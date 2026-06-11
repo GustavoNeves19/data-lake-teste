@@ -1,0 +1,90 @@
+{
+  "source": "UMBLER",
+  "dataset": "umbler_raw",
+  "connector": "umbler",
+  "auth": "bearer_static",
+  "context_columns": [
+    { "name": "organization_id", "type": "STRING" }
+  ],
+  "entities": [
+    {
+      "name": "channels",
+      "enabled": true,
+      "endpoint": "/v1/channels/",
+      "bq_table": "channels",
+      "write_mode": "truncate",
+      "pagination_mode": "none",
+      "data_path": "",
+      "record_id_path": "id",
+      "event_at_path": ""
+    },
+    {
+      "name": "chats",
+      "enabled": true,
+      "endpoint": "/v1/chats/",
+      "bq_table": "chats",
+      "write_mode": "truncate",
+      "pagination_mode": "skip_take",
+      "page_size": 100,
+      "data_path": "items",
+      "record_id_path": "id",
+      "event_at_path": "eventAtUTC"
+    },
+    {
+      "name": "contacts",
+      "enabled": true,
+      "endpoint": "/v1/contacts/",
+      "bq_table": "contacts",
+      "write_mode": "truncate",
+      "pagination_mode": "skip_take",
+      "page_size": 250,
+      "data_path": "items",
+      "record_id_path": "id",
+      "event_at_path": "lastActiveUTC"
+    },
+    {
+      "name": "tags",
+      "enabled": true,
+      "endpoint": "/v1/tags/",
+      "bq_table": "tags",
+      "write_mode": "truncate",
+      "pagination_mode": "skip_take",
+      "page_size": 250,
+      "data_path": "items",
+      "record_id_path": "id",
+      "event_at_path": ""
+    },
+    {
+      "name": "sectors",
+      "enabled": true,
+      "endpoint": "/v1/sectors/",
+      "bq_table": "sectors",
+      "write_mode": "truncate",
+      "pagination_mode": "none",
+      "data_path": "",
+      "record_id_path": "id",
+      "event_at_path": ""
+    },
+    {
+      "name": "messages",
+      "enabled": false,
+      "note": "Endpoint relative-messages retorna [] p/ toda a org (corte de plano/retencao Umbler, 04/06). Mensagem derivada do lastMessage embutido em chats no silver. Reativar quando o plano liberar o historico.",
+      "endpoint": "/v1/chats/{chatId}/relative-messages/",
+      "bq_table": "messages",
+      "write_mode": "append",
+      "pagination_mode": "nested_chats",
+      "depends_on": "chats",
+      "page_size": 100,
+      "data_path": "messages",
+      "record_id_path": "id",
+      "event_at_path": "eventAtUTC",
+      "record_columns": [
+        { "name": "chat_id", "type": "STRING", "key": "_chat_id" }
+      ],
+      "pii": {
+        "drop": ["content"],
+        "drop_in": { "file": ["url"] }
+      }
+    }
+  ]
+}

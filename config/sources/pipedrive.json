@@ -1,0 +1,2410 @@
+{
+  "source": "PIPEDRIVE",
+  "dataset": "crm_raw",
+  "connector": "pipedrive",
+  "auth": "api_token_header",
+  "entities": [
+    {
+      "name": "funil_vendas_farmacia",
+      "kind": "deals",
+      "pipeline_id": 2,
+      "bq_table": "funil_vendas_farmacia",
+      "projection": "typed",
+      "write_mode": "truncate",
+      "columns": [
+        {
+          "name": "pipeline_id",
+          "path": "_table_pipeline_id",
+          "type": "INT64"
+        },
+        {
+          "name": "deal_id",
+          "path": "id",
+          "type": "INT64"
+        },
+        {
+          "name": "title",
+          "path": "title",
+          "type": "STRING"
+        },
+        {
+          "name": "creator_user_id",
+          "path": "creator_user_id",
+          "type": "INT64"
+        },
+        {
+          "name": "value",
+          "path": "value",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "currency",
+          "path": "currency",
+          "type": "STRING"
+        },
+        {
+          "name": "person_id",
+          "path": "person_id",
+          "type": "INT64"
+        },
+        {
+          "name": "org_id",
+          "path": "org_id",
+          "type": "INT64"
+        },
+        {
+          "name": "stage_id",
+          "path": "stage_id",
+          "type": "INT64"
+        },
+        {
+          "name": "status",
+          "path": "status",
+          "type": "STRING"
+        },
+        {
+          "name": "probability",
+          "path": "probability",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "lost_reason",
+          "path": "lost_reason",
+          "type": "STRING"
+        },
+        {
+          "name": "visible_to",
+          "path": "visible_to",
+          "type": "STRING"
+        },
+        {
+          "name": "close_time",
+          "path": "close_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "pipeline_id_deal",
+          "path": "pipeline_id",
+          "type": "INT64"
+        },
+        {
+          "name": "won_time",
+          "path": "won_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "lost_time",
+          "path": "lost_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "stage_change_time",
+          "path": "stage_change_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "local_won_date",
+          "path": "local_won_date",
+          "type": "DATE"
+        },
+        {
+          "name": "local_lost_date",
+          "path": "local_lost_date",
+          "type": "DATE"
+        },
+        {
+          "name": "local_close_date",
+          "path": "local_close_date",
+          "type": "DATE"
+        },
+        {
+          "name": "expected_close_date",
+          "path": "expected_close_date",
+          "type": "DATE"
+        },
+        {
+          "name": "owner_id",
+          "path": "owner_id",
+          "type": "INT64"
+        },
+        {
+          "name": "label_ids",
+          "path": "label_ids",
+          "type": "STRING",
+          "transform": "array_join"
+        },
+        {
+          "name": "is_deleted",
+          "path": "is_deleted",
+          "type": "BOOL"
+        },
+        {
+          "name": "origin",
+          "path": "origin",
+          "type": "STRING"
+        },
+        {
+          "name": "origin_id",
+          "path": "origin_id",
+          "type": "STRING"
+        },
+        {
+          "name": "channel",
+          "path": "channel",
+          "type": "STRING"
+        },
+        {
+          "name": "channel_id",
+          "path": "channel_id",
+          "type": "STRING"
+        },
+        {
+          "name": "acv",
+          "path": "acv",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "arr",
+          "path": "arr",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "mrr",
+          "path": "mrr",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "is_archived",
+          "path": "is_archived",
+          "type": "BOOL"
+        },
+        {
+          "name": "archive_time",
+          "path": "archive_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "add_time",
+          "path": "add_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "update_time",
+          "path": "update_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "cf_e_loja_independente",
+          "path": "cf_e_loja_independente",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_faz_parte_de_alguma_bandeira",
+          "path": "cf_faz_parte_de_alguma_bandeira",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_quantidade_de_funcionarios",
+          "path": "cf_quantidade_de_funcionarios",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_o_que_voce_valoriza_em_uma_parceria",
+          "path": "cf_o_que_voce_valoriza_em_uma_parceria",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_canais_de_divulgacao_que_utiliza_para_venda",
+          "path": "cf_canais_de_divulgacao_que_utiliza_para_venda",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_forma_de_pagamento",
+          "path": "cf_forma_de_pagamento",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_perfil_de_credito_aprovado",
+          "path": "cf_perfil_de_credito_aprovado",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_prazo_de_entrega",
+          "path": "cf_prazo_de_entrega",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_possui_filial",
+          "path": "cf_possui_filial",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_possui_servico_de_logistica",
+          "path": "cf_possui_servico_de_logistica",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_trabalha_com_estoque",
+          "path": "cf_trabalha_com_estoque",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_precisa_de_produtos_para_teste",
+          "path": "cf_precisa_de_produtos_para_teste",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_e_o_decisor_da_negociacao",
+          "path": "cf_e_o_decisor_da_negociacao",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_area_de_atendimento",
+          "path": "cf_area_de_atendimento",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_ainda_possui_estoque_do_produto",
+          "path": "cf_ainda_possui_estoque_do_produto",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_por_qual_motivo_deixou_de_comprar_conosco",
+          "path": "cf_por_qual_motivo_deixou_de_comprar_conosco",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_responsavel_pelo_frete",
+          "path": "cf_responsavel_pelo_frete",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_carteira_ativapassiva",
+          "path": "cf_carteira_ativapassiva",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_motivo_de_perda_atual",
+          "path": "cf_motivo_de_perda_atual",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_ops___data_de_entrada_no_repositorio",
+          "path": "cf_ops___data_de_entrada_no_repositorio",
+          "type": "DATE"
+        },
+        {
+          "name": "cf_oportunidade_de_venda",
+          "path": "cf_oportunidade_de_venda",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_numero_de_serie",
+          "path": "cf_numero_de_serie",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_nota_fiscal_value",
+          "path": "cf_nota_fiscal_value",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "cf_nota_fiscal_currency",
+          "path": "cf_nota_fiscal_currency",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_garantia",
+          "path": "cf_garantia",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_cliente_final",
+          "path": "cf_cliente_final",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_tipo_de_servico",
+          "path": "cf_tipo_de_servico",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_data_da_ultima_compra_do_cliente",
+          "path": "cf_data_da_ultima_compra_do_cliente",
+          "type": "DATE"
+        },
+        {
+          "name": "cf_cnpj_enriquecido",
+          "path": "cf_cnpj_enriquecido",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_cnpj__cpf",
+          "path": "cf_cnpj__cpf",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_possui_loja_fisica",
+          "path": "cf_possui_loja_fisica",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_numero_da_cotacao",
+          "path": "cf_numero_da_cotacao",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_quais_canais_de_vendas_o_cliente_trabalha",
+          "path": "cf_quais_canais_de_vendas_o_cliente_trabalha",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_quais_segmentos_o_cliente_atende",
+          "path": "cf_quais_segmentos_o_cliente_atende",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_numero_de_lojas",
+          "path": "cf_numero_de_lojas",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "cf_data_que_ocorrera_a_licitacao",
+          "path": "cf_data_que_ocorrera_a_licitacao",
+          "type": "DATE"
+        },
+        {
+          "name": "cf_a_loja_pertence_a_alguma_rede",
+          "path": "cf_a_loja_pertence_a_alguma_rede",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "name": "funil_vendas_distribuidores",
+      "kind": "deals",
+      "pipeline_id": 3,
+      "bq_table": "funil_vendas_distribuidores",
+      "projection": "typed",
+      "write_mode": "truncate",
+      "columns": [
+        {
+          "name": "pipeline_id",
+          "path": "_table_pipeline_id",
+          "type": "INT64"
+        },
+        {
+          "name": "deal_id",
+          "path": "id",
+          "type": "INT64"
+        },
+        {
+          "name": "title",
+          "path": "title",
+          "type": "STRING"
+        },
+        {
+          "name": "creator_user_id",
+          "path": "creator_user_id",
+          "type": "INT64"
+        },
+        {
+          "name": "value",
+          "path": "value",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "currency",
+          "path": "currency",
+          "type": "STRING"
+        },
+        {
+          "name": "person_id",
+          "path": "person_id",
+          "type": "INT64"
+        },
+        {
+          "name": "org_id",
+          "path": "org_id",
+          "type": "INT64"
+        },
+        {
+          "name": "stage_id",
+          "path": "stage_id",
+          "type": "INT64"
+        },
+        {
+          "name": "status",
+          "path": "status",
+          "type": "STRING"
+        },
+        {
+          "name": "probability",
+          "path": "probability",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "lost_reason",
+          "path": "lost_reason",
+          "type": "STRING"
+        },
+        {
+          "name": "visible_to",
+          "path": "visible_to",
+          "type": "STRING"
+        },
+        {
+          "name": "close_time",
+          "path": "close_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "pipeline_id_deal",
+          "path": "pipeline_id",
+          "type": "INT64"
+        },
+        {
+          "name": "won_time",
+          "path": "won_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "lost_time",
+          "path": "lost_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "stage_change_time",
+          "path": "stage_change_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "local_won_date",
+          "path": "local_won_date",
+          "type": "DATE"
+        },
+        {
+          "name": "local_lost_date",
+          "path": "local_lost_date",
+          "type": "DATE"
+        },
+        {
+          "name": "local_close_date",
+          "path": "local_close_date",
+          "type": "DATE"
+        },
+        {
+          "name": "expected_close_date",
+          "path": "expected_close_date",
+          "type": "DATE"
+        },
+        {
+          "name": "owner_id",
+          "path": "owner_id",
+          "type": "INT64"
+        },
+        {
+          "name": "label_ids",
+          "path": "label_ids",
+          "type": "STRING",
+          "transform": "array_join"
+        },
+        {
+          "name": "is_deleted",
+          "path": "is_deleted",
+          "type": "BOOL"
+        },
+        {
+          "name": "origin",
+          "path": "origin",
+          "type": "STRING"
+        },
+        {
+          "name": "origin_id",
+          "path": "origin_id",
+          "type": "STRING"
+        },
+        {
+          "name": "channel",
+          "path": "channel",
+          "type": "STRING"
+        },
+        {
+          "name": "channel_id",
+          "path": "channel_id",
+          "type": "STRING"
+        },
+        {
+          "name": "acv",
+          "path": "acv",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "arr",
+          "path": "arr",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "mrr",
+          "path": "mrr",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "is_archived",
+          "path": "is_archived",
+          "type": "BOOL"
+        },
+        {
+          "name": "archive_time",
+          "path": "archive_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "add_time",
+          "path": "add_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "update_time",
+          "path": "update_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "cf_e_loja_independente",
+          "path": "cf_e_loja_independente",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_faz_parte_de_alguma_bandeira",
+          "path": "cf_faz_parte_de_alguma_bandeira",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_quantidade_de_funcionarios",
+          "path": "cf_quantidade_de_funcionarios",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_o_que_voce_valoriza_em_uma_parceria",
+          "path": "cf_o_que_voce_valoriza_em_uma_parceria",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_canais_de_divulgacao_que_utiliza_para_venda",
+          "path": "cf_canais_de_divulgacao_que_utiliza_para_venda",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_forma_de_pagamento",
+          "path": "cf_forma_de_pagamento",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_perfil_de_credito_aprovado",
+          "path": "cf_perfil_de_credito_aprovado",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_prazo_de_entrega",
+          "path": "cf_prazo_de_entrega",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_possui_filial",
+          "path": "cf_possui_filial",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_possui_servico_de_logistica",
+          "path": "cf_possui_servico_de_logistica",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_trabalha_com_estoque",
+          "path": "cf_trabalha_com_estoque",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_precisa_de_produtos_para_teste",
+          "path": "cf_precisa_de_produtos_para_teste",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_e_o_decisor_da_negociacao",
+          "path": "cf_e_o_decisor_da_negociacao",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_area_de_atendimento",
+          "path": "cf_area_de_atendimento",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_ainda_possui_estoque_do_produto",
+          "path": "cf_ainda_possui_estoque_do_produto",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_por_qual_motivo_deixou_de_comprar_conosco",
+          "path": "cf_por_qual_motivo_deixou_de_comprar_conosco",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_responsavel_pelo_frete",
+          "path": "cf_responsavel_pelo_frete",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_carteira_ativapassiva",
+          "path": "cf_carteira_ativapassiva",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_motivo_de_perda_atual",
+          "path": "cf_motivo_de_perda_atual",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_ops___data_de_entrada_no_repositorio",
+          "path": "cf_ops___data_de_entrada_no_repositorio",
+          "type": "DATE"
+        },
+        {
+          "name": "cf_oportunidade_de_venda",
+          "path": "cf_oportunidade_de_venda",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_numero_de_serie",
+          "path": "cf_numero_de_serie",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_nota_fiscal_value",
+          "path": "cf_nota_fiscal_value",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "cf_nota_fiscal_currency",
+          "path": "cf_nota_fiscal_currency",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_garantia",
+          "path": "cf_garantia",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_cliente_final",
+          "path": "cf_cliente_final",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_tipo_de_servico",
+          "path": "cf_tipo_de_servico",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_data_da_ultima_compra_do_cliente",
+          "path": "cf_data_da_ultima_compra_do_cliente",
+          "type": "DATE"
+        },
+        {
+          "name": "cf_cnpj_enriquecido",
+          "path": "cf_cnpj_enriquecido",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_cnpj__cpf",
+          "path": "cf_cnpj__cpf",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_possui_loja_fisica",
+          "path": "cf_possui_loja_fisica",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_numero_da_cotacao",
+          "path": "cf_numero_da_cotacao",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_quais_canais_de_vendas_o_cliente_trabalha",
+          "path": "cf_quais_canais_de_vendas_o_cliente_trabalha",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_quais_segmentos_o_cliente_atende",
+          "path": "cf_quais_segmentos_o_cliente_atende",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_numero_de_lojas",
+          "path": "cf_numero_de_lojas",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "cf_data_que_ocorrera_a_licitacao",
+          "path": "cf_data_que_ocorrera_a_licitacao",
+          "type": "DATE"
+        },
+        {
+          "name": "cf_a_loja_pertence_a_alguma_rede",
+          "path": "cf_a_loja_pertence_a_alguma_rede",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "name": "recorrencia_farmacia",
+      "kind": "deals",
+      "pipeline_id": 4,
+      "bq_table": "recorrencia_farmacia",
+      "projection": "typed",
+      "write_mode": "truncate",
+      "columns": [
+        {
+          "name": "pipeline_id",
+          "path": "_table_pipeline_id",
+          "type": "INT64"
+        },
+        {
+          "name": "deal_id",
+          "path": "id",
+          "type": "INT64"
+        },
+        {
+          "name": "title",
+          "path": "title",
+          "type": "STRING"
+        },
+        {
+          "name": "creator_user_id",
+          "path": "creator_user_id",
+          "type": "INT64"
+        },
+        {
+          "name": "value",
+          "path": "value",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "currency",
+          "path": "currency",
+          "type": "STRING"
+        },
+        {
+          "name": "person_id",
+          "path": "person_id",
+          "type": "INT64"
+        },
+        {
+          "name": "org_id",
+          "path": "org_id",
+          "type": "INT64"
+        },
+        {
+          "name": "stage_id",
+          "path": "stage_id",
+          "type": "INT64"
+        },
+        {
+          "name": "status",
+          "path": "status",
+          "type": "STRING"
+        },
+        {
+          "name": "probability",
+          "path": "probability",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "lost_reason",
+          "path": "lost_reason",
+          "type": "STRING"
+        },
+        {
+          "name": "visible_to",
+          "path": "visible_to",
+          "type": "STRING"
+        },
+        {
+          "name": "close_time",
+          "path": "close_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "pipeline_id_deal",
+          "path": "pipeline_id",
+          "type": "INT64"
+        },
+        {
+          "name": "won_time",
+          "path": "won_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "lost_time",
+          "path": "lost_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "stage_change_time",
+          "path": "stage_change_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "local_won_date",
+          "path": "local_won_date",
+          "type": "DATE"
+        },
+        {
+          "name": "local_lost_date",
+          "path": "local_lost_date",
+          "type": "DATE"
+        },
+        {
+          "name": "local_close_date",
+          "path": "local_close_date",
+          "type": "DATE"
+        },
+        {
+          "name": "expected_close_date",
+          "path": "expected_close_date",
+          "type": "DATE"
+        },
+        {
+          "name": "owner_id",
+          "path": "owner_id",
+          "type": "INT64"
+        },
+        {
+          "name": "label_ids",
+          "path": "label_ids",
+          "type": "STRING",
+          "transform": "array_join"
+        },
+        {
+          "name": "is_deleted",
+          "path": "is_deleted",
+          "type": "BOOL"
+        },
+        {
+          "name": "origin",
+          "path": "origin",
+          "type": "STRING"
+        },
+        {
+          "name": "origin_id",
+          "path": "origin_id",
+          "type": "STRING"
+        },
+        {
+          "name": "channel",
+          "path": "channel",
+          "type": "STRING"
+        },
+        {
+          "name": "channel_id",
+          "path": "channel_id",
+          "type": "STRING"
+        },
+        {
+          "name": "acv",
+          "path": "acv",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "arr",
+          "path": "arr",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "mrr",
+          "path": "mrr",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "is_archived",
+          "path": "is_archived",
+          "type": "BOOL"
+        },
+        {
+          "name": "archive_time",
+          "path": "archive_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "add_time",
+          "path": "add_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "update_time",
+          "path": "update_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "cf_e_loja_independente",
+          "path": "cf_e_loja_independente",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_faz_parte_de_alguma_bandeira",
+          "path": "cf_faz_parte_de_alguma_bandeira",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_quantidade_de_funcionarios",
+          "path": "cf_quantidade_de_funcionarios",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_o_que_voce_valoriza_em_uma_parceria",
+          "path": "cf_o_que_voce_valoriza_em_uma_parceria",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_canais_de_divulgacao_que_utiliza_para_venda",
+          "path": "cf_canais_de_divulgacao_que_utiliza_para_venda",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_forma_de_pagamento",
+          "path": "cf_forma_de_pagamento",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_perfil_de_credito_aprovado",
+          "path": "cf_perfil_de_credito_aprovado",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_prazo_de_entrega",
+          "path": "cf_prazo_de_entrega",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_possui_filial",
+          "path": "cf_possui_filial",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_possui_servico_de_logistica",
+          "path": "cf_possui_servico_de_logistica",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_trabalha_com_estoque",
+          "path": "cf_trabalha_com_estoque",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_precisa_de_produtos_para_teste",
+          "path": "cf_precisa_de_produtos_para_teste",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_e_o_decisor_da_negociacao",
+          "path": "cf_e_o_decisor_da_negociacao",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_area_de_atendimento",
+          "path": "cf_area_de_atendimento",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_ainda_possui_estoque_do_produto",
+          "path": "cf_ainda_possui_estoque_do_produto",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_por_qual_motivo_deixou_de_comprar_conosco",
+          "path": "cf_por_qual_motivo_deixou_de_comprar_conosco",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_responsavel_pelo_frete",
+          "path": "cf_responsavel_pelo_frete",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_carteira_ativapassiva",
+          "path": "cf_carteira_ativapassiva",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_motivo_de_perda_atual",
+          "path": "cf_motivo_de_perda_atual",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_ops___data_de_entrada_no_repositorio",
+          "path": "cf_ops___data_de_entrada_no_repositorio",
+          "type": "DATE"
+        },
+        {
+          "name": "cf_oportunidade_de_venda",
+          "path": "cf_oportunidade_de_venda",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_numero_de_serie",
+          "path": "cf_numero_de_serie",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_nota_fiscal_value",
+          "path": "cf_nota_fiscal_value",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "cf_nota_fiscal_currency",
+          "path": "cf_nota_fiscal_currency",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_garantia",
+          "path": "cf_garantia",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_cliente_final",
+          "path": "cf_cliente_final",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_tipo_de_servico",
+          "path": "cf_tipo_de_servico",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_data_da_ultima_compra_do_cliente",
+          "path": "cf_data_da_ultima_compra_do_cliente",
+          "type": "DATE"
+        },
+        {
+          "name": "cf_cnpj_enriquecido",
+          "path": "cf_cnpj_enriquecido",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_cnpj__cpf",
+          "path": "cf_cnpj__cpf",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_possui_loja_fisica",
+          "path": "cf_possui_loja_fisica",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_numero_da_cotacao",
+          "path": "cf_numero_da_cotacao",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_quais_canais_de_vendas_o_cliente_trabalha",
+          "path": "cf_quais_canais_de_vendas_o_cliente_trabalha",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_quais_segmentos_o_cliente_atende",
+          "path": "cf_quais_segmentos_o_cliente_atende",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_numero_de_lojas",
+          "path": "cf_numero_de_lojas",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "cf_data_que_ocorrera_a_licitacao",
+          "path": "cf_data_que_ocorrera_a_licitacao",
+          "type": "DATE"
+        },
+        {
+          "name": "cf_a_loja_pertence_a_alguma_rede",
+          "path": "cf_a_loja_pertence_a_alguma_rede",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "name": "recorrencia_distribuidores",
+      "kind": "deals",
+      "pipeline_id": 5,
+      "bq_table": "recorrencia_distribuidores",
+      "projection": "typed",
+      "write_mode": "truncate",
+      "columns": [
+        {
+          "name": "pipeline_id",
+          "path": "_table_pipeline_id",
+          "type": "INT64"
+        },
+        {
+          "name": "deal_id",
+          "path": "id",
+          "type": "INT64"
+        },
+        {
+          "name": "title",
+          "path": "title",
+          "type": "STRING"
+        },
+        {
+          "name": "creator_user_id",
+          "path": "creator_user_id",
+          "type": "INT64"
+        },
+        {
+          "name": "value",
+          "path": "value",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "currency",
+          "path": "currency",
+          "type": "STRING"
+        },
+        {
+          "name": "person_id",
+          "path": "person_id",
+          "type": "INT64"
+        },
+        {
+          "name": "org_id",
+          "path": "org_id",
+          "type": "INT64"
+        },
+        {
+          "name": "stage_id",
+          "path": "stage_id",
+          "type": "INT64"
+        },
+        {
+          "name": "status",
+          "path": "status",
+          "type": "STRING"
+        },
+        {
+          "name": "probability",
+          "path": "probability",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "lost_reason",
+          "path": "lost_reason",
+          "type": "STRING"
+        },
+        {
+          "name": "visible_to",
+          "path": "visible_to",
+          "type": "STRING"
+        },
+        {
+          "name": "close_time",
+          "path": "close_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "pipeline_id_deal",
+          "path": "pipeline_id",
+          "type": "INT64"
+        },
+        {
+          "name": "won_time",
+          "path": "won_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "lost_time",
+          "path": "lost_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "stage_change_time",
+          "path": "stage_change_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "local_won_date",
+          "path": "local_won_date",
+          "type": "DATE"
+        },
+        {
+          "name": "local_lost_date",
+          "path": "local_lost_date",
+          "type": "DATE"
+        },
+        {
+          "name": "local_close_date",
+          "path": "local_close_date",
+          "type": "DATE"
+        },
+        {
+          "name": "expected_close_date",
+          "path": "expected_close_date",
+          "type": "DATE"
+        },
+        {
+          "name": "owner_id",
+          "path": "owner_id",
+          "type": "INT64"
+        },
+        {
+          "name": "label_ids",
+          "path": "label_ids",
+          "type": "STRING",
+          "transform": "array_join"
+        },
+        {
+          "name": "is_deleted",
+          "path": "is_deleted",
+          "type": "BOOL"
+        },
+        {
+          "name": "origin",
+          "path": "origin",
+          "type": "STRING"
+        },
+        {
+          "name": "origin_id",
+          "path": "origin_id",
+          "type": "STRING"
+        },
+        {
+          "name": "channel",
+          "path": "channel",
+          "type": "STRING"
+        },
+        {
+          "name": "channel_id",
+          "path": "channel_id",
+          "type": "STRING"
+        },
+        {
+          "name": "acv",
+          "path": "acv",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "arr",
+          "path": "arr",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "mrr",
+          "path": "mrr",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "is_archived",
+          "path": "is_archived",
+          "type": "BOOL"
+        },
+        {
+          "name": "archive_time",
+          "path": "archive_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "add_time",
+          "path": "add_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "update_time",
+          "path": "update_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "cf_e_loja_independente",
+          "path": "cf_e_loja_independente",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_faz_parte_de_alguma_bandeira",
+          "path": "cf_faz_parte_de_alguma_bandeira",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_quantidade_de_funcionarios",
+          "path": "cf_quantidade_de_funcionarios",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_o_que_voce_valoriza_em_uma_parceria",
+          "path": "cf_o_que_voce_valoriza_em_uma_parceria",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_canais_de_divulgacao_que_utiliza_para_venda",
+          "path": "cf_canais_de_divulgacao_que_utiliza_para_venda",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_forma_de_pagamento",
+          "path": "cf_forma_de_pagamento",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_perfil_de_credito_aprovado",
+          "path": "cf_perfil_de_credito_aprovado",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_prazo_de_entrega",
+          "path": "cf_prazo_de_entrega",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_possui_filial",
+          "path": "cf_possui_filial",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_possui_servico_de_logistica",
+          "path": "cf_possui_servico_de_logistica",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_trabalha_com_estoque",
+          "path": "cf_trabalha_com_estoque",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_precisa_de_produtos_para_teste",
+          "path": "cf_precisa_de_produtos_para_teste",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_e_o_decisor_da_negociacao",
+          "path": "cf_e_o_decisor_da_negociacao",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_area_de_atendimento",
+          "path": "cf_area_de_atendimento",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_ainda_possui_estoque_do_produto",
+          "path": "cf_ainda_possui_estoque_do_produto",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_por_qual_motivo_deixou_de_comprar_conosco",
+          "path": "cf_por_qual_motivo_deixou_de_comprar_conosco",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_responsavel_pelo_frete",
+          "path": "cf_responsavel_pelo_frete",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_carteira_ativapassiva",
+          "path": "cf_carteira_ativapassiva",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_motivo_de_perda_atual",
+          "path": "cf_motivo_de_perda_atual",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_ops___data_de_entrada_no_repositorio",
+          "path": "cf_ops___data_de_entrada_no_repositorio",
+          "type": "DATE"
+        },
+        {
+          "name": "cf_oportunidade_de_venda",
+          "path": "cf_oportunidade_de_venda",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_numero_de_serie",
+          "path": "cf_numero_de_serie",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_nota_fiscal_value",
+          "path": "cf_nota_fiscal_value",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "cf_nota_fiscal_currency",
+          "path": "cf_nota_fiscal_currency",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_garantia",
+          "path": "cf_garantia",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_cliente_final",
+          "path": "cf_cliente_final",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_tipo_de_servico",
+          "path": "cf_tipo_de_servico",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_data_da_ultima_compra_do_cliente",
+          "path": "cf_data_da_ultima_compra_do_cliente",
+          "type": "DATE"
+        },
+        {
+          "name": "cf_cnpj_enriquecido",
+          "path": "cf_cnpj_enriquecido",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_cnpj__cpf",
+          "path": "cf_cnpj__cpf",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_possui_loja_fisica",
+          "path": "cf_possui_loja_fisica",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_numero_da_cotacao",
+          "path": "cf_numero_da_cotacao",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_quais_canais_de_vendas_o_cliente_trabalha",
+          "path": "cf_quais_canais_de_vendas_o_cliente_trabalha",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_quais_segmentos_o_cliente_atende",
+          "path": "cf_quais_segmentos_o_cliente_atende",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_numero_de_lojas",
+          "path": "cf_numero_de_lojas",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "cf_data_que_ocorrera_a_licitacao",
+          "path": "cf_data_que_ocorrera_a_licitacao",
+          "type": "DATE"
+        },
+        {
+          "name": "cf_a_loja_pertence_a_alguma_rede",
+          "path": "cf_a_loja_pertence_a_alguma_rede",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "name": "sac_atendimento",
+      "kind": "deals",
+      "pipeline_id": 10,
+      "bq_table": "sac_atendimento",
+      "projection": "typed",
+      "write_mode": "truncate",
+      "columns": [
+        {
+          "name": "pipeline_id",
+          "path": "_table_pipeline_id",
+          "type": "INT64"
+        },
+        {
+          "name": "deal_id",
+          "path": "id",
+          "type": "INT64"
+        },
+        {
+          "name": "title",
+          "path": "title",
+          "type": "STRING"
+        },
+        {
+          "name": "creator_user_id",
+          "path": "creator_user_id",
+          "type": "INT64"
+        },
+        {
+          "name": "value",
+          "path": "value",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "currency",
+          "path": "currency",
+          "type": "STRING"
+        },
+        {
+          "name": "person_id",
+          "path": "person_id",
+          "type": "INT64"
+        },
+        {
+          "name": "org_id",
+          "path": "org_id",
+          "type": "INT64"
+        },
+        {
+          "name": "stage_id",
+          "path": "stage_id",
+          "type": "INT64"
+        },
+        {
+          "name": "status",
+          "path": "status",
+          "type": "STRING"
+        },
+        {
+          "name": "probability",
+          "path": "probability",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "lost_reason",
+          "path": "lost_reason",
+          "type": "STRING"
+        },
+        {
+          "name": "visible_to",
+          "path": "visible_to",
+          "type": "STRING"
+        },
+        {
+          "name": "close_time",
+          "path": "close_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "pipeline_id_deal",
+          "path": "pipeline_id",
+          "type": "INT64"
+        },
+        {
+          "name": "won_time",
+          "path": "won_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "lost_time",
+          "path": "lost_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "stage_change_time",
+          "path": "stage_change_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "local_won_date",
+          "path": "local_won_date",
+          "type": "DATE"
+        },
+        {
+          "name": "local_lost_date",
+          "path": "local_lost_date",
+          "type": "DATE"
+        },
+        {
+          "name": "local_close_date",
+          "path": "local_close_date",
+          "type": "DATE"
+        },
+        {
+          "name": "expected_close_date",
+          "path": "expected_close_date",
+          "type": "DATE"
+        },
+        {
+          "name": "owner_id",
+          "path": "owner_id",
+          "type": "INT64"
+        },
+        {
+          "name": "label_ids",
+          "path": "label_ids",
+          "type": "STRING",
+          "transform": "array_join"
+        },
+        {
+          "name": "is_deleted",
+          "path": "is_deleted",
+          "type": "BOOL"
+        },
+        {
+          "name": "origin",
+          "path": "origin",
+          "type": "STRING"
+        },
+        {
+          "name": "origin_id",
+          "path": "origin_id",
+          "type": "STRING"
+        },
+        {
+          "name": "channel",
+          "path": "channel",
+          "type": "STRING"
+        },
+        {
+          "name": "channel_id",
+          "path": "channel_id",
+          "type": "STRING"
+        },
+        {
+          "name": "acv",
+          "path": "acv",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "arr",
+          "path": "arr",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "mrr",
+          "path": "mrr",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "is_archived",
+          "path": "is_archived",
+          "type": "BOOL"
+        },
+        {
+          "name": "archive_time",
+          "path": "archive_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "add_time",
+          "path": "add_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "update_time",
+          "path": "update_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "cf_e_loja_independente",
+          "path": "cf_e_loja_independente",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_faz_parte_de_alguma_bandeira",
+          "path": "cf_faz_parte_de_alguma_bandeira",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_quantidade_de_funcionarios",
+          "path": "cf_quantidade_de_funcionarios",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_o_que_voce_valoriza_em_uma_parceria",
+          "path": "cf_o_que_voce_valoriza_em_uma_parceria",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_canais_de_divulgacao_que_utiliza_para_venda",
+          "path": "cf_canais_de_divulgacao_que_utiliza_para_venda",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_forma_de_pagamento",
+          "path": "cf_forma_de_pagamento",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_perfil_de_credito_aprovado",
+          "path": "cf_perfil_de_credito_aprovado",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_prazo_de_entrega",
+          "path": "cf_prazo_de_entrega",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_possui_filial",
+          "path": "cf_possui_filial",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_possui_servico_de_logistica",
+          "path": "cf_possui_servico_de_logistica",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_trabalha_com_estoque",
+          "path": "cf_trabalha_com_estoque",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_precisa_de_produtos_para_teste",
+          "path": "cf_precisa_de_produtos_para_teste",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_e_o_decisor_da_negociacao",
+          "path": "cf_e_o_decisor_da_negociacao",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_area_de_atendimento",
+          "path": "cf_area_de_atendimento",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_ainda_possui_estoque_do_produto",
+          "path": "cf_ainda_possui_estoque_do_produto",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_por_qual_motivo_deixou_de_comprar_conosco",
+          "path": "cf_por_qual_motivo_deixou_de_comprar_conosco",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_responsavel_pelo_frete",
+          "path": "cf_responsavel_pelo_frete",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_carteira_ativapassiva",
+          "path": "cf_carteira_ativapassiva",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_motivo_de_perda_atual",
+          "path": "cf_motivo_de_perda_atual",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_ops___data_de_entrada_no_repositorio",
+          "path": "cf_ops___data_de_entrada_no_repositorio",
+          "type": "DATE"
+        },
+        {
+          "name": "cf_oportunidade_de_venda",
+          "path": "cf_oportunidade_de_venda",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_numero_de_serie",
+          "path": "cf_numero_de_serie",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_nota_fiscal_value",
+          "path": "cf_nota_fiscal_value",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "cf_nota_fiscal_currency",
+          "path": "cf_nota_fiscal_currency",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_garantia",
+          "path": "cf_garantia",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_cliente_final",
+          "path": "cf_cliente_final",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_tipo_de_servico",
+          "path": "cf_tipo_de_servico",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_data_da_ultima_compra_do_cliente",
+          "path": "cf_data_da_ultima_compra_do_cliente",
+          "type": "DATE"
+        },
+        {
+          "name": "cf_cnpj_enriquecido",
+          "path": "cf_cnpj_enriquecido",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_cnpj__cpf",
+          "path": "cf_cnpj__cpf",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_possui_loja_fisica",
+          "path": "cf_possui_loja_fisica",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_numero_da_cotacao",
+          "path": "cf_numero_da_cotacao",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_quais_canais_de_vendas_o_cliente_trabalha",
+          "path": "cf_quais_canais_de_vendas_o_cliente_trabalha",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_quais_segmentos_o_cliente_atende",
+          "path": "cf_quais_segmentos_o_cliente_atende",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_numero_de_lojas",
+          "path": "cf_numero_de_lojas",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "cf_data_que_ocorrera_a_licitacao",
+          "path": "cf_data_que_ocorrera_a_licitacao",
+          "type": "DATE"
+        },
+        {
+          "name": "cf_a_loja_pertence_a_alguma_rede",
+          "path": "cf_a_loja_pertence_a_alguma_rede",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "name": "sac_vendas",
+      "kind": "deals",
+      "pipeline_id": 11,
+      "bq_table": "sac_vendas",
+      "projection": "typed",
+      "write_mode": "truncate",
+      "columns": [
+        {
+          "name": "pipeline_id",
+          "path": "_table_pipeline_id",
+          "type": "INT64"
+        },
+        {
+          "name": "deal_id",
+          "path": "id",
+          "type": "INT64"
+        },
+        {
+          "name": "title",
+          "path": "title",
+          "type": "STRING"
+        },
+        {
+          "name": "creator_user_id",
+          "path": "creator_user_id",
+          "type": "INT64"
+        },
+        {
+          "name": "value",
+          "path": "value",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "currency",
+          "path": "currency",
+          "type": "STRING"
+        },
+        {
+          "name": "person_id",
+          "path": "person_id",
+          "type": "INT64"
+        },
+        {
+          "name": "org_id",
+          "path": "org_id",
+          "type": "INT64"
+        },
+        {
+          "name": "stage_id",
+          "path": "stage_id",
+          "type": "INT64"
+        },
+        {
+          "name": "status",
+          "path": "status",
+          "type": "STRING"
+        },
+        {
+          "name": "probability",
+          "path": "probability",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "lost_reason",
+          "path": "lost_reason",
+          "type": "STRING"
+        },
+        {
+          "name": "visible_to",
+          "path": "visible_to",
+          "type": "STRING"
+        },
+        {
+          "name": "close_time",
+          "path": "close_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "pipeline_id_deal",
+          "path": "pipeline_id",
+          "type": "INT64"
+        },
+        {
+          "name": "won_time",
+          "path": "won_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "lost_time",
+          "path": "lost_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "stage_change_time",
+          "path": "stage_change_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "local_won_date",
+          "path": "local_won_date",
+          "type": "DATE"
+        },
+        {
+          "name": "local_lost_date",
+          "path": "local_lost_date",
+          "type": "DATE"
+        },
+        {
+          "name": "local_close_date",
+          "path": "local_close_date",
+          "type": "DATE"
+        },
+        {
+          "name": "expected_close_date",
+          "path": "expected_close_date",
+          "type": "DATE"
+        },
+        {
+          "name": "owner_id",
+          "path": "owner_id",
+          "type": "INT64"
+        },
+        {
+          "name": "label_ids",
+          "path": "label_ids",
+          "type": "STRING",
+          "transform": "array_join"
+        },
+        {
+          "name": "is_deleted",
+          "path": "is_deleted",
+          "type": "BOOL"
+        },
+        {
+          "name": "origin",
+          "path": "origin",
+          "type": "STRING"
+        },
+        {
+          "name": "origin_id",
+          "path": "origin_id",
+          "type": "STRING"
+        },
+        {
+          "name": "channel",
+          "path": "channel",
+          "type": "STRING"
+        },
+        {
+          "name": "channel_id",
+          "path": "channel_id",
+          "type": "STRING"
+        },
+        {
+          "name": "acv",
+          "path": "acv",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "arr",
+          "path": "arr",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "mrr",
+          "path": "mrr",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "is_archived",
+          "path": "is_archived",
+          "type": "BOOL"
+        },
+        {
+          "name": "archive_time",
+          "path": "archive_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "add_time",
+          "path": "add_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "update_time",
+          "path": "update_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "cf_e_loja_independente",
+          "path": "cf_e_loja_independente",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_faz_parte_de_alguma_bandeira",
+          "path": "cf_faz_parte_de_alguma_bandeira",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_quantidade_de_funcionarios",
+          "path": "cf_quantidade_de_funcionarios",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_o_que_voce_valoriza_em_uma_parceria",
+          "path": "cf_o_que_voce_valoriza_em_uma_parceria",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_canais_de_divulgacao_que_utiliza_para_venda",
+          "path": "cf_canais_de_divulgacao_que_utiliza_para_venda",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_forma_de_pagamento",
+          "path": "cf_forma_de_pagamento",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_perfil_de_credito_aprovado",
+          "path": "cf_perfil_de_credito_aprovado",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_prazo_de_entrega",
+          "path": "cf_prazo_de_entrega",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_possui_filial",
+          "path": "cf_possui_filial",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_possui_servico_de_logistica",
+          "path": "cf_possui_servico_de_logistica",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_trabalha_com_estoque",
+          "path": "cf_trabalha_com_estoque",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_precisa_de_produtos_para_teste",
+          "path": "cf_precisa_de_produtos_para_teste",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_e_o_decisor_da_negociacao",
+          "path": "cf_e_o_decisor_da_negociacao",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_area_de_atendimento",
+          "path": "cf_area_de_atendimento",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_ainda_possui_estoque_do_produto",
+          "path": "cf_ainda_possui_estoque_do_produto",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_por_qual_motivo_deixou_de_comprar_conosco",
+          "path": "cf_por_qual_motivo_deixou_de_comprar_conosco",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_responsavel_pelo_frete",
+          "path": "cf_responsavel_pelo_frete",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_carteira_ativapassiva",
+          "path": "cf_carteira_ativapassiva",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_motivo_de_perda_atual",
+          "path": "cf_motivo_de_perda_atual",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_ops___data_de_entrada_no_repositorio",
+          "path": "cf_ops___data_de_entrada_no_repositorio",
+          "type": "DATE"
+        },
+        {
+          "name": "cf_oportunidade_de_venda",
+          "path": "cf_oportunidade_de_venda",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_numero_de_serie",
+          "path": "cf_numero_de_serie",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_nota_fiscal_value",
+          "path": "cf_nota_fiscal_value",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "cf_nota_fiscal_currency",
+          "path": "cf_nota_fiscal_currency",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_garantia",
+          "path": "cf_garantia",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_cliente_final",
+          "path": "cf_cliente_final",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_tipo_de_servico",
+          "path": "cf_tipo_de_servico",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_data_da_ultima_compra_do_cliente",
+          "path": "cf_data_da_ultima_compra_do_cliente",
+          "type": "DATE"
+        },
+        {
+          "name": "cf_cnpj_enriquecido",
+          "path": "cf_cnpj_enriquecido",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_cnpj__cpf",
+          "path": "cf_cnpj__cpf",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_possui_loja_fisica",
+          "path": "cf_possui_loja_fisica",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_numero_da_cotacao",
+          "path": "cf_numero_da_cotacao",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_quais_canais_de_vendas_o_cliente_trabalha",
+          "path": "cf_quais_canais_de_vendas_o_cliente_trabalha",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_quais_segmentos_o_cliente_atende",
+          "path": "cf_quais_segmentos_o_cliente_atende",
+          "type": "STRING"
+        },
+        {
+          "name": "cf_numero_de_lojas",
+          "path": "cf_numero_de_lojas",
+          "type": "FLOAT64"
+        },
+        {
+          "name": "cf_data_que_ocorrera_a_licitacao",
+          "path": "cf_data_que_ocorrera_a_licitacao",
+          "type": "DATE"
+        },
+        {
+          "name": "cf_a_loja_pertence_a_alguma_rede",
+          "path": "cf_a_loja_pertence_a_alguma_rede",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "name": "dim_crm_organization",
+      "kind": "organizations",
+      "bq_table": "dim_crm_organization",
+      "projection": "typed",
+      "write_mode": "truncate",
+      "columns": [
+        {
+          "name": "org_id",
+          "path": "id",
+          "type": "INT64"
+        },
+        {
+          "name": "name",
+          "path": "name",
+          "type": "STRING"
+        },
+        {
+          "name": "address",
+          "path": "address",
+          "type": "STRING"
+        },
+        {
+          "name": "owner_id",
+          "path": "owner_id",
+          "type": "INT64"
+        },
+        {
+          "name": "is_active",
+          "path": "active_flag",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "name": "dim_crm_person",
+      "kind": "persons",
+      "bq_table": "dim_crm_person",
+      "projection": "typed",
+      "write_mode": "truncate",
+      "columns": [
+        {
+          "name": "person_id",
+          "path": "id",
+          "type": "INT64"
+        },
+        {
+          "name": "name",
+          "path": "name",
+          "type": "STRING"
+        },
+        {
+          "name": "phone",
+          "path": "phone",
+          "type": "STRING"
+        },
+        {
+          "name": "email",
+          "path": "email",
+          "type": "STRING"
+        },
+        {
+          "name": "org_id",
+          "path": "org_id",
+          "type": "INT64"
+        },
+        {
+          "name": "owner_id",
+          "path": "owner_id",
+          "type": "INT64"
+        },
+        {
+          "name": "is_active",
+          "path": "active_flag",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "name": "dim_crm_stage",
+      "kind": "stages",
+      "bq_table": "dim_crm_stage",
+      "projection": "typed",
+      "write_mode": "truncate",
+      "columns": [
+        {
+          "name": "stage_id",
+          "path": "id",
+          "type": "INT64"
+        },
+        {
+          "name": "stage_name",
+          "path": "name",
+          "type": "STRING"
+        },
+        {
+          "name": "pipeline_id",
+          "path": "pipeline_id",
+          "type": "INT64"
+        },
+        {
+          "name": "pipeline_name",
+          "path": "pipeline_name",
+          "type": "STRING"
+        },
+        {
+          "name": "order_nr",
+          "path": "order_nr",
+          "type": "INT64"
+        },
+        {
+          "name": "is_active",
+          "path": "active_flag",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "name": "dim_crm_user",
+      "kind": "users",
+      "bq_table": "dim_crm_user",
+      "projection": "typed",
+      "write_mode": "truncate",
+      "columns": [
+        {
+          "name": "user_id",
+          "path": "id",
+          "type": "INT64"
+        },
+        {
+          "name": "name",
+          "path": "name",
+          "type": "STRING"
+        },
+        {
+          "name": "email",
+          "path": "email",
+          "type": "STRING"
+        },
+        {
+          "name": "is_active",
+          "path": "active_flag",
+          "type": "BOOL"
+        }
+      ]
+    }
+  ]
+}

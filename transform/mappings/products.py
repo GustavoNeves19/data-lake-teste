@@ -1,0 +1,81 @@
+"""
+Termos técnicos e de produtos industriais.
+Específicos do domínio PRODUCTS / ITENS do ERP.
+"""
+
+PRODUCT_FIXES = {
+    # Materiais
+    "A?O INOX": "AÇO INOX",
+    "A?O CARBONO": "AÇO CARBONO",
+    "A?O GALVANIZADO": "AÇO GALVANIZADO",
+    "FERRO FUNDIDO CIN?": "FERRO FUNDIDO CINZ",
+    "LAT?O": "LATÃO",
+    "ALUM?NIO": "ALUMÍNIO",
+    "PL?STICO": "PLÁSTICO",
+    "CER?MICA": "CERÂMICA",
+    "BORRACHA SINT?TICA": "BORRACHA SINTÉTICA",
+
+    # Componentes industriais
+    "V?LVULA ESFERA": "VÁLVULA ESFERA",
+    "V?LVULA GAVETA": "VÁLVULA GAVETA",
+    "V?LVULA GLOBO": "VÁLVULA GLOBO",
+    "V?LVULA RETEN??O": "VÁLVULA RETENÇÃO",
+    "V?LVULA SEGURAN?A": "VÁLVULA SEGURANÇA",
+    "V?LVULA SOLENOID": "VÁLVULA SOLENOID",
+    "V?LVULA PROPORCIONAL": "VÁLVULA PROPORCIONAL",
+    "CONEX?O HIDR?ULICA": "CONEXÃO HIDRÁULICA",
+    "CONEX?O PNEUM?TICA": "CONEXÃO PNEUMÁTICA",
+    "CONEX?O R?PIDA": "CONEXÃO RÁPIDA",
+    "CONEX?O ROSCADA": "CONEXÃO ROSCADA",
+    "PARAFUSO CABE?A": "PARAFUSO CABEÇA",
+    "PARAFUSO SEXTAVADO INOX": "PARAFUSO SEXTAVADO INOX",
+
+    # Equipamentos
+    "COMPRESS?R": "COMPRESSOR",
+    "TRANSMISS?O": "TRANSMISSÃO",
+    "SUSPENS?O": "SUSPENSÃO",
+    "REFRIGERA??O": "REFRIGERAÇÃO",
+    "AQUECIM?NTO": "AQUECIMENTO",
+    "ISOLAM?NTO": "ISOLAMENTO",
+    "REVESTIM?NTO": "REVESTIMENTO",
+    "EQUIPAM?NTO": "EQUIPAMENTO",
+    "INSTRUMENT?": "INSTRUMENTO",
+
+    # Medidas e especificações
+    "DI?METRO": "DIÂMETRO",
+    "COMPRIMENT?": "COMPRIMENTO",
+    "ESPESSUR?": "ESPESSURA",
+    "TOLER?NCIA": "TOLERÂNCIA",
+    "RESIST?NCIA": "RESISTÊNCIA",
+    "POT?NCIA": "POTÊNCIA",
+    "EFICI?NCIA": "EFICIÊNCIA",
+
+    # Processos
+    "USINAG?M": "USINAGEM",
+    "SOLDAG?M": "SOLDAGEM",
+    "FUNDICAO": "FUNDIÇÃO",
+    "GALVANIZA??O": "GALVANIZAÇÃO",
+    "CROMAC?O": "CROMAÇÃO",
+    "ANODIZA??O": "ANODIZAÇÃO",
+
+    # Iluminação
+    "L?MPADA": "LÂMPADA",
+    "L?MPADAS": "LÂMPADAS",
+
+    # Médico-hospitalar
+    "CIR?RGICO": "CIRÚRGICO",
+    "CIR?RGICA": "CIRÚRGICA",
+    "CIR?RGICOS": "CIRÚRGICOS",
+    "CIR?RGICAS": "CIRÚRGICAS",
+    "ORTOP?DICO": "ORTOPÉDICO",
+    "ORTOP?DICA": "ORTOPÉDICA",
+    "ORTOP?DICOS": "ORTOPÉDICOS",
+    "ORTOP?DICAS": "ORTOPÉDICAS",
+
+    # Fluidos
+    "SOLU??O": "SOLUÇÃO",
+    "SOLU??ES": "SOLUÇÕES",
+
+    # Embalagens
+    "EMBALAGENS FLEX?VEIS": "EMBALAGENS FLEXÍVEIS",
+}

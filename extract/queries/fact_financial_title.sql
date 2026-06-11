@@ -1,0 +1,42 @@
+-- fact_financial_title | PAGAR E RECEBER | Todos os títulos (sem correções)
+-- YENCDES='E' → RECEBIMENTO (NF de venda emitida, cliente nos paga)
+-- YENCDES='D' → PAGAMENTO   (NF de compra recebida, nós pagamos fornecedor)
+SELECT
+    YNUMERO  AS title_number,
+    YNUMPED  AS order_number,
+    YENCDES  AS operation_type,
+    YDOCUME  AS document,
+    YREFERE  AS reference,
+    YCODCLI  AS partner_code,
+    YCODEMP  AS company_code,
+    YCODSET  AS department_code,
+    YCODBCO  AS bank_code,
+    YCODITM  AS financial_item_code,
+    YDATEMI  AS issue_date,
+    YDATORI  AS original_due_date,
+    YDATVEN  AS due_date,
+    YDATPAG  AS settlement_date,
+    YVALDOC  AS document_amount,
+    YVALLIQ  AS net_amount,
+    YVALPAG  AS paid_amount,
+    YCODOS1  AS surcharge_code_1,
+    YVALOS1  AS surcharge_amount_1,
+    YCODOS2  AS surcharge_code_2,
+    YVALOS2  AS surcharge_amount_2,
+    YCODOS3  AS surcharge_code_3,
+    YVALOS3  AS surcharge_amount_3,
+    YCODOS4  AS surcharge_code_4,
+    YVALOS4  AS surcharge_amount_4,
+    YCODOS5  AS surcharge_code_5,
+    YVALOS5  AS surcharge_amount_5,
+    YCODOS6  AS surcharge_code_6,
+    YVALOS6  AS surcharge_amount_6,
+    YCODOS7  AS surcharge_code_7,
+    YVALOS7  AS surcharge_amount_7,
+    YANOCOMP AS comp_year,
+    YMESCOMP AS comp_month,
+    YDATINC  AS created_at_erp,
+    YUSAINC  AS created_by_erp,
+    YDATEXC  AS excluded_at
+FROM [PAGAR E RECEBER]
+-- Bronze pura: traz títulos ativos + cancelados. Filtro YDATEXC vive no silver.

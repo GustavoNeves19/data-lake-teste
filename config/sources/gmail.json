@@ -1,0 +1,57 @@
+{
+  "source": "GMAIL",
+  "dataset": "gmail_raw",
+  "connector": "gmail",
+  "auth": "service_account_delegation",
+  "entities": [
+    {
+      "name": "gmail_messages",
+      "kind": "messages",
+      "bq_table": "gmail_messages",
+      "projection": "typed",
+      "write_mode": "append",
+      "watermark": "internal_date",
+      "idempotent": true,
+      "columns": [
+        { "name": "gmail_message_id", "path": "id", "type": "STRING" },
+        { "name": "gmail_thread_id", "path": "threadId", "type": "STRING" },
+        { "name": "history_id", "path": "historyId", "type": "STRING" },
+        { "name": "internal_date", "path": "internal_date", "type": "TIMESTAMP" },
+        { "name": "size_estimate", "path": "sizeEstimate", "type": "INT64" },
+        { "name": "snippet", "path": "snippet", "type": "STRING" },
+        { "name": "label_ids", "path": "labelIds", "type": "STRING", "transform": "array_join" },
+        { "name": "subject", "path": "subject", "type": "STRING" },
+        { "name": "from_address", "path": "from", "type": "STRING" },
+        { "name": "to_address", "path": "to", "type": "STRING" },
+        { "name": "cc_address", "path": "cc", "type": "STRING" },
+        { "name": "bcc_address", "path": "bcc", "type": "STRING" },
+        { "name": "reply_to", "path": "reply_to", "type": "STRING" },
+        { "name": "in_reply_to", "path": "in_reply_to", "type": "STRING" },
+        { "name": "email_date", "path": "email_date", "type": "STRING" },
+        { "name": "email_message_id", "path": "email_message_id", "type": "STRING" },
+        { "name": "mime_type", "path": "mime_type", "type": "STRING" },
+        { "name": "has_attachments", "path": "has_attachments", "type": "BOOL" },
+        { "name": "attachment_count", "path": "attachment_count", "type": "INT64" },
+        { "name": "source_account", "path": "source_account", "type": "STRING" },
+        { "name": "extract_run_id", "path": "$run_id", "type": "STRING" }
+      ]
+    },
+    {
+      "name": "gmail_labels",
+      "kind": "labels",
+      "bq_table": "gmail_labels",
+      "projection": "typed",
+      "write_mode": "truncate",
+      "columns": [
+        { "name": "label_id", "path": "id", "type": "STRING" },
+        { "name": "label_name", "path": "name", "type": "STRING" },
+        { "name": "label_type", "path": "type", "type": "STRING" },
+        { "name": "messages_total", "path": "messagesTotal", "type": "INT64" },
+        { "name": "messages_unread", "path": "messagesUnread", "type": "INT64" },
+        { "name": "threads_total", "path": "threadsTotal", "type": "INT64" },
+        { "name": "threads_unread", "path": "threadsUnread", "type": "INT64" },
+        { "name": "source_account", "path": "source_account", "type": "STRING" }
+      ]
+    }
+  ]
+}

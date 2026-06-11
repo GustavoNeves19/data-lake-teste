@@ -1,0 +1,53 @@
+# Ambiente virtual
+venv/
+.venv/
+env/
+
+# Variáveis de ambiente
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Logs
+*.log
+
+# IDE / editor
+.vscode/
+.idea/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Testes / cobertura
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Build
+dist/
+build/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Node (frontend)
+node_modules/
+
+# Credenciais e secrets — NUNCA versionar
+credentials.json
+*-credentials.json
+service-account*.json
+*.sa.json
+secrets.toml
+**/secrets.toml
+!.streamlit/secrets.toml.example
+
+# Dados e artefatos intermediários
+*.zip
+*.bak
