@@ -7,7 +7,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-st.set_page_config(page_title="Fiscal | Nevoni 360°", page_icon="🧾", layout="wide")
+st.set_page_config(page_title="Fiscal | Nevoni 360°", page_icon="", layout="wide")
 
 from dashboard.utils.components import inject_css, page_header, kpi_card, section_title, sidebar_brand
 from dashboard.utils.bq_client import query_layer, fmt_brl, PROJECT_PROD
@@ -21,13 +21,13 @@ PAY     = f"{PROJ}.dm_payments"
 IMPORTS = f"{PROJ}.dm_imports"
 
 page_header(
-    title="🧾 Setor Fiscal",
+    title="Setor Fiscal",
     subtitle="Impostos · Importações · Carga Tributária",
     sources=[{"name": "gold_fiscal", "active": True}, {"name": "ERP (Bronze fallback)", "active": True}],
 )
 
 tab_imp, tab_import, tab_carga = st.tabs([
-    "🧮 Impostos Mensais", "🚢 Importações", "📊 Carga Tributária",
+    "Impostos Mensais", "Importações", "Carga Tributária",
 ])
 
 # ── Impostos ─────────────────────────────────────────────────

@@ -64,6 +64,21 @@ def query(sql: str, project: str = PROJECT_PROD) -> pd.DataFrame:
     return client.query(sql).to_dataframe()
 
 
+@st.cache_data(ttl=600, show_spinner=False)
+def data_ultima_carga(project: str = PROJECT_PROD) -> str:
+    """Data/hora (BRT) da última carga do fact_sales_order — frescor REAL dos dados
+    de vendas/faturamento. Usar pra exibir 'Dados de ...' em vez da data de hoje."""
+    try:
+        df = query(
+            f"SELECT FORMAT_TIMESTAMP('%d/%m/%Y %Hh%M', MAX(loaded_at), 'America/Sao_Paulo') AS dt "
+            f"FROM `{project}.dm_orders.fact_sales_order`",
+            project,
+        )
+        return df["dt"].iloc[0] or "—"
+    except Exception:
+        return "—"
+
+
 def gold_not_ready(table: str, msg: str = "") -> None:
     """Exibe card padrão quando uma tabela Gold ainda não existe."""
     import streamlit as st
@@ -73,7 +88,7 @@ def gold_not_ready(table: str, msg: str = "") -> None:
     )
     st.info(
         f"**Gold em construção**\n\n{msg or default}\n\n`{table}`",
-        icon="🏗️",
+        icon="",
     )
 
 
@@ -96,7 +111,7 @@ def query_layer(gold_sql: str, bronze_sql: str, label: str = "") -> tuple[pd.Dat
             df = query(bronze_sql)
             return df, "bronze"
         except Exception as e:
-            st.error(f"Erro ao consultar Bronze: {e}", icon="🚨")
+            st.error(f"Erro ao consultar Bronze: {e}", icon="")
             return pd.DataFrame(), "error"
 
 

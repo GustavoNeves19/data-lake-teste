@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Lake como Base Estratégica de Decisão — Nevoni</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Arial:wght@400;700&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 11pt;
+    color: #1a1a1a;
+    background: #f0f2f5;
+    line-height: 1.6;
+  }
+
+  .page {
+    background: white;
+    max-width: 21cm;
+    margin: 0 auto;
+    padding: 0;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.12);
+  }
+
+  /* ── CAPA ── */
+  .cover {
+    background: linear-gradient(160deg, #1F3864 0%, #2E5F8A 60%, #3a7abd 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4cm 3cm;
+    text-align: center;
+    page-break-after: always;
+  }
+  .cover-badge {
+    background: rgba(255,255,255,0.15);
+    color: #cce0f5;
+    font-size: 9.5pt;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 6px 20px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.3);
+    margin-bottom: 48px;
+  }
+  .cover h1 {
+    font-size: 54pt;
+    font-weight: 700;
+    color: white;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  .cover h2 {
+    font-size: 22pt;
+    font-weight: 400;
+    color: #a8d4f5;
+    margin-bottom: 48px;
+    line-height: 1.3;
+  }
+  .cover-divider {
+    width: 80px;
+    height: 4px;
+    background: rgba(255,255,255,0.4);
+    border-radius: 2px;
+    margin: 0 auto 48px;
+  }
+  .cover-subtitle {
+    font-size: 14pt;
+    color: rgba(255,255,255,0.7);
+    font-style: italic;
+    margin-bottom: 80px;
+  }
+  .cover-meta {
+    margin-top: auto;
+    padding-top: 48px;
+  }
+  .cover-client {
+    font-size: 14pt;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 6px;
+  }
+  .cover-date {
+    font-size: 10pt;
+    color: rgba(255,255,255,0.6);
+  }
+
+  /* ── CONTEÚDO ── */
+  .content {
+    padding: 2.2cm 2.5cm;
+  }
+
+  /* ── HEADER / FOOTER ── */
+  .doc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 2.5cm;
+    border-bottom: 2px solid #2E5F8A;
+    background: #f8fafc;
+    font-size: 8.5pt;
+    color: #888;
+  }
+  .doc-header strong { color: #1F3864; }
+
+  /* ── TIPOGRAFIA ── */
+  h1 {
+    font-size: 18pt;
+    font-weight: 700;
+    color: #1F3864;
+    margin: 32px 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 3px solid #2E5F8A;
+    page-break-after: avoid;
+  }
+  h2 {
+    font-size: 13.5pt;
+    font-weight: 700;
+    color: #2E5F8A;
+    margin: 24px 0 10px;
+    page-break-after: avoid;
+  }
+  h3 {
+    font-size: 12pt;
+    font-weight: 700;
+    color: #1F3864;
+    margin: 18px 0 8px;
+    page-break-after: avoid;
+  }
+  p {
+    font-size: 10.5pt;
+    color: #1a1a1a;
+    margin-bottom: 10px;
+    text-align: justify;
+    line-height: 1.65;
+  }
+  .spacer { height: 14px; }
+  .spacer-lg { height: 28px; }
+
+  /* ── BULLETS ── */
+  ul.styled {
+    list-style: none;
+    padding-left: 20px;
+    margin-bottom: 12px;
+  }
+  ul.styled li {
+    font-size: 10.5pt;
+    color: #1a1a1a;
+    margin-bottom: 6px;
+    padding-left: 18px;
+    position: relative;
+    line-height: 1.55;
+  }
+  ul.styled li::before {
+    content: "•";
+    color: #2E5F8A;
+    font-weight: 700;
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+  ul.styled li strong { color: #1F3864; }
+
+  /* ── TABELAS ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0 22px;
+    font-size: 9.5pt;
+  }
+  thead tr {
+    background: #1F3864;
+  }
+  thead th {
+    color: white;
+    font-weight: 700;
+    padding: 9px 12px;
+    text-align: left;
+    border: 1px solid #1F3864;
+  }
+  tbody tr:nth-child(even) { background: #f5f7fa; }
+  tbody tr:nth-child(odd) { background: white; }
+  tbody td {
+    padding: 8px 12px;
+    border: 1px solid #dde3ea;
+    vertical-align: top;
+    line-height: 1.5;
+  }
+  tbody td:first-child { font-weight: 600; color: #1F3864; }
+
+  /* ── CAIXAS DE DESTAQUE ── */
+  .box {
+    border-radius: 6px;
+    padding: 20px 24px;
+    margin: 14px 0 22px;
+    border-left: 6px solid;
+  }
+  .box h4 {
+    font-size: 11pt;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .box ul { list-style: none; padding: 0; }
+  .box ul li {
+    font-size: 10pt;
+    padding: 4px 0 4px 18px;
+    position: relative;
+    line-height: 1.5;
+    color: #1a1a1a;
+  }
+  .box ul li::before {
+    content: "•";
+    font-weight: 700;
+    position: absolute;
+    left: 0;
+    top: 4px;
+  }
+
+  .box-blue   { background: #d0e4f3; border-color: #1F3864; }
+  .box-blue h4, .box-blue ul li::before { color: #1F3864; }
+
+  .box-bronze { background: #fff3e0; border-color: #7D4C00; }
+  .box-bronze h4, .box-bronze ul li::before { color: #7D4C00; }
+
+  .box-prata  { background: #edf2f7; border-color: #4A5568; }
+  .box-prata h4, .box-prata ul li::before { color: #4A5568; }
+
+  .box-ouro   { background: #fffde7; border-color: #7B5C00; }
+  .box-ouro h4, .box-ouro ul li::before { color: #7B5C00; }
+
+  .box-verde  { background: #e6f4ed; border-color: #1A6B3C; }
+  .box-verde h4, .box-verde ul li::before { color: #1A6B3C; }
+
+  /* ── CAMADAS (Bronze/Prata/Ouro) ── */
+  .layer-card {
+    border-radius: 8px;
+    padding: 24px 28px;
+    margin: 10px 0;
+    border: 3px solid;
+  }
+  .layer-card .layer-title {
+    font-size: 15pt;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .layer-card .layer-subtitle {
+    font-size: 10.5pt;
+    font-style: italic;
+    margin-bottom: 12px;
+  }
+  .layer-card .layer-desc {
+    font-size: 10pt;
+    color: #222;
+    margin-bottom: 12px;
+    line-height: 1.6;
+    text-align: justify;
+  }
+  .layer-card ul { list-style: none; padding: 0; }
+  .layer-card ul li {
+    font-size: 10pt;
+    padding: 3px 0 3px 20px;
+    position: relative;
+    line-height: 1.5;
+    color: #222;
+  }
+  .layer-card ul li::before {
+    content: "✔";
+    font-size: 9pt;
+    position: absolute;
+    left: 0;
+    top: 4px;
+  }
+
+  .bronze-card { background: #fff9f0; border-color: #7D4C00; }
+  .bronze-card .layer-title, .bronze-card .layer-subtitle { color: #7D4C00; }
+  .bronze-card ul li::before { color: #7D4C00; }
+
+  .prata-card  { background: #f3f6fb; border-color: #4A5568; }
+  .prata-card .layer-title, .prata-card .layer-subtitle { color: #4A5568; }
+  .prata-card ul li::before { color: #4A5568; }
+
+  .ouro-card   { background: #fffef0; border-color: #7B5C00; }
+  .ouro-card .layer-title, .ouro-card .layer-subtitle { color: #7B5C00; }
+  .ouro-card ul li::before { color: #7B5C00; }
+
+  /* ── SETAS ── */
+  .arrow-row {
+    text-align: center;
+    font-size: 10pt;
+    color: #2E5F8A;
+    padding: 8px 0;
+    font-weight: 600;
+  }
+  .arrow-row span { font-size: 14pt; }
+
+  /* ── STATUS BADGE ── */
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 8.5pt;
+    font-weight: 700;
+  }
+  .badge-green  { background: #e6f4ed; color: #1A6B3C; border: 1px solid #1A6B3C; }
+  .badge-yellow { background: #fff8e1; color: #7B5C00; border: 1px solid #7B5C00; }
+  .badge-gray   { background: #edf2f7; color: #4A5568; border: 1px solid #4A5568; }
+
+  /* ── CONCLUSÃO ── */
+  .conclusion-box {
+    background: linear-gradient(135deg, #1F3864 0%, #2E5F8A 100%);
+    color: white;
+    border-radius: 10px;
+    padding: 28px 32px;
+    margin: 22px 0;
+  }
+  .conclusion-box h4 {
+    font-size: 13pt;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: #a8d4f5;
+  }
+  .conclusion-box ul { list-style: none; padding: 0; }
+  .conclusion-box ul li {
+    font-size: 10.5pt;
+    padding: 5px 0 5px 22px;
+    position: relative;
+    line-height: 1.5;
+    color: rgba(255,255,255,0.92);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .conclusion-box ul li:last-child { border-bottom: none; }
+  .conclusion-box ul li::before {
+    content: "⬡";
+    color: #a8d4f5;
+    position: absolute;
+    left: 0;
+    top: 6px;
+    font-size: 9pt;
+  }
+
+  .footer-note {
+    text-align: center;
+    font-size: 8.5pt;
+    color: #aaa;
+    border-top: 1px solid #e0e4ea;
+    padding-top: 18px;
+    margin-top: 32px;
+    font-style: italic;
+  }
+
+  /* ── PRINT ── */
+  @media print {
+    body { background: white; }
+    .page { box-shadow: none; max-width: none; }
+    .cover { min-height: auto; padding: 3cm 2cm; }
+    h1 { page-break-before: auto; }
+    table { page-break-inside: avoid; }
+    .layer-card { page-break-inside: avoid; }
+    .box { page-break-inside: avoid; }
+    @page { size: A4; margin: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ═══ CAPA ═══ -->
+  <div class="cover">
+    <div class="cover-badge">Documento Estratégico · Uso Interno · Versão 1.0</div>
+    <h1>DATA LAKE</h1>
+    <h2>como Base Estratégica de Decisão</h2>
+    <div class="cover-divider"></div>
+    <div class="cover-subtitle">Fundação de Dados, Inteligência e Crescimento</div>
+    <div class="cover-meta">
+      <div class="cover-client">Nevoni Distribuidora</div>
+      <div class="cover-date">Maio de 2025 · Versão 1.0</div>
+    </div>
+  </div>
+
+  <!-- ═══ HEADER ═══ -->
+  <div class="doc-header">
+    <span><strong>Data Lake como Base Estratégica de Decisão</strong> · Nevoni Distribuidora</span>
+    <span>Maio 2025 · Versão 1.0</span>
+  </div>
+
+  <!-- ═══ CONTEÚDO ═══ -->
+  <div class="content">
+
+    <!-- 1. SUMÁRIO EXECUTIVO -->
+    <h1>1. Sumário Executivo</h1>
+
+    <p>Este documento apresenta a arquitetura e a estratégia do Data Lake da Nevoni: uma plataforma centralizada de dados construída para reunir, organizar e transformar informações de todas as fontes operacionais da empresa em inteligência de negócio acionável.</p>
+
+    <p>O projeto está em construção ativa. A camada de dados brutos <strong>(Bronze)</strong> está implementada em produção com dados do ERP, do CRM Pipedrive e da telefonia GoTo Connect. A camada de tratamento e relacionamento <strong>(Prata)</strong> está em fase de validação, com 19 tabelas analíticas já carregadas e mais de 735 mil linhas de dados tratados. A camada de inteligência <strong>(Ouro)</strong> representa os próximos passos: painéis, alertas, priorizações e integração com ferramentas de IA.</p>
+
+    <p>O objetivo deste material é apresentar, de forma clara e objetiva, o que está sendo construído, por que cada decisão foi tomada e qual o valor concreto que o Data Lake vai gerar para a operação, para o comercial e para a liderança da empresa.</p>
+
+    <div class="spacer-lg"></div>
+
+    <!-- 2. O PROBLEMA -->
+    <h1>2. O Problema: Dados Espalhados, Decisões Fragmentadas</h1>
+
+    <p>Toda empresa que cresceu de forma orgânica acumula um desafio comum: os dados estão espalhados. O ERP tem uma visão. O CRM tem outra. A telefonia tem a sua. As planilhas manuais tentam juntar tudo — e frequentemente geram versões diferentes da verdade, dependendo de quem as atualizou por último.</p>
+
+    <p>Na prática, isso se manifesta em situações que geram retrabalho, decisões atrasadas e oportunidades perdidas:</p>
+
+    <div class="spacer"></div>
+    <div class="box box-blue">
+      <h4>Sintomas típicos de dados fragmentados</h4>
+      <ul>
+        <li>Perguntas simples como "qual foi o faturamento real do mês?" exigem consulta manual em múltiplos sistemas</li>
+        <li>Não é possível cruzar facilmente quem fez cotação mas não virou pedido, ou quem comprou mas não recebeu ainda</li>
+        <li>Relatórios diferentes apresentam números diferentes para a mesma pergunta, dependendo de quem os gerou</li>
+        <li>A equipe comercial não tem visão completa do histórico de cada cliente no momento da abordagem</li>
+        <li>A área de estoque não projeta com confiança a necessidade de compras com base em vendas futuras</li>
+        <li>Decisões importantes são tomadas com base em feeling ou em planilhas que ninguém tem certeza se estão atualizadas</li>
+      </ul>
+    </div>
+
+    <p>A solução não é apenas ter mais dados. É ter os dados certos, organizados, confiáveis e acessíveis no momento em que a decisão precisa ser tomada. É para isso que o Data Lake foi construído.</p>
+
+    <div class="spacer-lg"></div>
+
+    <!-- 3. O QUE É -->
+    <h1>3. O Que é um Data Lake</h1>
+
+    <p>Pense no Data Lake como a <strong>memória centralizada da empresa</strong>. Um lugar único onde todas as informações relevantes chegam, são organizadas e ficam disponíveis para análise — independentemente de onde vieram: ERP, CRM, telefonia, planilhas ou qualquer outra fonte.</p>
+
+    <p>A analogia mais simples é a de um arquivo central de documentos. Antes do arquivo, cada departamento guardava suas próprias pastas, em gavetas diferentes, com critérios diferentes. Com o arquivo central, tudo está no mesmo lugar, catalogado, acessível e confiável. O Data Lake faz exatamente isso com os dados da empresa — de forma automática, em tempo real e com capacidade de cruzamento que seria impossível manualmente.</p>
+
+    <p>No contexto da Nevoni, o Data Lake reúne dados de três grandes fontes:</p>
+    <div class="spacer"></div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:28%">Fonte de Dados</th>
+          <th style="width:50%">O que contém</th>
+          <th style="width:22%">Volume em Produção</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>ERP (Sistema Operacional)</td>
+          <td>Pedidos, cotações, estoque, produção, pagamentos, importações, parceiros e produtos</td>
+          <td style="text-align:center">9 datasets · 36+ entidades</td>
+        </tr>
+        <tr>
+          <td>CRM Pipedrive</td>
+          <td>Funis comerciais, deals, oportunidades, etapas de venda, contatos e organizações</td>
+          <td style="text-align:center">16.601 registros · 6 pipelines</td>
+        </tr>
+        <tr>
+          <td>Telefonia GoTo Connect</td>
+          <td>Ligações, participantes, ramais, números DID, transcrições e sentimento de IA</td>
+          <td style="text-align:center">5 tabelas · histórico completo</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>Com essas três fontes integradas, é possível responder perguntas que antes eram impossíveis de responder com agilidade: um cliente que faz muitas ligações mas não compra, ou que compra mas tem títulos em atraso, ou que comprou muito no passado mas sumiu há noventa dias.</p>
+
+    <p>O Data Lake não substitui o ERP nem o CRM. Ele é o lugar onde esses sistemas se encontram, onde os dados ganham contexto e onde a inteligência de negócio é gerada.</p>
+
+    <div class="spacer-lg"></div>
+
+    <!-- 4. A LÓGICA DAS CAMADAS -->
+    <h1>4. A Lógica das Camadas: Bronze, Prata e Ouro</h1>
+
+    <p>O dado bruto que sai de um sistema operacional raramente está pronto para ser usado diretamente em uma decisão de negócio. Ele precisa ser recebido, limpo, enriquecido, relacionado com outros dados e transformado em um indicador compreensível.</p>
+
+    <p>Para isso, o Data Lake é organizado em três camadas, cada uma com uma função clara e progressiva. Cada camada se apoia na anterior e eleva o nível de maturidade da informação:</p>
+
+    <div class="spacer"></div>
+    <div class="arrow-row"><strong>FONTES DE DADOS &nbsp;|&nbsp; ERP &nbsp;·&nbsp; CRM Pipedrive &nbsp;·&nbsp; GoTo Connect</strong></div>
+    <div class="arrow-row"><span>↓</span> &nbsp;Extração e carga automatizada (pipeline ETL)</div>
+    <div class="spacer"></div>
+
+    <div class="layer-card bronze-card">
+      <div class="layer-title">🪨 &nbsp;CAMADA BRONZE</div>
+      <div class="layer-subtitle">Preservação e rastreabilidade completa</div>
+      <div class="layer-desc">Os dados chegam exatamente como foram gerados nas fontes, com tipagem e estrutura, mas sem regras de negócio aplicadas. Esta é a camada da verdade original — o que o sistema disse, na hora em que disse. É o alicerce que garante que qualquer dado possa ser auditado, rastreado e reprocessado no futuro, independentemente do que muda nos sistemas de origem.</div>
+      <ul>
+        <li>Rastreabilidade total de qualquer transação ou evento</li>
+        <li>Auditoria e conformidade com histórico imutável</li>
+        <li>Base para reprocessamento em caso de erro ou mudança de regra de negócio</li>
+        <li>Segurança: dado original preservado independentemente do que muda nos sistemas</li>
+      </ul>
+    </div>
+
+    <div class="arrow-row"><span>↓</span> &nbsp;Transformação, limpeza e relacionamento entre fontes</div>
+    <div class="spacer"></div>
+
+    <div class="layer-card prata-card">
+      <div class="layer-title">🔬 &nbsp;CAMADA PRATA</div>
+      <div class="layer-subtitle">Organização, contexto e inteligência estruturada</div>
+      <div class="layer-desc">Os dados são tratados, relacionados entre fontes, padronizados e enriquecidos com lógica de negócio. É aqui que cotações se juntam a pedidos, que clientes se juntam ao histórico de compras, que ligações se juntam a vendas. Para consumo interno e ferramentas operacionais, a Prata já entrega enorme valor — os dados deixam de estar brutos e passam a estar estruturados e prontos para análise.</div>
+      <ul>
+        <li>Cruzamento automático entre ERP, CRM e Telefonia</li>
+        <li>Dados prontos para relatório, painel e consulta gerencial</li>
+        <li>Segmentação de clientes, classificação de produtos e scoring de oportunidades</li>
+        <li>Eliminação de duplicidades, inconsistências e ruídos dos sistemas de origem</li>
+      </ul>
+    </div>
+
+    <div class="arrow-row"><span>↓</span> &nbsp;Inteligência, alertas e entrega de valor ao negócio</div>
+    <div class="spacer"></div>
+
+    <div class="layer-card ouro-card">
+      <div class="layer-title">🏆 &nbsp;CAMADA OURO</div>
+      <div class="layer-subtitle">Indicadores, alertas e decisão em tempo real</div>
+      <div class="layer-desc">Os dados tratados são transformados em indicadores estratégicos, painéis executivos, alertas operacionais e insumos para automações e IA. É a camada que a liderança vê e que alimenta decisões. Ela responde as perguntas mais importantes de negócio, de forma automática, confiável e acessível a qualquer membro da equipe, independentemente de conhecimento técnico.</div>
+      <ul>
+        <li>Dashboards no Looker Studio, Power BI e ferramentas de BI</li>
+        <li>Alertas automáticos de ruptura, inadimplência e oportunidade comercial</li>
+        <li>Priorização de carteira, reativação de clientes e ações de venda</li>
+        <li>Integração com agentes de IA, automações e ferramentas de comunicação</li>
+      </ul>
+    </div>
+
+    <div class="spacer-lg"></div>
+
+    <!-- 5. BRONZE -->
+    <h1>5. Camada Bronze: A Fundação Confiável</h1>
+
+    <p>A camada Bronze é o alicerce de tudo. Sem ela, nenhuma das camadas seguintes existe. Ela recebe os dados exatamente como são gerados nas fontes — sem filtros, sem interpretações, sem perda de informação.</p>
+
+    <p>Uma analogia útil: é como guardar o extrato bancário original em vez de apenas anotar o saldo. Se alguém questionar um lançamento no futuro, você pode consultar o documento original. Com a Bronze, o mesmo princípio se aplica a qualquer dado operacional da empresa.</p>
+
+    <h2>O que já está implementado na Bronze</h2>
+    <p>A camada Bronze da Nevoni está em produção no BigQuery (Google Cloud) e contempla dados estruturados de três grandes fontes, organizados em 10 domínios de negócio:</p>
+    <div class="spacer"></div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:26%">Domínio de Negócio</th>
+          <th style="width:12%">Tabelas</th>
+          <th>O que contém</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Parceiros (Partners)</td><td style="text-align:center">5</td><td>Clientes, fornecedores, transportadoras, representantes e empresa</td></tr>
+        <tr><td>Produtos (Products)</td><td style="text-align:center">6</td><td>Catálogo de itens, famílias, grupos, materiais, numeração de série e estrutura de produto (BOM)</td></tr>
+        <tr><td>Cotações / Orçamentos</td><td style="text-align:center">2</td><td>Orçamentos emitidos com cabeçalho, itens, datas, valores e condições de pagamento</td></tr>
+        <tr><td>Pedidos (Orders)</td><td style="text-align:center">6</td><td>Pedidos de venda e compra, itens, livro fiscal e naturezas de operação</td></tr>
+        <tr><td>Estoque (Inventory)</td><td style="text-align:center">4</td><td>Movimentações físicas, saldo por lote e snapshot da posição atual do estoque</td></tr>
+        <tr><td>Pagamentos (Payments)</td><td style="text-align:center">7</td><td>Contas a pagar, contas a receber e títulos já liquidados com informações bancárias</td></tr>
+        <tr><td>Importações (Imports)</td><td style="text-align:center">4</td><td>Processos de importação com DI, custos aduaneiros, câmbio e itens</td></tr>
+        <tr><td>Produção (Production)</td><td style="text-align:center">3</td><td>Ordens de produção, itens produzidos e componentes consumidos</td></tr>
+        <tr><td>CRM Pipedrive</td><td style="text-align:center">10</td><td>Deals por pipeline comercial, estágios, contatos, organizações e usuários CRM</td></tr>
+        <tr><td>Telefonia GoTo Connect</td><td style="text-align:center">5</td><td>Chamadas, participantes, ramais, números DID e ligações com análise de IA integrada</td></tr>
+      </tbody>
+    </table>
+
+    <p>Todos esses dados são atualizados de forma automatizada, sem intervenção manual. O pipeline de ETL conecta o ERP via SQL Server, o Pipedrive via API e o GoTo via OAuth2, e carrega os dados estruturados diretamente para o BigQuery no Google Cloud.</p>
+
+    <h2>Por que a Bronze já gera valor por si só</h2>
+    <ul class="styled">
+      <li>Auditar qualquer transação histórica com rastreabilidade completa — quem registrou, quando e o que estava no sistema naquele momento</li>
+      <li>Recuperar dados que eventualmente se percam no sistema de origem por erro ou exclusão acidental</li>
+      <li>Garantir que análises feitas hoje possam ser reproduzidas e auditadas no futuro, com o dado original preservado</li>
+      <li>Iniciar consultas e explorações que seriam impossíveis de fazer manualmente por volume e complexidade</li>
+    </ul>
+
+    <div class="spacer-lg"></div>
+
+    <!-- 6. PRATA -->
+    <h1>6. Camada Prata: Dados com Contexto e Inteligência</h1>
+
+    <p>Se a Bronze é o arquivo que guarda todos os documentos originais, a Prata é o analista que organizou esses documentos, eliminou duplicidades, cruzou as informações entre departamentos e preparou os relatórios que a diretoria precisa.</p>
+
+    <p>Na Prata, os dados brutos de múltiplas fontes são relacionados, tratados e enriquecidos com lógica de negócio. Um pedido de venda deixa de ser apenas uma linha no ERP e passa a ser um evento completo — com o cliente do CRM, com a ligação do GoTo que antecedeu o fechamento, com o lote do estoque que foi separado e com o título financeiro que foi gerado.</p>
+
+    <h2>O que já está implementado na Prata</h2>
+    <p>A camada Prata conta com <strong>19 tabelas analíticas</strong> já carregadas, organizadas em quatro frentes de negócio, com mais de <strong>735 mil linhas de dados tratados</strong> e 165 MB de informação estruturada:</p>
+
+    <div class="spacer"></div>
+    <h3 style="color:#7D4C00">Frente 1 — Desempenho Comercial e Recorrência</h3>
+    <table>
+      <thead><tr><th style="width:38%">Tabela Analítica</th><th>O que responde para o negócio</th></tr></thead>
+      <tbody>
+        <tr><td>Faturamento Efetivo</td><td>Quais vendas realmente saíram da empresa — pedidos faturados sem devolução (222 mil linhas)</td></tr>
+        <tr><td>Segmentação RFV</td><td>Quem são os clientes Campeões, Fiéis, Em Risco e Inativos — com score calculado por recência, frequência e valor (34.807 registros)</td></tr>
+        <tr><td>Conversão Orçamento-Pedido</td><td>Quantos orçamentos viraram pedido — taxa atual de 17,7% de conversão (91 mil registros analisados)</td></tr>
+        <tr><td>Motivos de Perda (CRM)</td><td>Por que deals foram perdidos — distribuição por categoria de perda (3.312 registros)</td></tr>
+        <tr><td>Reativação Comercial</td><td>Lista priorizada de clientes para reativação, com tier de urgência calculado (31.982 registros)</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="color:#4A5568">Frente 2 — Planejamento de Produção</h3>
+    <table>
+      <thead><tr><th style="width:38%">Tabela Analítica</th><th>O que responde para o negócio</th></tr></thead>
+      <tbody>
+        <tr><td>Plano de Produção Trimestral</td><td>Projeção de necessidade líquida por item, cruzando estoque atual, vendas e demanda prevista</td></tr>
+        <tr><td>Cobertura e Segurança de Estoque</td><td>Status de cada item: Excesso, Equilíbrio, Atenção ou Ruptura vs. política definida pela empresa</td></tr>
+        <tr><td>Ajuste de Calendário Industrial</td><td>Necessidade mensal ajustada por dias úteis e restrições de calendário produtivo</td></tr>
+        <tr><td>Itens Prioritários (Curva ABC)</td><td>14 itens A (críticos), 28 B, 235 C — com tier de prioridade para produção e compras</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="color:#7B5C00">Frente 3 — Compras e Insumos</h3>
+    <table>
+      <thead><tr><th style="width:38%">Tabela Analítica</th><th>O que responde para o negócio</th></tr></thead>
+      <tbody>
+        <tr><td>Explosão de Necessidades (BOM)</td><td>Quais componentes e matérias-primas são necessários para atender os pedidos, via estrutura do produto</td></tr>
+        <tr><td>Ruptura de Matérias-Primas</td><td>39 itens identificados em risco de ruptura; 17 com compra pendente já registrada no sistema</td></tr>
+        <tr><td>Variação de Custo de Insumos</td><td>Preço médio ponderado por item e fornecedor ao longo do tempo, com alerta de variação (95.762 registros)</td></tr>
+        <tr><td>Divergência de Compra</td><td>Diferença entre o que foi orçado, pedido e efetivamente faturado na compra (116.693 registros)</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="color:#2E5F8A">Frente 4 — Eficiência Operacional</h3>
+    <table>
+      <thead><tr><th style="width:38%">Tabela Analítica</th><th>O que responde para o negócio</th></tr></thead>
+      <tbody>
+        <tr><td>Lead Time Faturamento-Expedição</td><td>Quanto tempo leva entre o pedido ser faturado e a mercadoria sair fisicamente (135.962 registros)</td></tr>
+        <tr><td>Gargalos de Etapa no Fluxo</td><td>Onde os pedidos travam: por status, faixa etária do pedido e se está faturado (16 categorias)</td></tr>
+        <tr><td>Performance de Vendedores</td><td>Win rate, valor médio e pipeline ativo por vendedor no CRM (12 vendedores analisados)</td></tr>
+        <tr><td>Produtividade Canal de Contato</td><td>Correlação diária entre ligações GoTo, deals no CRM e faturamento (812 dias de histórico)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="spacer-lg"></div>
+
+    <!-- 7. OURO -->
+    <h1>7. Camada Ouro: Inteligência que Gera Resultado</h1>
+
+    <p>A camada Ouro é onde o investimento em dados se converte em vantagem competitiva concreta. É a camada que a diretoria vê no painel, que o vendedor usa na abordagem e que o sistema usa para disparar alertas automáticos.</p>
+
+    <p>Se a Prata organiza e relaciona os dados, a Ouro responde as perguntas mais importantes de negócio — com clareza, em tempo real e de forma acessível a qualquer pessoa da equipe, independentemente de conhecimento técnico.</p>
+
+    <h2>Perguntas que a Ouro vai responder automaticamente</h2>
+    <div class="spacer"></div>
+
+    <div class="box box-blue">
+      <h4>Comercial e Gestão de Carteira</h4>
+      <ul>
+        <li>Quais clientes compraram muito no passado mas não compraram nos últimos 60 ou 90 dias?</li>
+        <li>Quais cotações enviadas há mais de 15 dias ainda não viraram pedido?</li>
+        <li>Qual é o potencial de receita da carteira ativa versus a carteira inativa?</li>
+        <li>Quais clientes têm título vencido e ainda assim continuam sendo abordados pela equipe?</li>
+        <li>Qual vendedor tem o maior número de deals parados há mais de 30 dias em negociação?</li>
+      </ul>
+    </div>
+
+    <div class="box box-bronze">
+      <h4>Estoque, Produção e Compras</h4>
+      <ul>
+        <li>Quais itens vão entrar em ruptura nos próximos 30 dias se nada for comprado?</li>
+        <li>Quais matérias-primas têm variação de custo acima de 15% no último trimestre?</li>
+        <li>Quais ordens de produção estão abertas há mais tempo sem conclusão?</li>
+        <li>Há diferença entre o que foi planejado e o que foi realmente produzido — e quanto essa diferença representa?</li>
+      </ul>
+    </div>
+
+    <div class="box box-prata">
+      <h4>Financeiro e Operacional</h4>
+      <ul>
+        <li>Qual é a diferença entre o valor faturado e o valor efetivamente recebido no mês?</li>
+        <li>Quais pedidos faturados ainda não foram expedidos — e há quanto tempo estão nessa situação?</li>
+        <li>Qual é o custo médio de importação por produto, considerando todos os encargos aduaneiros?</li>
+        <li>Qual é o tempo médio entre a emissão da nota fiscal e a expedição física da mercadoria?</li>
+      </ul>
+    </div>
+
+    <p>Essas perguntas — hoje respondidas de forma manual, intermitente ou imprecisa — passarão a ter respostas automáticas, atualizadas e confiáveis na camada Ouro, sem que ninguém precise abrir o ERP, o CRM ou uma planilha.</p>
+
+    <div class="spacer-lg"></div>
+
+    <!-- 8. VALOR DE NEGÓCIO -->
+    <h1>8. Valor de Negócio: O que Muda na Prática</h1>
+
+    <p>O Data Lake não é apenas uma infraestrutura técnica. É uma mudança na forma como a empresa opera, decide e cresce. A seguir, os principais impactos esperados para cada área:</p>
+    <div class="spacer"></div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:16%">Área</th>
+          <th style="width:42%">Antes do Data Lake</th>
+          <th>Com o Data Lake</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Comercial</td>
+          <td>Abordagem baseada em feeling ou planilhas desatualizadas</td>
+          <td>Priorização automática da carteira com base em histórico, RFV e sinais de reativação</td>
+        </tr>
+        <tr>
+          <td>Financeiro</td>
+          <td>Conciliação manual entre ERP e bancário, sem visão integrada</td>
+          <td>Visão unificada de faturado vs. recebido vs. vencido, com alertas automáticos</td>
+        </tr>
+        <tr>
+          <td>Estoque e Compras</td>
+          <td>Decisão de compra por experiência do gestor, sem projeção confiável</td>
+          <td>Plano de compras gerado a partir da demanda real, cobertura de estoque e BOM</td>
+        </tr>
+        <tr>
+          <td>Produção</td>
+          <td>Prioridade definida na reunião semanal sem dados consolidados</td>
+          <td>Ranking de itens críticos com necessidade líquida calculada e calendário ajustado</td>
+        </tr>
+        <tr>
+          <td>Liderança</td>
+          <td>Relatórios manuais, atrasados e frequentemente divergentes entre áreas</td>
+          <td>Dashboard em tempo real com KPIs consolidados e alertas de desvio automáticos</td>
+        </tr>
+        <tr>
+          <td>TI e Processos</td>
+          <td>Dados em silos, sem governança ou documentação formal</td>
+          <td>Arquitetura documentada, pipelines automatizados e dado como ativo gerenciado</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Benefícios transversais</h2>
+    <ul class="styled">
+      <li><strong>Redução de retrabalho:</strong> menos tempo gasto coletando, limpando e cruzando dados manualmente entre sistemas</li>
+      <li><strong>Decisão mais rápida:</strong> a informação certa chega antes que o momento de decisão passe ou o problema escale</li>
+      <li><strong>Confiabilidade:</strong> uma única fonte da verdade elimina conflitos entre relatórios diferentes de áreas diferentes</li>
+      <li><strong>Escalabilidade:</strong> a estrutura comporta novas fontes de dados sem retrabalho na arquitetura existente</li>
+      <li><strong>Base para IA:</strong> a camada Ouro é o insumo ideal para agentes inteligentes, automações e modelos preditivos de demanda, churn e inadimplência</li>
+    </ul>
+
+    <div class="spacer-lg"></div>
+
+    <!-- 9. CASOS DE USO -->
+    <h1>9. Casos de Uso Priorizados</h1>
+
+    <p>A seguir, os casos de uso mais estratégicos mapeados para a Nevoni, com descrição do problema atual, do que o Data Lake entrega e do impacto esperado para o negócio:</p>
+
+    <div class="spacer"></div>
+
+    <h3>1. Carteira 360 — Venda versus Monetização Real</h3>
+    <p>Hoje não é trivial saber, para um dado cliente, quanta receita foi faturada versus quanto efetivamente entrou no caixa — considerando prazos, descontos e títulos em aberto. O Data Lake cruza automaticamente os dados de pedidos, títulos a receber e títulos liquidados para entregar essa visão de forma completa, cliente a cliente, sem consulta manual ao ERP ou ao financeiro.</p>
+
+    <h3>2. Reativação de Carteira — Quem Sumiu e Vale Reativar</h3>
+    <p>A tabela de reativação comercial já existe na Prata com prioridade calculada por cliente. Na Ouro, isso vira uma lista de ação diária para o time comercial: quem abordar primeiro, com que frequência e com qual argumento — baseado no histórico de compras, no ticket médio, no tempo sem contato e no potencial estimado. Sem depender de memória ou planilhas manuais.</p>
+
+    <h3>3. Funil de Cotação — Orçamentos sem Conversão</h3>
+    <p>Com 17,7% de conversão de orçamento para pedido identificada na Prata, a Ouro vai permitir que a equipe veja em tempo real quais orçamentos estão há mais de X dias sem retorno, qual vendedor tem a pior taxa de conversão e quais produtos aparecem mais em cotações que não fecham. Isso transforma uma métrica passiva em uma ação comercial diária.</p>
+
+    <h3>4. Alerta de Ruptura de Estoque</h3>
+    <p>A Prata já identificou 39 itens em risco de ruptura, com 17 deles tendo compra pendente registrada. Na Ouro, esse alerta é automatizado: o gestor de compras recebe diariamente a lista atualizada de itens críticos, com a necessidade líquida calculada e o prazo estimado antes da ruptura. Sem planilha, sem reunião semanal para descobrir o problema — o sistema avisa antes que vire crise.</p>
+
+    <h3>5. Performance Comercial por Vendedor</h3>
+    <p>A Prata já calcula win rate, valor médio e pipeline por responsável no CRM. Na Ouro, isso vira um painel de gestão: quem está convertendo mais, quem tem mais deals parados e quais oportunidades estão esquecidas no funil há mais de 30 dias — base para coaching, redistribuição de carteira e priorização de esforço comercial.</p>
+
+    <h3>6. Correlação Telefonia e Vendas (GoTo + CRM + ERP)</h3>
+    <p>Um dos diferenciais do Data Lake da Nevoni é a integração da telefonia. É possível cruzar diariamente ligações realizadas, deals abertos no CRM e faturamento gerado. Com isso: quais clientes ligam muito mas não compram (oportunidade de conversão), quais horários de pico de atendimento coincidem com fechamentos de venda, e quais canais geram mais resultado com menos esforço.</p>
+
+    <h3>7. Dashboards no Looker Studio e Power BI</h3>
+    <p>Todas as camadas Bronze e Prata já estão no BigQuery, o que significa que qualquer ferramenta de BI pode se conectar diretamente e consumir os dados tratados. Os painéis são atualizados automaticamente a cada nova carga do pipeline. Não é necessário exportar para Excel, não há versões desatualizadas — o painel reflete sempre o estado atual do negócio.</p>
+
+    <h3>8. Integração com IA, Agentes e Automações</h3>
+    <p>A camada Ouro é o ponto de partida ideal para integração com ferramentas de inteligência artificial. Com os dados estruturados e confiáveis, é possível construir agentes que respondam perguntas em linguagem natural ("Quais clientes posso reativar essa semana?"), automações que disparem alertas por e-mail ou WhatsApp, e modelos preditivos de demanda, inadimplência ou churn. O Data Lake não é o fim do caminho — é a fundação para essa evolução.</p>
+
+    <div class="spacer-lg"></div>
+
+    <!-- 10. STATUS -->
+    <h1>10. Status Atual e Próximos Passos</h1>
+
+    <p>O projeto está em andamento ativo. A seguir, o status consolidado de cada componente e os próximos marcos planejados:</p>
+    <div class="spacer"></div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:42%">Componente</th>
+          <th style="width:18%">Status Atual</th>
+          <th>Próximo Passo</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Bronze ERP — 8 domínios, 36+ entidades</td>
+          <td><span class="badge badge-green">Em produção</span></td>
+          <td>Monitoramento contínuo e expansão conforme novas entidades</td>
+        </tr>
+        <tr>
+          <td>Bronze CRM Pipedrive — 10 tabelas</td>
+          <td><span class="badge badge-green">Em produção</span></td>
+          <td>Automatização da atualização periódica</td>
+        </tr>
+        <tr>
+          <td>Bronze GoTo Connect — 5 tabelas</td>
+          <td><span class="badge badge-green">Em produção</span></td>
+          <td>Inclusão de transcrições completas (em andamento)</td>
+        </tr>
+        <tr>
+          <td>Prata — 4 frentes, 19 tabelas analíticas</td>
+          <td><span class="badge badge-yellow">Validação</span></td>
+          <td>Validação de negócio por área e carga em produção</td>
+        </tr>
+        <tr>
+          <td>Parâmetros de negócio editáveis</td>
+          <td><span class="badge badge-green">Disponível</span></td>
+          <td>Calibração com Compras e Produção</td>
+        </tr>
+        <tr>
+          <td>Ouro — Dashboards e Painéis</td>
+          <td><span class="badge badge-gray">Planejado</span></td>
+          <td>Conexão Looker Studio / Power BI com tabelas validadas</td>
+        </tr>
+        <tr>
+          <td>Ouro — Alertas e Priorização automáticos</td>
+          <td><span class="badge badge-gray">Planejado</span></td>
+          <td>Definição de thresholds com liderança e configuração</td>
+        </tr>
+        <tr>
+          <td>Ouro — Integração com IA e Agentes</td>
+          <td><span class="badge badge-gray">Próximo ciclo</span></td>
+          <td>Definição de casos de uso e construção dos agentes</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Ações recomendadas imediatas</h2>
+    <ul class="styled">
+      <li><strong>Imediato:</strong> Reunião de validação da Prata com as áreas de Comercial, Compras, Produção e Financeiro</li>
+      <li><strong>Curto prazo:</strong> Calibração dos parâmetros de política de cobertura de estoque com a área de Compras</li>
+      <li><strong>Curto prazo:</strong> Construção dos primeiros dashboards no Looker Studio com tabelas já validadas</li>
+      <li><strong>Médio prazo:</strong> Definição dos alertas operacionais prioritários: ruptura, inadimplência e cotações sem retorno</li>
+      <li><strong>Próximo ciclo:</strong> Avaliação de casos de uso para agentes de IA com acesso ao Data Lake</li>
+    </ul>
+
+    <div class="spacer-lg"></div>
+
+    <!-- 11. CONCLUSÃO -->
+    <h1>11. Conclusão: Dados como Vantagem Competitiva</h1>
+
+    <p>O Data Lake da Nevoni não é um projeto de TI. É uma decisão estratégica de transformar dados dispersos em um ativo centralizado, confiável e inteligente — capaz de suportar decisões mais rápidas, operações mais eficientes e um crescimento sustentável.</p>
+
+    <p>A camada Bronze já está em produção com dados do ERP, do CRM e da telefonia. A Prata está em validação com mais de 735 mil linhas de dados tratados e 19 tabelas analíticas cobrindo comercial, produção, compras e operação. A Ouro está sendo planejada com casos de uso concretos e priorizados com base nos problemas reais do negócio.</p>
+
+    <p>O que estamos construindo não é apenas uma infraestrutura de dados. É a fundação para uma empresa que <strong>decide com base em evidências</strong>, que <strong>antecipa problemas antes que se tornem crises</strong>, que <strong>prioriza esforço comercial onde há mais retorno</strong> e que está pronta para integrar inteligência artificial de forma segura e incremental.</p>
+
+    <div class="spacer"></div>
+
+    <div class="conclusion-box">
+      <h4>Em resumo: o que já foi construído</h4>
+      <ul>
+        <li>3 fontes integradas em produção: ERP (36 entidades), CRM Pipedrive (10 tabelas) e GoTo Connect (5 tabelas)</li>
+        <li>19 tabelas analíticas na Prata cobrindo 4 frentes: comercial, produção, compras e operação</li>
+        <li>735 mil linhas tratadas e estruturadas · 165 MB de inteligência pronta para uso</li>
+        <li>Base pronta para dashboards, alertas automáticos e integração com IA</li>
+        <li>Uma única fonte da verdade para toda a empresa — confiável, auditável e escalável</li>
+      </ul>
+    </div>
+
+    <div class="footer-note">
+      Documento preparado pela equipe de dados da Nevoni &nbsp;·&nbsp; Maio de 2025 &nbsp;·&nbsp; Versão 1.0<br>
+      Para importar no Google Docs: abra drive.google.com → Novo → Fazer upload de arquivo → selecione este HTML → clique com botão direito → Abrir com → Google Docs
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /page -->
+</body>
+</html>

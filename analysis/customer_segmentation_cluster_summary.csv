@@ -1,0 +1,7 @@
+cluster,cluster_strategy,clientes,receita_12m_total,share_receita_12m,rec_mediana,receita_12m_mediana,receita_hist_media,pedidos_12m_medios,ticket_12m_medio,qty_12m_media,guardrail_financeiro,share_clientes
+A. Ativos estratégicos,E1 Consultiva premium,573,5331281.37207,56.0,47.0,1936.22,81170.15,3.27,2030.54,60.5,1,1.7
+B. Ativos transacionais,E2 Reposição e continuidade,3579,530972.60437,5.6,38.0,66.67,220.09,1.01,146.99,1.14,0,10.3
+C. Janela de recompra,E2 Reposição e continuidade,2501,1864265.34966,19.6,129.0,319.13,7694.86,1.16,506.42,4.75,0,7.2
+D. Reativação quente valiosa,E3 Reativação contextual,1007,1287554.78411,13.5,386.0,0.0,25096.21,0.65,2097.29,10.69,5,2.9
+E. Reativação quente massiva,E3 Reativação contextual,3502,507410.17963,5.3,241.0,39.72,246.76,0.8,179.68,1.98,0,10.1
+F. Base fria e legado,E3 Reativação contextual,23509,0.0,0.0,2427.0,0.0,4414.66,0.0,,0.0,10,67.8

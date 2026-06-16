@@ -1,0 +1,38 @@
+========================================================================================
+VALIDAÇÃO RFV POR GRUPO — 2025-04-01 a 2026-04-30
+========================================================================================
+
+[Q1] Total por GRUPO (todas operações financeiras):
+  grupo=None                   ERP=     R$ 1.163.278,23  BQ=             R$ 0,00  Δ=R$ -1.163.278,23 (-100.00%)
+  grupo=                       ERP=        R$ 13.580,64  BQ=             R$ 0,00  Δ= R$ -13.580,64 (-100.00%)
+  grupo=(sem grupo)            ERP=             R$ 0,00  BQ=     R$ 1.188.384,31  Δ=R$ 1.188.384,31 (+0.00%)
+  grupo=EC                     ERP=     R$ 2.040.013,29  BQ=     R$ 2.062.293,28  Δ=  R$ 22.279,99 (+1.09%)
+  grupo=FA                     ERP=     R$ 8.129.125,10  BQ=     R$ 8.215.348,87  Δ=  R$ 86.223,77 (+1.06%)
+  grupo=FR                     ERP=       R$ 716.977,27  BQ=       R$ 818.418,42  Δ= R$ 101.441,15 (+14.15%)
+  grupo=PC                     ERP=     R$ 1.166.163,82  BQ=     R$ 1.187.004,34  Δ=  R$ 20.840,52 (+1.79%)
+
+[Q2] Total apenas FA + FR + PC:
+  FA+FR+PC (Valpro/total)      ERP=    R$ 10.012.266,19  BQ=    R$ 10.220.771,63  Δ= R$ 208.505,44 (+2.08%)
+  Referência reunião 27/05/2026: ERP-Frederico = R$ 10.012.266 (Valpro)
+
+[Q3] Top 10 vendedores nos 3 grupos (Valpro):
+    000209  GUILHERME DE AQUINO MARQUES     FA      R$ 4.542.570,35
+    000175  EDUARDO MARQUES                 FA      R$ 2.193.591,38
+    000187  ALVES VICTOR                    FA        R$ 518.443,44
+    000188  KAUA RODRIGUES                  FA        R$ 484.170,47
+    000228  KAUA RODRIGUES (FARMACIA)       FR        R$ 466.444,47
+    000177  CLARICE AMANCIO                 PC        R$ 410.654,54
+    000218  GEOVANA GOMES                   PC        R$ 360.427,25
+        ED  EDGARD SOARES                   PC        R$ 250.431,86
+    000213  KARINA CORREIA DO NASCIMENTO    FR        R$ 204.815,29
+      0333  RICHARD LUCAS                   FA        R$ 154.338,11
+
+========================================================================================
+INTERPRETAÇÃO
+========================================================================================
+• Q2 ERP é o número-âncora do Frederico (R$ 10.012.266 em abr/25-abr/26).
+• Se o BQ.Q2 estiver próximo (delta < 0,5%), o refator está OK.
+• Diferenças por GRUPO em Q1 podem indicar: (a) coluna ainda não populada no
+  fact_sales_order do BQ (faltou ALTER + reload), (b) financial_flag fora de
+  sincronia entre ERP e dim_operation_nature, ou (c) janela invoice_date com
+  pedidos não-faturados (NULL) no BQ. Use Q3 para destrinchar por vendedor.

@@ -7,7 +7,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-st.set_page_config(page_title="SAC e AT | Nevoni 360°", page_icon="🎧", layout="wide")
+st.set_page_config(page_title="SAC e AT | Nevoni 360°", page_icon="", layout="wide")
 
 from dashboard.utils.components import inject_css, page_header, kpi_card, section_title, sidebar_brand, coming_soon
 from dashboard.utils.bq_client import query_layer, PROJECT_PROD
@@ -21,7 +21,7 @@ PROJ = PROJECT_PROD
 SAC_PIPELINE_IDS = "(4, 5, 7, 9)"
 
 page_header(
-    title="🎧 SAC e Assistência Técnica",
+    title="SAC e Assistência Técnica",
     subtitle="Atendimentos · SLA · Chamadas GoTo Connect · Chat Umbler",
     sources=[
         {"name": "gold_sac", "active": True},
@@ -30,7 +30,7 @@ page_header(
 )
 
 tab_atend, tab_sla, tab_calls, tab_chat = st.tabs([
-    "🎫 Atendimentos", "⏱️ SLA", "📞 Chamadas", "💬 Chat",
+    "Atendimentos", "SLA", "Chamadas", "Chat",
 ])
 
 # ── Atendimentos ─────────────────────────────────────────────

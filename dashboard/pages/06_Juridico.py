@@ -2,14 +2,14 @@
 
 import streamlit as st
 
-st.set_page_config(page_title="Jurídico | Nevoni 360°", page_icon="⚖️", layout="wide")
+st.set_page_config(page_title="Jurídico | Nevoni 360°", page_icon="", layout="wide")
 
 from dashboard.utils.components import inject_css, page_header, sidebar_brand, coming_soon
 inject_css()
 sidebar_brand()
 
 page_header(
-    title="⚖️ Jurídico e Homologações",
+    title="Jurídico e Homologações",
     subtitle="Contratos · Certidões · INMETRO · Compliance",
 )
 

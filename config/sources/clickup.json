@@ -1,0 +1,92 @@
+{
+  "source": "CLICKUP",
+  "dataset": "clickup_raw",
+  "connector": "clickup",
+  "auth": "token_header",
+  "entities": [
+    {
+      "name": "spaces",
+      "kind": "spaces",
+      "bq_table": "spaces",
+      "projection": "typed",
+      "write_mode": "truncate",
+      "columns": [
+        { "name": "space_id", "path": "id", "type": "STRING" },
+        { "name": "name", "path": "name", "type": "STRING" },
+        { "name": "private", "path": "private", "type": "BOOL" }
+      ]
+    },
+    {
+      "name": "folders",
+      "kind": "folders",
+      "bq_table": "folders",
+      "projection": "typed",
+      "write_mode": "truncate",
+      "columns": [
+        { "name": "folder_id", "path": "id", "type": "STRING" },
+        { "name": "name", "path": "name", "type": "STRING" },
+        { "name": "space_id", "path": "space.id", "type": "STRING" },
+        { "name": "task_count", "path": "task_count", "type": "INT64" },
+        { "name": "archived", "path": "archived", "type": "BOOL" }
+      ]
+    },
+    {
+      "name": "lists",
+      "kind": "lists",
+      "bq_table": "lists",
+      "projection": "typed",
+      "write_mode": "truncate",
+      "columns": [
+        { "name": "list_id", "path": "id", "type": "STRING" },
+        { "name": "name", "path": "name", "type": "STRING" },
+        { "name": "folder_id", "path": "folder.id", "type": "STRING" },
+        { "name": "space_id", "path": "space.id", "type": "STRING" },
+        { "name": "task_count", "path": "task_count", "type": "INT64" },
+        { "name": "archived", "path": "archived", "type": "BOOL" }
+      ]
+    },
+    {
+      "name": "tasks",
+      "kind": "tasks",
+      "bq_table": "tasks",
+      "projection": "typed",
+      "write_mode": "truncate",
+      "columns": [
+        { "name": "task_id", "path": "id", "type": "STRING" },
+        { "name": "name", "path": "name", "type": "STRING" },
+        { "name": "status", "path": "status.status", "type": "STRING" },
+        { "name": "status_type", "path": "status.type", "type": "STRING" },
+        { "name": "space_id", "path": "space.id", "type": "STRING" },
+        { "name": "folder_id", "path": "folder.id", "type": "STRING" },
+        { "name": "list_id", "path": "list.id", "type": "STRING" },
+        { "name": "parent_id", "path": "parent", "type": "STRING" },
+        { "name": "top_level_parent_id", "path": "top_level_parent", "type": "STRING" },
+        { "name": "creator", "path": "creator.username", "type": "STRING" },
+        { "name": "creator_id", "path": "creator.id", "type": "INT64" },
+        { "name": "priority", "path": "priority.priority", "type": "STRING" },
+        { "name": "text_content", "path": "text_content", "type": "STRING" },
+        { "name": "url", "path": "url", "type": "STRING" },
+        { "name": "archived", "path": "archived", "type": "BOOL" },
+        { "name": "date_created", "path": "date_created", "type": "INT64" },
+        { "name": "date_updated", "path": "date_updated", "type": "INT64" },
+        { "name": "date_closed", "path": "date_closed", "type": "INT64" },
+        { "name": "date_done", "path": "date_done", "type": "INT64" },
+        { "name": "start_date", "path": "start_date", "type": "INT64" },
+        { "name": "due_date", "path": "due_date", "type": "INT64" }
+      ]
+    },
+    {
+      "name": "task_assignees",
+      "kind": "task_assignees",
+      "bq_table": "task_assignees",
+      "projection": "typed",
+      "write_mode": "truncate",
+      "columns": [
+        { "name": "task_id", "path": "task_id", "type": "STRING" },
+        { "name": "user_id", "path": "user_id", "type": "INT64" },
+        { "name": "username", "path": "username", "type": "STRING" },
+        { "name": "email", "path": "email", "type": "STRING" }
+      ]
+    }
+  ]
+}

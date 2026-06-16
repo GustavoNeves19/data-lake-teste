@@ -20,7 +20,7 @@ DEFAULT_ENDPOINTS_FILE = BASE_DIR / "config" / "umbler_endpoints.json"
 # ── Credenciais e opcoes de conexao ──────────────────────────────────────────
 UMBLER_CONFIG = {
     "api_token":       os.getenv("UMBLER_API_TOKEN", ""),
-    "organization_id": os.getenv("UMBLER_ORGANIZATION_ID", ""),
+    "organization_id": os.getenv("UMBLER_ORGANIZATION_ID", "aOe3s7VDrlIxo82l"),
     "base_url":        os.getenv("UMBLER_BASE_URL", "https://app-utalk.umbler.com/api"),
     "timeout":         int(os.getenv("UMBLER_TIMEOUT", "30")),
     "pause_seconds":   float(os.getenv("UMBLER_PAUSE_SECONDS", "0.3")),

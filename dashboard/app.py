@@ -19,8 +19,8 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-from dashboard.utils.components import inject_css, page_header, kpi_card, sector_card, section_title, sidebar_brand
-from dashboard.utils.bq_client import query, fmt_brl, PROJECT_PROD
+from dashboard.utils.components import inject_css, page_header, kpi_card, kpi_row, sector_card, section_title, sidebar_brand
+from dashboard.utils.bq_client import query, fmt_brl, PROJECT_PROD, data_ultima_carga
 
 inject_css()
 sidebar_brand()
@@ -38,7 +38,7 @@ PART   = f"{PROJ}.dm_partners"
 # ── Header ───────────────────────────────────────────────────
 page_header(
     title="Nevoni 360° — Visão Gerencial Integrada",
-    subtitle=f"Atualizado em {date.today().strftime('%d/%m/%Y')} · {PROJECT_PROD} · Cache 1h",
+    subtitle=f"Dados de {data_ultima_carga()} BRT · vendas/faturamento · {PROJECT_PROD}",
     sources=[
         {"name": "ERP (SQL Server)", "active": True},
         {"name": "CRM (Pipedrive)",  "active": True},
@@ -61,7 +61,7 @@ st.markdown(
         margin-bottom: 20px;
     ">
         <p style="margin:0; font-size:14px; color:#1E1882; font-weight:700;">
-            📊 O Data Lake Nevoni já tem dados reais em todos os setores operacionais
+            O Data Lake Nevoni já tem dados reais em todos os setores operacionais
         </p>
         <p style="margin:6px 0 0; font-size:13px; color:#374151;">
             Mesmo com apenas o setor Financeiro em nível Silver, os dados Bronze do ERP cobrem
@@ -121,32 +121,23 @@ with st.spinner("Consultando BigQuery..."):
     except Exception as e:
         parceiros = skus = None; erros.append(str(e))
 
-c1, c2, c3, c4, c5 = st.columns(5)
-with c1:
-    kpi_card("Faturamento 2025",
-             fmt_brl(fat_2025) if fat_2025 else "—",
-             delta=f"{ped_2025:,} pedidos" if ped_2025 else "",
-             delta_dir="flat", variant="success")
-with c2:
-    kpi_card("Histórico Liquidado",
-             fmt_brl(liq_total) if liq_total else "—",
-             delta=f"{liq_n:,} títulos" if liq_n else "",
-             delta_dir="flat")
-with c3:
-    kpi_card("Itens em Estoque",
-             f"{est_itens:,}" if est_itens else "—",
-             delta=f"{est_geral:,.0f} unid. gerais" if est_geral else "",
-             delta_dir="flat")
-with c4:
-    kpi_card("Parceiros / Clientes",
-             f"{parceiros:,}" if parceiros else "—",
-             delta="base ativa ERP",
-             delta_dir="flat")
-with c5:
-    kpi_card("SKUs no Catálogo",
-             f"{skus:,}" if skus else "—",
-             delta="com estrutura BOM",
-             delta_dir="flat")
+kpi_row([
+    {"label": "Faturamento 2025",
+     "value": fmt_brl(fat_2025) if fat_2025 else "—",
+     "delta": f"{ped_2025:,} pedidos" if ped_2025 else "", "variant": "success"},
+    {"label": "Histórico Liquidado",
+     "value": fmt_brl(liq_total) if liq_total else "—",
+     "delta": f"{liq_n:,} títulos" if liq_n else ""},
+    {"label": "Itens em Estoque",
+     "value": f"{est_itens:,}" if est_itens else "—",
+     "delta": f"{est_geral:,.0f} unid. gerais" if est_geral else ""},
+    {"label": "Parceiros / Clientes",
+     "value": f"{parceiros:,}" if parceiros else "—",
+     "delta": "base ativa ERP"},
+    {"label": "SKUs no Catálogo",
+     "value": f"{skus:,}" if skus else "—",
+     "delta": "com estrutura BOM"},
+])
 
 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -233,7 +224,7 @@ with st.spinner("Carregando maturidade..."):
         """)
         df2 = query(f"SELECT COUNT(*) n FROM `{ORDERS}.fact_order_item`")
         setores.append({
-            "icon": "📦", "nome": "Comercial e Compras",
+            "icon": "", "nome": "Comercial e Compras",
             "resumo": f"{int(df['pedidos'].iloc[0]):,} pedidos de venda · {int(df2['n'].iloc[0]):,} itens",
             "volume": fmt_brl(float(df["faturamento"].iloc[0] or 0)),
             "periodo": f"desde {str(df['desde'].iloc[0])[:7]}",
@@ -250,7 +241,7 @@ with st.spinner("Carregando maturidade..."):
             WHERE invoice_date IS NOT NULL
         """)
         setores.append({
-            "icon": "🏷️", "nome": "Compras e Suprimentos",
+            "icon": "", "nome": "Compras e Suprimentos",
             "resumo": f"{int(df['pedidos'].iloc[0]):,} pedidos de compra",
             "volume": fmt_brl(float(df["compras"].iloc[0] or 0)),
             "periodo": "histórico completo ERP",
@@ -265,7 +256,7 @@ with st.spinner("Carregando maturidade..."):
         df_est = query(f"SELECT COUNT(*) n, SUM(general_balance) g FROM `{INV}.snapshot_inventory_balance` WHERE general_balance>0")
         df_op  = query(f"SELECT COUNT(*) n FROM `{PROD}.fact_production_order`")
         setores.append({
-            "icon": "🏭", "nome": "Operacional e Produção",
+            "icon": "", "nome": "Operacional e Produção",
             "resumo": f"{int(df_op['n'].iloc[0]):,} OPs · {int(df_mov['n'].iloc[0]):,} mov. estoque",
             "volume": f"{float(df_est['g'].iloc[0] or 0):,.0f} unid. em estoque",
             "periodo": f"{int(df_est['n'].iloc[0]):,} SKUs com saldo",
@@ -280,11 +271,11 @@ with st.spinner("Carregando maturidade..."):
         df_cp = query(f"SELECT COUNT(*) n, SUM(net_amount) v FROM `{PAY}.fact_payable`")
         df_lq = query(f"SELECT COUNT(*) n, SUM(paid_amount) v FROM `{PAY}.fact_settled_title`")
         setores.append({
-            "icon": "💰", "nome": "Financeiro",
+            "icon": "", "nome": "Financeiro",
             "resumo": f"{int(df_lq['n'].iloc[0]):,} títulos liquidados · {int(df_cr['n'].iloc[0]):,} CR · {int(df_cp['n'].iloc[0]):,} CP",
             "volume": fmt_brl(float(df_lq["v"].iloc[0] or 0)) + " liquidado",
             "periodo": "Silver parcial — 5 questões abertas c/ Diego",
-            "camada": "Silver parcial ✦",
+            "camada": "Silver parcial ",
             "cor": "#D1FAE5",
         })
     except: pass
@@ -297,7 +288,7 @@ with st.spinner("Carregando maturidade..."):
             FROM `{IMP}.fact_import_order`
         """)
         setores.append({
-            "icon": "🧾", "nome": "Fiscal e Importações",
+            "icon": "", "nome": "Fiscal e Importações",
             "resumo": f"{int(df['n'].iloc[0]):,} importações · tributos mapeados",
             "volume": fmt_brl(float(df["tributos"].iloc[0] or 0)) + " em tributos",
             "periodo": "II · IPI · PIS · COFINS · ICMS",
@@ -312,7 +303,7 @@ with st.spinner("Carregando maturidade..."):
         df_bom = query(f"SELECT COUNT(*) n FROM `{PRD}.bridge_item_bom`")
         df_ser = query(f"SELECT COUNT(*) n FROM `{PRD}.fact_serial_number`")
         setores.append({
-            "icon": "🔧", "nome": "Engenharia e P&D",
+            "icon": "", "nome": "Engenharia e P&D",
             "resumo": f"{int(df_sku['n'].iloc[0]):,} SKUs · {int(df_bom['n'].iloc[0]):,} relações BOM · {int(df_ser['n'].iloc[0]):,} seriais",
             "volume": "Catálogo completo",
             "periodo": "Estrutura BOM multi-nível disponível",
@@ -335,19 +326,18 @@ for i in range(0, len(setores), 3):
                         border-radius: 14px;
                         padding: 18px 20px;
                         box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-                        border-top: 4px solid {'#10B981' if '✦' in s['camada'] else '#1E1882'};
-                        min-height: 160px;
+                        border-top: 4px solid {'#10B981' if 'Silver' in s['camada'] else '#1E1882'};
+                        min-height: 150px;
                         margin-bottom: 12px;
                     ">
-                        <div style="font-size:24px; margin-bottom:8px;">{s['icon']}</div>
                         <div style="font-size:15px; font-weight:700; color:#111827;">{s['nome']}</div>
                         <div style="font-size:12px; color:#6B7280; margin: 4px 0;">{s['resumo']}</div>
                         <div style="font-size:16px; font-weight:700; color:#1E1882; margin: 6px 0;">{s['volume']}</div>
                         <div style="font-size:11px; color:#9CA3AF;">{s['periodo']}</div>
                         <span style="
                             display:inline-block; margin-top:8px;
-                            background:{'#D1FAE5' if '✦' in s['camada'] else '#EEF0FF'};
-                            color:{'#065F46' if '✦' in s['camada'] else '#1E1882'};
+                            background:{'#D1FAE5' if 'Silver' in s['camada'] else '#EEF0FF'};
+                            color:{'#065F46' if 'Silver' in s['camada'] else '#1E1882'};
                             padding:2px 10px; border-radius:20px; font-size:11px; font-weight:600;
                         ">{s['camada']}</span>
                     </div>
@@ -367,7 +357,6 @@ st.markdown(
         display:flex; gap:24px; align-items:center; flex-wrap:wrap;
         margin-bottom:20px;
     ">
-        <div style="font-size:28px;">🎧</div>
         <div>
             <div style="font-size:15px;font-weight:700;color:#111827;">SAC e Assistência Técnica</div>
             <div style="font-size:12px;color:#6B7280;">Pipedrive CRM (6 pipelines SAC mapeados) · GoTo Connect · Umbler Talk</div>
@@ -387,13 +376,13 @@ section_title("Arquitetura — onde cada setor está hoje")
 st.markdown("""
 | Setor | Camada atual | O que falta para Gold |
 |---|---|---|
-| 💰 **Financeiro** | Silver parcial (8 tabelas) | Fechar 5 questões conceituais c/ Diego |
-| 📦 **Comercial e Compras** | Bronze completo | Criar `gold_comercial` (agregações + CRM) |
-| 🏭 **Operacional e Produção** | Bronze completo | Criar `gold_operacional` (eficiência, giro) |
-| 🧾 **Fiscal e Importações** | Bronze completo | Criar `gold_fiscal` (carga tributária) |
-| 🎧 **SAC e AT** | Bronze (CRM + GoTo) | Criar `gold_sac` (SLA, TMR, CSAT) |
-| 🔧 **Engenharia e P&D** | Bronze completo (BOM, seriais) | Criar `gold_engenharia` + integrar Miro/ClickUp |
-| ⚖️ **Jurídico** | Sem fonte ainda | Definir fonte (Drive, ClickUp, planilha) |
+| **Financeiro** | Silver parcial (8 tabelas) | Fechar 5 questões conceituais c/ Diego |
+| **Comercial e Compras** | Bronze completo | Criar `gold_comercial` (agregações + CRM) |
+| **Operacional e Produção** | Bronze completo | Criar `gold_operacional` (eficiência, giro) |
+| **Fiscal e Importações** | Bronze completo | Criar `gold_fiscal` (carga tributária) |
+| **SAC e AT** | Bronze (CRM + GoTo) | Criar `gold_sac` (SLA, TMR, CSAT) |
+| **Engenharia e P&D** | Bronze completo (BOM, seriais) | Criar `gold_engenharia` + integrar Miro/ClickUp |
+| **Jurídico** | Sem fonte ainda | Definir fonte (Drive, ClickUp, planilha) |
 """)
 
 st.markdown("---")

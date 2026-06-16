@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parecer Técnico — Framework DEEP + PEI Lakehouse Medalhão v0.9</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10.5pt;
+    color: #1a1a1a;
+    background: #f0f2f5;
+    line-height: 1.6;
+  }
+  .page {
+    background: white;
+    max-width: 21cm;
+    margin: 0 auto;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.12);
+  }
+
+  /* CAPA */
+  .cover {
+    background: linear-gradient(160deg, #1F3864 0%, #2E5F8A 60%, #3a7abd 100%);
+    padding: 4cm 3cm;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+  }
+  .cover-badge {
+    background: rgba(255,255,255,0.15);
+    color: #cce0f5;
+    font-size: 9pt;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 6px 20px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.3);
+    margin-bottom: 36px;
+  }
+  .cover h1 { font-size: 32pt; font-weight: 700; color: white; margin-bottom: 8px; }
+  .cover h2 { font-size: 16pt; font-weight: 400; color: #a8d4f5; margin-bottom: 32px; line-height: 1.4; }
+  .cover-divider { width: 60px; height: 3px; background: rgba(255,255,255,0.4); margin: 0 auto 32px; }
+  .cover-sub { font-size: 12pt; color: rgba(255,255,255,0.7); font-style: italic; margin-bottom: 60px; }
+  .cover-meta { margin-top: auto; }
+  .cover-author { font-size: 12pt; font-weight: 700; color: white; margin-bottom: 4px; }
+  .cover-date { font-size: 9.5pt; color: rgba(255,255,255,0.6); }
+
+  /* HEADER */
+  .doc-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 2.5cm;
+    border-bottom: 2px solid #2E5F8A;
+    background: #f8fafc;
+    font-size: 8pt; color: #888;
+  }
+  .doc-header strong { color: #1F3864; }
+
+  /* CONTEÚDO */
+  .content { padding: 2cm 2.5cm; }
+
+  /* TIPOGRAFIA */
+  h1 {
+    font-size: 16pt; font-weight: 700; color: #1F3864;
+    margin: 32px 0 12px; padding-bottom: 8px;
+    border-bottom: 3px solid #2E5F8A;
+    page-break-after: avoid;
+  }
+  h2 { font-size: 13pt; font-weight: 700; color: #2E5F8A; margin: 22px 0 8px; }
+  h3 { font-size: 11.5pt; font-weight: 700; color: #1F3864; margin: 16px 0 6px; }
+  p { font-size: 10.5pt; color: #1a1a1a; margin-bottom: 10px; text-align: justify; line-height: 1.65; }
+  .spacer { height: 12px; }
+  .spacer-lg { height: 24px; }
+
+  /* BLOCO DE FRAMEWORK ORIGINAL */
+  .framework-block {
+    background: #f8fafc;
+    border-left: 4px solid #2E5F8A;
+    border-radius: 0 6px 6px 0;
+    padding: 16px 20px;
+    margin: 14px 0;
+    font-size: 10pt;
+    color: #2a2a2a;
+    line-height: 1.6;
+  }
+  .framework-block .label {
+    font-size: 8pt; font-weight: 700; color: #2E5F8A;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    margin-bottom: 6px;
+  }
+
+  /* BLOCO DE PARECER */
+  .parecer {
+    background: #fffde7;
+    border: 2px solid #7B5C00;
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin: 16px 0 24px;
+  }
+  .parecer-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 12px;
+  }
+  .parecer-badge {
+    background: #7B5C00; color: white;
+    font-size: 8pt; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    padding: 3px 10px; border-radius: 12px;
+  }
+  .parecer-title { font-size: 11pt; font-weight: 700; color: #7B5C00; }
+  .parecer p { color: #2a2a2a; margin-bottom: 8px; font-size: 10pt; }
+  .parecer p:last-child { margin-bottom: 0; }
+
+  /* BLOCO DE SUGESTÃO */
+  .sugestao {
+    background: #e8f5e9;
+    border: 2px solid #1A6B3C;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 10px 0 20px;
+  }
+  .sugestao-header {
+    font-size: 9pt; font-weight: 700; color: #1A6B3C;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .sugestao p { color: #1a1a1a; font-size: 10pt; margin-bottom: 6px; }
+  .sugestao p:last-child { margin-bottom: 0; }
+  .sugestao ul { padding-left: 20px; }
+  .sugestao ul li { font-size: 10pt; color: #1a1a1a; margin-bottom: 4px; line-height: 1.5; }
+
+  /* TABELAS */
+  table { width: 100%; border-collapse: collapse; margin: 14px 0 20px; font-size: 9.5pt; }
+  thead tr { background: #1F3864; }
+  thead th { color: white; font-weight: 700; padding: 8px 12px; text-align: left; border: 1px solid #1F3864; }
+  tbody tr:nth-child(even) { background: #f5f7fa; }
+  tbody tr:nth-child(odd) { background: white; }
+  tbody td { padding: 7px 12px; border: 1px solid #dde3ea; vertical-align: top; line-height: 1.5; }
+  tbody td:first-child { font-weight: 600; color: #1F3864; }
+
+  /* BULLETS */
+  ul.styled { list-style: none; padding-left: 18px; margin-bottom: 10px; }
+  ul.styled li { font-size: 10.5pt; color: #1a1a1a; margin-bottom: 5px; padding-left: 16px; position: relative; line-height: 1.5; }
+  ul.styled li::before { content: "•"; color: #2E5F8A; font-weight: 700; position: absolute; left: 0; }
+  ul.styled li strong { color: #1F3864; }
+
+  /* CAIXA AZUL */
+  .box-blue {
+    background: #d0e4f3; border-left: 6px solid #1F3864;
+    border-radius: 0 6px 6px 0; padding: 16px 20px; margin: 12px 0 20px;
+  }
+  .box-blue h4 { font-size: 10.5pt; font-weight: 700; color: #1F3864; margin-bottom: 8px; }
+  .box-blue ul { list-style: none; padding: 0; }
+  .box-blue ul li { font-size: 10pt; padding: 3px 0 3px 16px; position: relative; color: #1a1a1a; }
+  .box-blue ul li::before { content: "•"; color: #1F3864; font-weight: 700; position: absolute; left: 0; }
+
+  /* TABELA FINAL DE SUGESTÕES */
+  .final-table thead tr { background: #1F3864; }
+  .final-table .camada-cell { font-weight: 700; color: #1F3864; }
+  .final-table td.status-add { color: #1A6B3C; font-weight: 700; }
+  .final-table td.status-ok { color: #2E5F8A; }
+
+  /* MENSAGEM */
+  .mensagem-box {
+    background: #f3f6fb;
+    border: 2px solid #2E5F8A;
+    border-radius: 10px;
+    padding: 28px 32px;
+    margin: 20px 0;
+  }
+  .mensagem-box h3 { color: #1F3864; margin-bottom: 16px; font-size: 12pt; }
+  .mensagem-box p { color: #1a1a1a; font-size: 10.5pt; margin-bottom: 10px; line-height: 1.7; }
+  .mensagem-box .assinatura { margin-top: 20px; font-size: 10pt; color: #444; }
+
+  /* FOOTER */
+  .footer-note {
+    text-align: center; font-size: 8pt; color: #aaa;
+    border-top: 1px solid #e0e4ea;
+    padding-top: 16px; margin-top: 32px; font-style: italic;
+  }
+
+  @media print {
+    body { background: white; }
+    .page { box-shadow: none; max-width: none; }
+    @page { size: A4; margin: 1.5cm; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- CAPA -->
+  <div class="cover">
+    <div class="cover-badge">Parecer Técnico · Revisão v0.9 → v1.0</div>
+    <h1>Framework DEEP + PEI</h1>
+    <h2>Lakehouse Medalhão — VanguardIA</h2>
+    <div class="cover-divider"></div>
+    <div class="cover-sub">Análise sequencial da arquitetura com sugestões para versão 1.0</div>
+    <div class="cover-meta">
+      <div class="cover-author">Gustavo Neves · Especialista em Data Lake</div>
+      <div class="cover-date">Maio de 2026 · Revisão do documento v2.0 de Jorge</div>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <div class="doc-header">
+    <span><strong>Parecer Técnico — Framework DEEP + PEI Lakehouse</strong> · VanguardIA</span>
+    <span>Gustavo Neves · Maio/2026</span>
+  </div>
+
+  <!-- CONTEÚDO -->
+  <div class="content">
+
+    <!-- NOTA DE REVISÃO -->
+    <h1>Nota de Revisão</h1>
+    <p>Este documento apresenta minha análise técnica do <strong>Framework DEEP + PEI para Lakehouse Medalhão v2.0</strong>, elaborado pelo Jorge. A revisão foi conduzida de forma sequencial, camada por camada, com o objetivo de identificar o que está sólido e deve permanecer, e o que precisa ser adicionado ou refinado antes da versão 1.0 oficial.</p>
+    <p>A metodologia adotada foi revisar cada seção do framework à luz da experiência prática de implementação de Data Lake em produção, cruzando os conceitos com decisões arquiteturais reais e casos concretos — incluindo o projeto Data Lake da Nevoni, que serviu como referência de validação para vários pontos levantados.</p>
+    <p>O parecer está organizado seguindo a mesma estrutura do documento original. Para cada bloco, reproduzo a definição central do framework e adiciono minha posição técnica. Ao final, há uma tabela consolidada com todas as sugestões para o v1.0.</p>
+    <div class="spacer-lg"></div>
+
+    <!-- SEÇÕES 0-1 -->
+    <h1>Seções 0 e 1 — Resumo Executivo e Tese Institucional</h1>
+
+    <div class="framework-block">
+      <div class="label">Framework — definição central</div>
+      A entrega do Lakehouse passa a ser conduzida por DEEP (diagnóstico estrutural) e PEI (priorização). A ordem institucional permanece Pessoas → Processos → Tecnologia. Antes de modelar tabelas, o time precisa entender quem decide, qual processo gera o dado, qual regra define a métrica e qual pergunta executiva precisa ser respondida. Frase canônica: <em>"ferramenta inteligente sobre dado estúpido não entrega resultado."</em>
+    </div>
+
+    <div class="parecer">
+      <div class="parecer-header">
+        <span class="parecer-badge">Parecer</span>
+        <span class="parecer-title">Tese sólida — uma questão operacional em aberto</span>
+      </div>
+      <p>A tese institucional é arquiteturalmente correta e alinhada com a prática real. O problema clássico em projetos de Data Lake é exatamente esse: equipes vão direto para a tecnologia antes de entender quem decide e qual pergunta executiva precisa ser respondida. O framework faz bem em formalizar isso.</p>
+      <p>A afirmação "não existe Lakehouse útil sem DEEP e PEI antes da construção" é forte e verdadeira — mas abre uma questão operacional que precisa ser definida antes do v1.0: o DEEP é um ritual formal com entregável próprio e precificação separada, ou pode ser absorvido pelo onboarding comercial? A resposta afeta escopo, time e proposta comercial.</p>
+    </div>
+
+    <div class="sugestao">
+      <div class="sugestao-header">✦ Sugestão para v1.0</div>
+      <p>Adicionar uma linha sobre o posicionamento comercial do DEEP: ele é uma etapa de projeto com entregável formal (inventário de fontes, mapa de processos, perguntas soberanas, PEI) ou faz parte do escopo de implantação? Essa definição protege o time de CS de entregar o DEEP informalmente e perder o valor que ele gera.</p>
+    </div>
+
+    <div class="spacer-lg"></div>
+
+    <!-- SEÇÃO 2 -->
+    <h1>Seção 2 — A Arquitetura Medalhão</h1>
+
+    <div class="framework-block">
+      <div class="label">Framework — arquitetura proposta</div>
+      <strong>Fontes → Raw → Bronze → Prata Transacional → Prata de Contexto → Ouro → BI → Oráculos</strong><br><br>
+      Raw: área de pouso, dado bruto e rastreável, não é camada de consumo.<br>
+      Bronze: réplica fiel da fonte. Espelhar, não inventar regra de negócio.<br>
+      Prata Transacional: padronizar por sistema/fonte sem alterar significado.<br>
+      Prata de Contexto: consolidar por contexto de negócio, joins e regras de negócio.<br>
+      Ouro: tabelas finais com dimensões, métricas e cálculos prontos para decisão.<br>
+      BI: dashboards recorrentes para acompanhamento executivo e operacional.<br>
+      Oráculos: agentes inteligentes conectados ao dado confiável.
+    </div>
+
+    <div class="parecer">
+      <div class="parecer-header">
+        <span class="parecer-badge">Parecer</span>
+        <span class="parecer-title">A separação Raw/Bronze é contextual — a divisão da Prata é a maior contribuição</span>
+      </div>
+      <p><strong>Sobre Raw e Bronze:</strong> em arquiteturas com CDC (Change Data Capture) ou streaming, a Raw como área de pouso faz sentido arquitetural claro. Para cargas batch com full truncate ou incremental por watermark — que são o padrão da maioria dos clientes B2B — Raw e Bronze podem e devem colapsar em uma única camada sem perda de rastreabilidade. Tornar a Raw obrigatória em todo projeto adiciona complexidade sem benefício para esse perfil de cliente.</p>
+      <p><strong>Sobre a divisão Prata Transacional / Prata de Contexto:</strong> essa é a contribuição conceitual mais valiosa do documento inteiro. Antes dessa separação, "camada prata" era um termo vago que misturava padronização técnica com regra de negócio — e as equipes faziam tudo junto de forma caótica. A distinção resolve um problema real e precisa permanecer.</p>
+    </div>
+
+    <div class="sugestao">
+      <div class="sugestao-header">✦ Sugestão para v1.0</div>
+      <p>Adicionar critério de quando Raw é necessária versus quando pode ser colapsada com Bronze, com base no perfil de carga:</p>
+      <ul>
+        <li><strong>Raw obrigatória:</strong> CDC / streaming / near real-time — a Raw é a área de pouso dos eventos antes do processamento em Bronze</li>
+        <li><strong>Raw opcional / colapsável:</strong> batch com full truncate ou incremental por watermark — Bronze já cumpre o papel de registro bruto e rastreável</li>
+      </ul>
+    </div>
+
+    <div class="spacer-lg"></div>
+
+    <!-- SEÇÕES 4-5: DEEP -->
+    <h1>Seções 4 e 5 — DEEP Lakehouse e Saídas Obrigatórias</h1>
+
+    <div class="framework-block">
+      <div class="label">Framework — definição central</div>
+      O DEEP amplia o diagnóstico para incluir uma quarta lente: Dados. Investiga pessoas, processos, sistemas, dados, decisões e riscos. Saídas obrigatórias: inventário de fontes, mapa de processos, mapa de entidades, perguntas soberanas, mapa de qualidade, backlog de Lakehouse e matriz PEI preenchida.
+    </div>
+
+    <div class="parecer">
+      <div class="parecer-header">
+        <span class="parecer-badge">Parecer</span>
+        <span class="parecer-title">Estrutura robusta — dois gaps críticos na fase de fontes</span>
+      </div>
+      <p>O DEEP Lakehouse como expansão do diagnóstico tradicional é correto e necessário. A lente de Dados adiciona objetividade ao diagnóstico — em vez de perguntar "que dashboard você quer?", pergunta quais decisões estão travadas porque os dados não chegam.</p>
+      <p>O inventário de fontes está bem definido, mas tem dois gaps que comprometem a execução: o primeiro é a ausência do conceito de <strong>Fonte Âncora</strong>. O segundo é que "acesso concedido" no checklist presume que a entrevista com o owner é suficiente — na prática, acesso precisa de validação técnica real antes de fechar o PEI.</p>
+    </div>
+
+    <div class="sugestao">
+      <div class="sugestao-header">✦ Sugestão para v1.0 — Fonte Âncora</div>
+      <p>Inserir etapa explícita entre o DEEP e o PEI: <strong>Identificação da Fonte Âncora</strong>. Três perguntas de qualificação:</p>
+      <ul>
+        <li>Qual entidade de negócio é a mais central para as decisões da empresa — cliente, pedido, contrato, ativo?</li>
+        <li>Qual fonte é a origem primária dessa entidade?</li>
+        <li>Qual fonte, se não extraída, torna as outras inúteis ou impossíveis de contextualizar?</li>
+      </ul>
+      <p>A Fonte Âncora entra automaticamente com Prioridade 5 no PEI, independente de qualquer outro critério. Ela também é o argumento técnico para reordenar a entrega quando o cliente quer começar pelo lado errado.</p>
+    </div>
+
+    <div class="sugestao">
+      <div class="sugestao-header">✦ Sugestão para v1.0 — Prova de Conexão Técnica</div>
+      <p>Adicionar um passo de <strong>validação técnica de acesso</strong> no DEEP antes de fechar o PEI de fontes. "Acesso concedido" no checklist precisa incluir evidência técnica: conexão estabelecida, query de teste executada, volume estimado confirmado. Sem isso, fontes que aparecem viáveis nas entrevistas podem travar o projeto por semanas depois.</p>
+    </div>
+
+    <div class="spacer-lg"></div>
+
+    <!-- SEÇÃO 6-9: PEI -->
+    <h1>Seções 6 a 9 — PEI Lakehouse</h1>
+
+    <div class="framework-block">
+      <div class="label">Framework — definição central</div>
+      PEI: matriz de decisão com três dimensões — Prioridade (45%), Estabilidade (30%), Iteração (25%). Score de 0 a 100. Travas executivas: Estabilidade menor que 3 bloqueia Ouro e Oráculo. Sem dono, sem regra contestada, sem acesso confiável — cada condição tem decisão obrigatória correspondente.
+    </div>
+
+    <div class="parecer">
+      <div class="parecer-header">
+        <span class="parecer-badge">Parecer</span>
+        <span class="parecer-title">Framework sólido e bem calibrado — falta posição da Fonte Âncora</span>
+      </div>
+      <p>A matriz PEI resolve um problema real: equipes constroem tecnologia pelo fascínio técnico, não pelo impacto no negócio. O peso maior em Prioridade (45%) é correto — Estabilidade e Iteração são critérios de viabilidade, não de valor.</p>
+      <p>As travas executivas são a parte mais importante do PEI e devem permanecer exatamente como estão. A trava de Estabilidade menor que 3 bloqueando Ouro e Oráculo é inegociável — um Oráculo sobre base instável entrega resultado errado com ar de autoridade, e o custo reputacional é alto.</p>
+      <p>O único gap é que o PEI não tem regra para a Fonte Âncora — que por definição precisa ter Prioridade 5 mesmo que sua Estabilidade seja 3 ou 4, porque sem ela nenhum outro item do ranking faz sentido.</p>
+    </div>
+
+    <div class="sugestao">
+      <div class="sugestao-header">✦ Sugestão para v1.0</div>
+      <p>Adicionar regra especial para Fonte Âncora no PEI: ela recebe Prioridade = 5 automaticamente e entra obrigatoriamente no primeiro ciclo, independente do score final. O score PEI ainda é calculado normalmente para efeito de planejamento de capacidade, mas não pode bloquear a extração da âncora.</p>
+    </div>
+
+    <div class="spacer-lg"></div>
+
+    <!-- BRONZE -->
+    <h1>Camada Bronze</h1>
+
+    <div class="framework-block">
+      <div class="label">Framework — definição central</div>
+      Réplica fiel da fonte. Idealmente select * na Bronze bate com select * na origem. Espelhar. Não inventar regra de negócio aqui. Checklist para avançar: select da origem reconciliado, tipos padronizados, chaves identificadas, nomes normalizados, qualidade básica medida.
+    </div>
+
+    <div class="parecer">
+      <div class="parecer-header">
+        <span class="parecer-badge">Parecer</span>
+        <span class="parecer-title">Princípio correto — três decisões arquiteturais não endereçadas</span>
+      </div>
+      <p>A regra "Bronze não tem regra de negócio" é inegociável e o documento defende bem. O impulso de limpar ou ajustar dados na Bronze precisa ser contido — qualquer transformação aqui quebra a rastreabilidade.</p>
+      <p>O "select * bate com a origem" é o ideal de rastreabilidade, mas precisa de critério sobre quando aplicá-lo. Fontes com 150+ colunas, incluindo campos de controle interno do sistema, raramente justificam extração completa. A seleção explícita com schema declarado em código é mais manutenível — mas cria risco de perder colunas não mapeadas que o negócio precisar no futuro.</p>
+      <p>O gap mais crítico: o documento não aborda o que acontece quando a fonte muda de schema. Uma coluna renomeada no ERP ou um campo deprecated na API quebra silenciosamente a Bronze — e o problema só aparece quando o dashboard sumiu.</p>
+    </div>
+
+    <div class="sugestao">
+      <div class="sugestao-header">✦ Sugestão 1 para v1.0 — Estratégia de carga por perfil de fonte</div>
+      <table>
+        <thead><tr><th>Perfil</th><th>Estratégia</th><th>Quando usar</th></tr></thead>
+        <tbody>
+          <tr><td>Fonte pequena e estável</td><td>Full truncate · Select *</td><td>Dimensões, tabelas de referência</td></tr>
+          <tr><td>Fonte grande com histórico</td><td>Incremental por watermark · Schema explícito</td><td>Fatos transacionais com updated_at confiável</td></tr>
+          <tr><td>Fonte em tempo real</td><td>CDC · Raw como pouso · Bronze com micro-batch</td><td>Quando latência é requisito de negócio</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="sugestao">
+      <div class="sugestao-header">✦ Sugestão 2 para v1.0 — Protocolo de evolução de schema</div>
+      <ul>
+        <li><strong>Coluna adicionada na origem:</strong> adicionar na Bronze e alertar o time via Oráculo de Dados</li>
+        <li><strong>Coluna removida na origem:</strong> manter na Bronze como nullable com data de deprecação registrada</li>
+        <li><strong>Tipo alterado:</strong> versionamento do schema com data de vigência</li>
+        <li><strong>Endpoint deprecated:</strong> protocolo de substituição antes da quebra, com bridge temporário quando necessário</li>
+      </ul>
+    </div>
+
+    <div class="spacer-lg"></div>
+
+    <!-- PRATA TRANSACIONAL -->
+    <h1>Prata Transacional</h1>
+
+    <div class="framework-block">
+      <div class="label">Framework — definição central</div>
+      Dados padronizados por sistema/fonte: nomenclatura, tipos, chaves, qualidade básica. Ordenar o banco. Padronizar sem mudar o significado do dado. Taxonomia oficial. Checklist para avançar: contexto de negócio definido, fontes mapeadas, joins conhecidos, owner da regra definido, conflitos identificados.
+    </div>
+
+    <div class="parecer">
+      <div class="parecer-header">
+        <span class="parecer-badge">Parecer</span>
+        <span class="parecer-title">A camada mais subestimada — três funções distintas não separadas</span>
+      </div>
+      <p>A Prata Transacional é onde a maioria dos projetos falha por subestimação. Todo mundo quer chegar na Prata de Contexto — essa camada não aparece para o cliente, não gera entusiasmo, não tem resultado visível imediato. O time sente pressão para pulá-la ou executá-la depressa. O problema é que tudo que está errado aqui se multiplica nas camadas seguintes.</p>
+      <p>O documento trata a Prata Transacional como uma camada única, mas na prática são três trabalhos distintos: padronização de representação (datas, strings, tipos, nomenclatura), identificação e validação de chaves (qual é a chave natural, tem duplicatas, é estável), e medição de qualidade por campo. Misturá-los cria confusão sobre o que está "pronto".</p>
+      <p>O critério "qualidade básica medida" no checklist é importante mas indefinido. Mediu 40% de nulos em campo crítico — pode avançar? Encontrou 3% de duplicatas na chave — pode avançar? Sem threshold explícito, o time vai ter interpretações diferentes.</p>
+    </div>
+
+    <div class="sugestao">
+      <div class="sugestao-header">✦ Sugestão 1 para v1.0 — Três funções explícitas com entregável próprio</div>
+      <ul>
+        <li><strong>Padronização de representação:</strong> datas em UTC, strings sem espaço, booleanos como BOOL, moeda com NUMERIC de precisão definida, nomes em snake_case</li>
+        <li><strong>Identificação e validação de chaves:</strong> qual coluna é a chave natural, tem duplicatas, é estável ao longo do tempo</li>
+        <li><strong>Medição de qualidade por campo:</strong> percentual de nulos, range esperado, outliers — documentado para o owner de área decidir</li>
+      </ul>
+    </div>
+
+    <div class="sugestao">
+      <div class="sugestao-header">✦ Sugestão 2 para v1.0 — Threshold de qualidade por categoria de campo</div>
+      <table>
+        <thead><tr><th>Categoria</th><th>Critério mínimo para avançar</th></tr></thead>
+        <tbody>
+          <tr><td>Campo de chave primária</td><td>Zero nulos · Zero duplicatas — trava técnica, não negociável</td></tr>
+          <tr><td>Campo crítico para join</td><td>Menos de 5% de nulos · Taxa de match documentada</td></tr>
+          <tr><td>Campo de atributo</td><td>Percentual de nulos documentado · Sem critério bloqueante</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="sugestao">
+      <div class="sugestao-header">✦ Sugestão 3 para v1.0 — Divisão por domínio em fontes grandes</div>
+      <p>Fontes grandes com entidades muito diferentes (ex: ERP com parceiros, produtos, pedidos, estoque e financeiro) devem ser divididas em domínios na Prata Transacional, com owner por domínio. A divisão é orientada por entidade de negócio, não por volume técnico.</p>
+    </div>
+
+    <div class="spacer-lg"></div>
+
+    <!-- PRATA DE CONTEXTO -->
+    <h1>Prata de Contexto</h1>
+
+    <div class="framework-block">
+      <div class="label">Framework — definição central</div>
+      Consolidação por contexto de negócio: vendas, financeiro, supply chain, operação, cliente, BU. Aqui nascem joins, consolidações e regras de negócio. Owner da regra deve estar definido antes de modelar. Checklist para avançar: regra de negócio aprovada, métrica soberana documentada, dimensões definidas, cálculos testados, usuário validou.
+    </div>
+
+    <div class="parecer">
+      <div class="parecer-header">
+        <span class="parecer-badge">Parecer</span>
+        <span class="parecer-title">Onde a arquitetura encontra a política de negócio — três gaps operacionais</span>
+      </div>
+      <p>Até a Prata Transacional o trabalho é predominantemente técnico — o dado existe ou não existe, a chave é única ou não é. Na Prata de Contexto a pergunta muda: "o que esse dado significa para o negócio?" — e aí cada área tem uma resposta diferente.</p>
+      <p>O documento exige que conflitos sejam identificados, mas não diz o que fazer quando dois owners discordam. Isso é o cenário mais comum: Comercial define "venda" de um jeito, Financeiro define de outro. Sem protocolo de resolução, a Prata de Contexto fica bloqueada indefinidamente ou é construída com uma definição contestada.</p>
+      <p>O segundo gap crítico: o documento não aborda o que acontece quando uma regra de negócio muda depois que a camada já está em produção. Uma mudança no critério de cliente ativo de 90 para 60 dias quebra silenciosamente a série histórica — dados anteriores calculados com uma regra, posteriores com outra.</p>
+      <p>O terceiro gap: não há critério para definir a granularidade de contexto. O time tende para dois erros opostos: criar um contexto por fonte técnica (voltando para o modelo Bronze) ou criar um contexto gigante que tenta ser tudo.</p>
+    </div>
+
+    <div class="sugestao">
+      <div class="sugestao-header">✦ Sugestão 1 para v1.0 — Protocolo de resolução de conflito</div>
+      <p>Quando dois owners discordam sobre uma regra, ela não entra em produção até ter arbitragem documentada por um nível acima. O framework precisa nomear quem arbitra — tipicamente o patrocinador executivo do projeto — e estabelecer que a regra contestada fica na Prata de Contexto como rascunho até a resolução.</p>
+    </div>
+
+    <div class="sugestao">
+      <div class="sugestao-header">✦ Sugestão 2 para v1.0 — Versionamento de regra de negócio</div>
+      <p>Toda mudança de regra na Prata de Contexto tem data de vigência registrada. Análises históricas que cruzam o ponto de mudança precisam de tratamento explícito — filtro por período de vigência ou recálculo com regra histórica. Sem isso, a série histórica torna-se inválida sem que ninguém perceba.</p>
+    </div>
+
+    <div class="sugestao">
+      <div class="sugestao-header">✦ Sugestão 3 para v1.0 — Critério de contexto</div>
+      <p>Um contexto é definido pela pergunta soberana que responde e pelo owner que aprova suas regras — não pelo volume de dados ou número de fontes que consolida. Se vendas e financeiro fazem perguntas diferentes sobre o mesmo dado de pedido, são dois contextos. Se supply chain e produção têm o mesmo owner e perguntas sobrepostas, podem ser um contexto.</p>
+    </div>
+
+    <div class="spacer-lg"></div>
+
+    <!-- OURO -->
+    <h1>Camada Ouro</h1>
+
+    <div class="framework-block">
+      <div class="label">Framework — definição central</div>
+      Tabelas finais com dimensões, métricas, cálculos e cubos prontos para decisão. Uma camada Ouro deve representar uma pergunta de negócio madura. Consumidores: BI, diretoria, agentes. Checklist: regra aprovada, métrica soberana documentada, dimensões definidas, cálculos testados, usuário validou.
+    </div>
+
+    <div class="parecer">
+      <div class="parecer-header">
+        <span class="parecer-badge">Parecer</span>
+        <span class="parecer-title">Definição correta — grain, maturidade e frequência precisam ser explícitos</span>
+      </div>
+      <p>A distinção entre Prata de Contexto e Ouro está bem colocada: a Prata organiza e relaciona, o Ouro representa uma pergunta de negócio que já está madura o suficiente para virar decisão recorrente. Essa separação é importante e precisa permanecer.</p>
+      <p>A frase "dashboard sem definição de métrica é teatro visual" é uma das mais honestas do documento e deve permanecer como frase canônica.</p>
+      <p>O gap mais fundamental: o documento não menciona grain em nenhum momento. O grain — o que uma linha representa — é a decisão mais importante de uma tabela Ouro. Um grain errado pode ser corrigido, mas exige reescrever a tabela inteira e invalidar histórico. Além disso, o documento não aborda o que acontece com dimensões que mudam ao longo do tempo, nem prescreve frequência de atualização — que determina toda a arquitetura upstream.</p>
+    </div>
+
+    <div class="sugestao">
+      <div class="sugestao-header">✦ Sugestão 1 para v1.0 — Grain obrigatório</div>
+      <p>Toda especificação de tabela Ouro inclui obrigatoriamente: definição do grain (o que uma linha representa) e justificativa. Exemplos: "uma linha por item de pedido faturado" ou "uma linha por título por data de vencimento". Sem grain documentado, a tabela não pode entrar em modelagem.</p>
+    </div>
+
+    <div class="sugestao">
+      <div class="sugestao-header">✦ Sugestão 2 para v1.0 — Critério de pergunta madura</div>
+      <p>Uma pergunta é madura para Ouro quando atende a três critérios simultâneos:</p>
+      <ul>
+        <li>É feita com frequência definida — semanal, mensal, toda diretoria</li>
+        <li>A definição está estável e aprovada pelo owner — não muda a cada resposta</li>
+        <li>Gera uma decisão real — existe alguém que age diferente com base nesse número</li>
+      </ul>
+    </div>
+
+    <div class="sugestao">
+      <div class="sugestao-header">✦ Sugestão 3 para v1.0 — Frequência de atualização como campo obrigatório</div>
+      <p>Cada tabela Ouro declara frequência de atualização com pré-requisitos correspondentes: diária (batch Bronze compatível), horária (incremental obrigatório), near real-time (CDC obrigatório na Bronze). A frequência do Ouro define o teto de todas as camadas abaixo.</p>
+    </div>
+
+    <div class="spacer-lg"></div>
+
+    <!-- BI -->
+    <h1>Camada BI</h1>
+
+    <div class="framework-block">
+      <div class="label">Framework — definição central</div>
+      Dashboards recorrentes e visuais para acompanhamento executivo e operacional. BI mostra o que precisa ser monitorado com frequência. Consumidores: gestores e times. Checklist: perguntas recorrentes definidas, layout validado, filtro e permissão definidos, cadência de uso combinada.
+    </div>
+
+    <div class="parecer">
+      <div class="parecer-header">
+        <span class="parecer-badge">Parecer</span>
+        <span class="parecer-title">A seção mais vaga do documento — hierarquia e divisão de responsabilidade faltam</span>
+      </div>
+      <p>O BI é a seção mais curta e a mais vaga do framework. "BI mostra o que precisa ser monitorado com frequência" é correto como princípio mas insuficiente como especificação. O documento não diz o que vai para o BI versus o que vai para o Oráculo, nem como organizar o BI quando existem múltiplas áreas com Ouros em diferentes estágios de maturidade.</p>
+      <p>O critério "perguntas recorrentes definidas" é o mais importante do checklist — mas recorrente para quem? Frequência executiva (mensal), gerencial (semanal) ou operacional (diária) geram dashboards completamente diferentes com necessidades distintas de atualização e nível de detalhe.</p>
+    </div>
+
+    <div class="sugestao">
+      <div class="sugestao-header">✦ Sugestão 1 para v1.0 — Hierarquia de BI</div>
+      <table>
+        <thead><tr><th>Nível</th><th>Consumidor</th><th>Quando pode ser construído</th></tr></thead>
+        <tbody>
+          <tr><td>BI Executivo</td><td>CEO, diretores, conselho</td><td>Quando dois ou mais Ouros de áreas diferentes estão validados</td></tr>
+          <tr><td>BI por Área</td><td>Gerentes e times de cada área</td><td>Quando o Ouro da área atingiu score PEI ≥ 70 e foi validado</td></tr>
+          <tr><td>BI Operacional</td><td>Analistas e operação</td><td>Pode consumir Prata de Contexto com nota de limitação</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="sugestao">
+      <div class="sugestao-header">✦ Sugestão 2 para v1.0 — Divisão de responsabilidade BI vs Oráculo</div>
+      <p><strong>BI:</strong> responde perguntas que a área já sabe que vai fazer — recorrentes, periódicas, monitoramento contínuo. O gestor abre toda segunda-feira e vê o mesmo conjunto de métricas atualizadas.</p>
+      <p><strong>Oráculo:</strong> responde perguntas que surgem a partir do que o BI mostrou — exploratórias, contextuais, geradas pela curiosidade ou pelo alerta. O gestor viu que a margem caiu e pergunta ao Oráculo por quê.</p>
+      <p>Não é uma escolha entre um e outro — são funções complementares sobre a mesma base de Ouro.</p>
+    </div>
+
+    <div class="spacer-lg"></div>
+
+    <!-- ORÁCULOS -->
+    <h1>Oráculos Inteligentes — Seções 22 a 39</h1>
+
+    <div class="framework-block">
+      <div class="label">Framework — definição central</div>
+      Agente inteligente por área, BU ou nível executivo, alimentado por camadas confiáveis do Lakehouse — principalmente Ouro e BI. Capaz de responder perguntas, explicar variações, apontar riscos, sugerir ações e acionar rituais. Não inventa dado, não cria regra de negócio sozinho, não expõe informação sem permissão. Sem camada Ouro confiável, o Oráculo deve nascer limitado ou não nascer.
+    </div>
+
+    <div class="parecer">
+      <div class="parecer-header">
+        <span class="parecer-badge">Parecer</span>
+        <span class="parecer-title">A seção mais completa — três gaps arquiteturais relevantes</span>
+      </div>
+      <p>O Oráculo não é uma camada de dados — é uma camada de consumo inteligente. Uma interface conversacional sobre tudo que foi construído abaixo. Isso muda como se pensa sobre ele: as camadas anteriores têm problemas de engenharia de dados; o Oráculo tem esses mais problemas de design de comportamento de agente — duas disciplinas que precisam colaborar.</p>
+      <p>O modelo de maturidade em 6 níveis é a ferramenta mais valiosa da seção. Ele dá ao time um argumento técnico para gerenciar expectativa: o cliente quer nível 3 direto, mas o Ouro suporta até o nível 2 agora — e aqui está o que precisamos resolver para chegar no 3. Isso transforma uma negativa em um roadmap.</p>
+      <p>O contrato semântico é o segundo ponto mais valioso — mas arquiteturalmente ele deveria ter nascido na Prata de Contexto, quando a regra foi aprovada. Se chegou até o Oráculo sem esse contrato existir, o problema vai aparecer quando o Oráculo responder com definição errada com ar de autoridade.</p>
+      <p>Os três gaps: o documento não especifica a arquitetura de conexão entre o LLM e o Ouro; não tem protocolo de como propagar mudança de regra de negócio para o Prompt Master; e o Oráculo de Dados está subdesenvolvido apesar de ser o mais crítico para o time interno.</p>
+    </div>
+
+    <div class="sugestao">
+      <div class="sugestao-header">✦ Sugestão 1 para v1.0 — Arquitetura de conexão LLM-Ouro</div>
+      <p>Nomear explicitamente as três opções de arquitetura com critério de escolha:</p>
+      <ul>
+        <li><strong>SQL generation direto:</strong> simples, mas perigoso — query cara e potencialmente errada. Adequado apenas para Oráculos nível 1 com conjunto limitado de perguntas.</li>
+        <li><strong>Camada semântica intermediária</strong> (dbt Semantic Layer, Cube.js, LookML): o LLM gera queries sobre objetos semânticos pré-definidos, não sobre tabelas brutas. Arquitetura mais robusta — recomendada para Oráculos nível 2 e acima.</li>
+        <li><strong>RAG sobre documentação:</strong> quando a resposta não é um número mas uma interpretação de processo ou política. Complementa os dados com contexto não estruturado.</li>
+      </ul>
+    </div>
+
+    <div class="sugestao">
+      <div class="sugestao-header">✦ Sugestão 2 para v1.0 — Protocolo de propagação de mudança de regra</div>
+      <p>Quando o contrato semântico muda (regra de negócio alterada na Prata de Contexto ou Ouro), o protocolo é:</p>
+      <ul>
+        <li>Atualizar o Prompt Master com nova definição e data de vigência</li>
+        <li>Documentar a mudança no contrato semântico com data de vigência</li>
+        <li>Alertar que análises históricas que cruzam o ponto de mudança precisam de tratamento explícito</li>
+        <li>Executar subset do QA Supremo (regra de negócio + verdade do dado) antes de reativar o Oráculo</li>
+      </ul>
+    </div>
+
+    <div class="sugestao">
+      <div class="sugestao-header">✦ Sugestão 3 para v1.0 — Oráculo de Dados como seção própria</div>
+      <p>O Oráculo de Dados monitora a confiabilidade técnica do Lakehouse — "qual fonte atrasou? qual tabela quebrou? qual regra mudou?" — mas não consome Ouro de negócio. Ele consome logs de pipeline, métricas de qualidade e alertas de schema. Por ter pré-requisitos completamente diferentes, precisa de seção própria com:</p>
+      <ul>
+        <li>Infraestrutura de observabilidade como pré-requisito: logs estruturados de execução, métricas de qualidade por carga, alertas de schema drift</li>
+        <li>Canal dedicado: Slack ou Jira para o time técnico — não WhatsApp de gestor</li>
+        <li>Owner técnico, não de negócio</li>
+      </ul>
+    </div>
+
+    <div class="spacer-lg"></div>
+
+    <!-- TABELA CONSOLIDADA -->
+    <h1>Consolidado — Sugestões para v1.0</h1>
+    <p>A tabela a seguir consolida todas as adições recomendadas. O framework está sólido em sua tese e estrutura — as sugestões são complementos, não revisões.</p>
+    <div class="spacer"></div>
+
+    <table class="final-table">
+      <thead>
+        <tr>
+          <th style="width:18%">Camada / Seção</th>
+          <th style="width:35%">Adição recomendada</th>
+          <th>Justificativa</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Tese (Seções 0-1)</td>
+          <td>Posicionamento comercial do DEEP — ritual formal ou onboarding?</td>
+          <td>Define escopo, precificação e expectativa do CS com o cliente</td>
+        </tr>
+        <tr>
+          <td>Arquitetura (Seção 2)</td>
+          <td>Critério Raw obrigatória vs colapsável com Bronze</td>
+          <td>Raw é necessária para CDC/streaming; dispensável para batch</td>
+        </tr>
+        <tr>
+          <td>DEEP (Seções 4-5)</td>
+          <td>Identificação da Fonte Âncora como etapa pré-PEI</td>
+          <td>Define a sequência de extração e protege de começar pelo lado errado</td>
+        </tr>
+        <tr>
+          <td>DEEP (Seções 4-5)</td>
+          <td>Prova de conexão técnica antes de fechar PEI</td>
+          <td>Evita fontes que aparecem viáveis nas entrevistas mas travam na execução</td>
+        </tr>
+        <tr>
+          <td>PEI (Seções 6-9)</td>
+          <td>Regra especial: Fonte Âncora = Prioridade 5 automática</td>
+          <td>Sem âncora, nenhum outro item do ranking faz sentido</td>
+        </tr>
+        <tr>
+          <td>Bronze</td>
+          <td>Estratégia de carga por perfil: full truncate, incremental, CDC</td>
+          <td>A escolha afeta custo, latência e necessidade da camada Raw</td>
+        </tr>
+        <tr>
+          <td>Bronze</td>
+          <td>Protocolo de evolução de schema (adição, remoção, tipo alterado)</td>
+          <td>Mudanças de schema são inevitáveis — sem protocolo, a Bronze quebra silenciosamente</td>
+        </tr>
+        <tr>
+          <td>Prata Transacional</td>
+          <td>Separar explicitamente as 3 funções: padronização, chaves, qualidade</td>
+          <td>Evita ambiguidade sobre o que está "pronto" para avançar</td>
+        </tr>
+        <tr>
+          <td>Prata Transacional</td>
+          <td>Threshold de qualidade por categoria de campo</td>
+          <td>Chave primária com nulo é trava técnica — campo de atributo com nulo é decisão de negócio</td>
+        </tr>
+        <tr>
+          <td>Prata Transacional</td>
+          <td>Critério de divisão por domínio em fontes grandes</td>
+          <td>ERP único com múltiplos domínios precisa de owners distintos por domínio</td>
+        </tr>
+        <tr>
+          <td>Prata de Contexto</td>
+          <td>Protocolo de resolução de conflito entre owners</td>
+          <td>Conflitos acontecem — sem protocolo, a camada fica bloqueada ou é construída com definição contestada</td>
+        </tr>
+        <tr>
+          <td>Prata de Contexto</td>
+          <td>Versionamento de regra com data de vigência</td>
+          <td>Mudança de regra invalida série histórica silenciosamente</td>
+        </tr>
+        <tr>
+          <td>Prata de Contexto</td>
+          <td>Critério de contexto baseado em pergunta soberana + owner</td>
+          <td>Evita contextos por fonte técnica ou contextos gigantes sem fronteira</td>
+        </tr>
+        <tr>
+          <td>Ouro</td>
+          <td>Grain obrigatório como campo de especificação</td>
+          <td>Grain errado invalida a tabela inteira — precisa estar definido antes de modelar</td>
+        </tr>
+        <tr>
+          <td>Ouro</td>
+          <td>Critério de pergunta madura: recorrente, definição estável, gera decisão</td>
+          <td>Define claramente quando um contexto da Prata está pronto para virar Ouro</td>
+        </tr>
+        <tr>
+          <td>Ouro</td>
+          <td>Frequência de atualização com pré-requisitos de infraestrutura</td>
+          <td>Frequência do Ouro define o teto de todas as camadas abaixo</td>
+        </tr>
+        <tr>
+          <td>BI</td>
+          <td>Hierarquia: Executivo, por Área, Operacional — com critério de quando cada nível pode ser construído</td>
+          <td>BI segue a maturidade do Ouro disponível, não o desejo da diretoria</td>
+        </tr>
+        <tr>
+          <td>BI</td>
+          <td>Divisão de responsabilidade BI (recorrente) vs Oráculo (exploratório)</td>
+          <td>Evita dúvida do time sobre o que vai para cada canal</td>
+        </tr>
+        <tr>
+          <td>Oráculos</td>
+          <td>Arquitetura de conexão LLM-Ouro: SQL generation, camada semântica, RAG</td>
+          <td>A escolha tem implicação de custo, latência e confiabilidade — precisa ser prescrita</td>
+        </tr>
+        <tr>
+          <td>Oráculos</td>
+          <td>Protocolo de propagação de mudança de regra para o Prompt Master</td>
+          <td>Mudança de regra sem atualização do Oráculo gera respostas erradas com ar de autoridade</td>
+        </tr>
+        <tr>
+          <td>Oráculos</td>
+          <td>Oráculo de Dados como seção própria com pré-requisitos de observabilidade</td>
+          <td>Consome infraestrutura diferente dos outros Oráculos — merece especificação separada</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="spacer-lg"></div>
+
+    <!-- MENSAGEM PARA O JORGE -->
+    <h1>Rascunho — Mensagem para o Jorge</h1>
+    <p>Texto sugerido para encaminhar ao Jorge junto com este documento:</p>
+    <div class="spacer"></div>
+
+    <div class="mensagem-box">
+      <h3>Assunto: Parecer técnico — Framework DEEP + PEI Lakehouse v0.9 → v1.0</h3>
+
+      <p>Jorge,</p>
+
+      <p>Li o documento completo de forma sequencial, camada por camada, como especialista em Data Lake e com o projeto da Nevoni como referência prática de validação.</p>
+
+      <p>Minha avaliação geral: o framework está sólido em sua tese e estrutura. A separação entre Prata Transacional e Prata de Contexto é a contribuição conceitual mais valiosa — resolve um problema que muita equipe carrega sem ter nome para ele. As travas executivas do PEI são inegociáveis e devem permanecer exatamente como estão. O modelo de maturidade dos Oráculos em 6 níveis é a ferramenta mais prática da seção de agentes.</p>
+
+      <p>Para o v1.0, levanto 21 adições agrupadas em três categorias:</p>
+
+      <p><strong>Adições estruturais</strong> — conceitos que estão implícitos mas precisam ser explícitos: Fonte Âncora como etapa pré-PEI com regra de Prioridade 5 automática; critério de quando Raw e Bronze podem colapsar em projetos batch; hierarquia de BI em três níveis com critério de quando cada nível pode ser construído.</p>
+
+      <p><strong>Adições de governança</strong> — protocolos que estão ausentes e que vão aparecer como problema na execução: protocolo de resolução de conflito entre owners na Prata de Contexto; versionamento de regra de negócio com data de vigência; protocolo de propagação de mudança de regra para o Prompt Master dos Oráculos.</p>
+
+      <p><strong>Adições técnicas</strong> — especificações que precisam de mais detalhe: estratégia de carga por perfil de fonte (full truncate, incremental, CDC); protocolo de evolução de schema na Bronze; threshold de qualidade por categoria de campo na Prata Transacional; grain obrigatório como campo de especificação do Ouro; arquitetura de conexão LLM-Ouro nos Oráculos; Oráculo de Dados como seção própria com pré-requisitos de observabilidade.</p>
+
+      <p>Todas as sugestões estão detalhadas com justificativa técnica no documento em anexo. Nenhuma delas questiona a estrutura ou a tese — são complementos que fecham lacunas operacionais antes que o time precise inventar na hora do projeto.</p>
+
+      <p>Podemos marcar uma sessão para discutir as que gerarem mais debate antes de fechar o v1.0?</p>
+
+      <div class="assinatura">
+        Gustavo Neves<br>
+        Especialista em Data Lake · VanguardIA
+      </div>
+    </div>
+
+    <div class="footer-note">
+      Parecer Técnico — Framework DEEP + PEI Lakehouse Medalhão &nbsp;·&nbsp; Gustavo Neves &nbsp;·&nbsp; Maio de 2026 &nbsp;·&nbsp; Para importar no Google Docs: drive.google.com → Novo → Fazer upload → Abrir com Google Docs
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

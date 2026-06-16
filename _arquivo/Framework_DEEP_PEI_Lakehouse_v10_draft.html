@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Framework DEEP + PEI para Lakehouse Medalhão — v1.0 Draft</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10.5pt;
+    color: #1a1a1a;
+    background: #f0f2f5;
+    line-height: 1.6;
+  }
+  .page {
+    background: white;
+    max-width: 21cm;
+    margin: 0 auto;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.12);
+  }
+
+  /* CAPA */
+  .cover {
+    background: linear-gradient(160deg, #1F3864 0%, #2E5F8A 60%, #3a7abd 100%);
+    padding: 4cm 3cm;
+    text-align: center;
+    min-height: 65vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .cover-badge {
+    background: rgba(255,255,255,0.15); color: #cce0f5;
+    font-size: 9pt; letter-spacing: 0.18em; text-transform: uppercase;
+    padding: 5px 18px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.3);
+    margin-bottom: 32px;
+  }
+  .cover h1 { font-size: 34pt; font-weight: 700; color: white; margin-bottom: 10px; line-height: 1.2; }
+  .cover h2 { font-size: 15pt; font-weight: 400; color: #a8d4f5; margin-bottom: 32px; line-height: 1.4; }
+  .cover-divider { width: 60px; height: 3px; background: rgba(255,255,255,0.4); margin: 0 auto 28px; border-radius: 2px; }
+  .cover-sub { font-size: 11pt; color: rgba(255,255,255,0.7); font-style: italic; margin-bottom: 48px; }
+  .cover-meta { margin-top: auto; padding-top: 32px; }
+  .cover-org { font-size: 11pt; font-weight: 700; color: white; margin-bottom: 4px; }
+  .cover-version { font-size: 9.5pt; color: rgba(255,255,255,0.6); }
+
+  /* HEADER */
+  .doc-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 11px 2.5cm; border-bottom: 2px solid #2E5F8A;
+    background: #f8fafc; font-size: 8pt; color: #888;
+  }
+  .doc-header strong { color: #1F3864; }
+
+  /* CONTEÚDO */
+  .content { padding: 2cm 2.5cm; }
+
+  /* TIPOGRAFIA */
+  h1 {
+    font-size: 16pt; font-weight: 700; color: #1F3864;
+    margin: 32px 0 12px; padding-bottom: 8px;
+    border-bottom: 3px solid #2E5F8A;
+  }
+  h2 { font-size: 12.5pt; font-weight: 700; color: #2E5F8A; margin: 22px 0 8px; }
+  h3 { font-size: 11pt; font-weight: 700; color: #1F3864; margin: 16px 0 6px; }
+  p { font-size: 10.5pt; color: #1a1a1a; margin-bottom: 10px; text-align: justify; line-height: 1.65; }
+  .spacer { height: 12px; }
+  .spacer-lg { height: 24px; }
+
+  /* BULLETS */
+  ul.doc-list { list-style: none; padding-left: 18px; margin-bottom: 12px; }
+  ul.doc-list li { font-size: 10.5pt; color: #1a1a1a; margin-bottom: 5px; padding-left: 16px; position: relative; line-height: 1.55; }
+  ul.doc-list li::before { content: "•"; color: #2E5F8A; font-weight: 700; position: absolute; left: 0; }
+  ul.doc-list li strong { color: #1F3864; }
+
+  /* TABELAS */
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 18px; font-size: 9.5pt; }
+  thead tr { background: #1F3864; }
+  thead th { color: white; font-weight: 700; padding: 8px 10px; text-align: left; border: 1px solid #1F3864; }
+  tbody tr:nth-child(even) { background: #f5f7fa; }
+  tbody tr:nth-child(odd) { background: white; }
+  tbody td { padding: 7px 10px; border: 1px solid #dde3ea; vertical-align: top; line-height: 1.5; font-size: 9.5pt; }
+  tbody td:first-child { font-weight: 600; color: #1F3864; }
+
+  /* FRASE CANÔNICA */
+  .regra-soberana {
+    background: #1F3864; color: white;
+    border-radius: 6px; padding: 14px 20px; margin: 14px 0;
+    font-size: 10.5pt; font-style: italic; line-height: 1.6;
+  }
+
+  /* BLOCO DE CONTRIBUIÇÃO */
+  .contrib {
+    background: #fff8e1;
+    border: 2px solid #E65100;
+    border-radius: 8px;
+    padding: 18px 22px;
+    margin: 16px 0 22px;
+    position: relative;
+  }
+  .contrib::before {
+    content: "";
+    position: absolute;
+    top: -1px; left: 24px;
+    width: 0; height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 10px solid #E65100;
+    transform: translateY(-100%);
+  }
+  .contrib-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+  }
+  .contrib-badge {
+    background: #E65100; color: white;
+    font-size: 7.5pt; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.12em; padding: 3px 10px; border-radius: 12px;
+    white-space: nowrap;
+  }
+  .contrib-title { font-size: 10.5pt; font-weight: 700; color: #BF360C; }
+  .contrib p { color: #1a1a1a; font-size: 10pt; margin-bottom: 8px; }
+  .contrib p:last-child { margin-bottom: 0; }
+  .contrib ul { list-style: none; padding-left: 16px; margin: 6px 0; }
+  .contrib ul li { font-size: 10pt; color: #1a1a1a; margin-bottom: 4px; padding-left: 14px; position: relative; line-height: 1.5; }
+  .contrib ul li::before { content: "→"; color: #E65100; position: absolute; left: 0; font-size: 9pt; top: 2px; }
+  .contrib ul li strong { color: #BF360C; }
+  .contrib table thead tr { background: #BF360C; }
+  .contrib table { margin: 8px 0; }
+
+  /* FOOTER */
+  .footer-note {
+    text-align: center; font-size: 8pt; color: #aaa;
+    border-top: 1px solid #e0e4ea;
+    padding-top: 14px; margin-top: 28px; font-style: italic;
+  }
+
+  @media print {
+    body { background: white; }
+    .page { box-shadow: none; max-width: none; }
+    @page { size: A4; margin: 1.5cm; }
+    .contrib { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- CAPA -->
+  <div class="cover">
+    <div class="cover-badge">Documento Operacional · v1.0 Draft · Maio/2026</div>
+    <h1>Framework DEEP + PEI para Lakehouse Medalhão</h1>
+    <h2>Diagnóstico, priorização e entrega de Data Lake / Lakehouse em camadas Bronze, Prata, Ouro, BI e Oráculos Inteligentes</h2>
+    <div class="cover-divider"></div>
+    <div class="cover-sub">Documento operacional para CS, Tech, Dados, Produto e Liderança</div>
+    <div class="cover-meta">
+      <div class="cover-org">Grupo VanguardIA</div>
+      <div class="cover-version">Versão 1.0 Draft · Maio/2026 · Grupo VanguardIA</div>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <div class="doc-header">
+    <span><strong>Framework DEEP + PEI Lakehouse Medalhão</strong> · Grupo VanguardIA</span>
+    <span>v1.0 Draft · Maio/2026</span>
+  </div>
+
+  <div class="content">
+
+    <!-- SEÇÃO 0 -->
+    <h1>0. Resumo Executivo</h1>
+    <p>Este documento transforma a entrega de Data Lake / Lakehouse da VanguardIA em um sistema operacional claro para CS e Tech. A entrega passa a ser conduzida por duas inteligências complementares: DEEP e PEI.</p>
+    <ul class="doc-list">
+      <li><strong>DEEP Lakehouse:</strong> diagnóstico estrutural de pessoas, processos, sistemas, dados, decisões e gargalos. Ele revela onde a empresa está gerindo no escuro.</li>
+      <li><strong>PEI Lakehouse:</strong> etapa final do DEEP. Ele ranqueia quais fontes, tabelas, contextos, métricas, dashboards e agentes devem ser construídos primeiro.</li>
+      <li><strong>Medalhão VanguardIA:</strong> arquitetura em camadas Raw, Bronze, Prata Transacional, Prata de Contexto, Ouro, BI e Oráculos Inteligentes.</li>
+      <li><strong>Oráculos por área ou BU:</strong> agentes inteligentes conectados aos dados confiáveis, entregues no BI, portal ou aplicativos de mensageria como WhatsApp, Telegram, Slack e email.</li>
+    </ul>
+    <div class="regra-soberana">Regra soberana: não existe agente confiável sobre dado desorganizado. Não existe BI confiável sobre regra de negócio indefinida. Não existe Lakehouse útil sem DEEP e PEI antes da construção.</div>
+
+    <!-- SEÇÃO 1 -->
+    <h1>1. Tese Institucional</h1>
+    <p>A VanguardIA não deve vender Data Lake como infraestrutura fria. Deve vender clareza operacional, governança e capacidade de decisão em tempo hábil. O Lakehouse é a fundação que permite que qualquer BI, automação, agente, oráculo ou IA futura funcione com contexto real.</p>
+    <p>A ordem institucional permanece a mesma do ICIA: Pessoas &gt; Processos &gt; Tecnologia. No contexto de dados, isso significa: antes de modelar tabelas, o time precisa entender quem decide, qual processo gera o dado, qual regra define a métrica e qual pergunta executiva precisa ser respondida.</p>
+    <div class="regra-soberana">Frase canônica: ferramenta inteligente sobre dado estúpido não entrega resultado. Entrega frustração, custo e descrença. A fundação precisa vir primeiro.</div>
+
+    <div class="contrib">
+      <div class="contrib-header">
+        <span class="contrib-badge">Adição v1.0</span>
+        <span class="contrib-title">Posicionamento operacional do DEEP</span>
+      </div>
+      <p>A afirmação "não existe Lakehouse útil sem DEEP e PEI antes da construção" é correta e precisa de uma definição operacional complementar: o DEEP é um entregável formal com escopo e precificação próprios — não pode ser absorvido informalmente pelo onboarding comercial. Quando tratado como etapa implícita, o time de CS entrega o diagnóstico sem que o valor seja reconhecido pelo cliente, e o time perde a proteção de escopo que o DEEP deveria oferecer.</p>
+    </div>
+
+    <!-- SEÇÃO 2 -->
+    <h1>2. A Arquitetura Medalhão que Passa a Basear a Entrega</h1>
+    <p>A arquitetura a seguir organiza a entrega em camadas. Ela impede que a VanguardIA pule do banco transacional diretamente para dashboards e agentes, que é uma das causas clássicas de pântano de dados.</p>
+
+    <table>
+      <thead><tr><th>Camada</th><th>Função</th><th>Regra de ouro</th><th>Consumidor principal</th></tr></thead>
+      <tbody>
+        <tr><td>Fontes</td><td>Bancos, ERPs, CRMs, planilhas, APIs, sistemas legados e bases operacionais.</td><td>Mapear acesso, dono, frequência, risco e significado antes de integrar.</td><td>DEEP, Tech, cliente, TI</td></tr>
+        <tr><td>Raw</td><td>Dado bruto recebido continuamente ou por carga. Área de pouso.</td><td>Não é camada de consumo. É registro bruto e rastreável.</td><td>Engenharia de dados</td></tr>
+        <tr><td>Bronze</td><td>Réplica fiel da fonte. Idealmente select * na Bronze bate com select * na origem.</td><td>Espelhar. Não inventar regra de negócio aqui.</td><td>Engenharia de dados</td></tr>
+        <tr><td>Prata Transacional</td><td>Dados padronizados por sistema/fonte: nomenclatura, tipos, chaves, qualidade básica.</td><td>Ordenar o banco. Padronizar sem mudar o significado do dado.</td><td>Dados, analytics, tech</td></tr>
+        <tr><td>Prata de Contexto</td><td>Consolidação por contexto de negócio: vendas, financeiro, supply chain, operação, cliente, BU.</td><td>Aqui nascem joins, consolidações e regras de negócio.</td><td>Analytics, CS, área de negócio</td></tr>
+        <tr><td>Ouro</td><td>Tabelas finais com dimensões, métricas, cálculos e cubos prontos para decisão.</td><td>Uma camada Ouro deve representar uma pergunta de negócio madura.</td><td>BI, diretoria, agentes</td></tr>
+        <tr><td>BI</td><td>Dashboards recorrentes e visuais para acompanhamento executivo e operacional.</td><td>BI mostra o que precisa ser monitorado com frequência.</td><td>Gestores e times</td></tr>
+        <tr><td>Oráculos IA</td><td>Agentes conversacionais por área, BU ou conselho, conectados ao dado confiável.</td><td>Agente responde, interpreta, alerta e recomenda com base no dado governado.</td><td>Gestores, diretoria, operação</td></tr>
+      </tbody>
+    </table>
+
+    <!-- DIAGRAMA DA ARQUITETURA -->
+    <div style="margin: 24px 0 8px; text-align: center;">
+      <div style="font-size:8.5pt; color:#6B7A99; margin-bottom:8px; font-style:italic;">Figura 1 — Arquitetura Lakehouse Medalhão VanguardIA</div>
+      <svg viewBox="0 0 900 620" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-width:860px; border-radius:10px; box-shadow: 0 2px 12px rgba(0,0,0,0.10);" font-family="Arial, Helvetica, sans-serif">
+        <title>Arquitetura Lakehouse Medalhão — VanguardIA</title>
+        <desc>Diagrama das camadas: Fontes, Bronze, Prata Transacional, Prata de Contexto, Ouro, BI e Oráculos IA</desc>
+        <rect width="900" height="620" fill="#F5F7FA" rx="12"/>
+        <text x="450" y="38" text-anchor="middle" font-size="15" font-weight="700" fill="#1F3864">Arquitetura Lakehouse Medalhão — VanguardIA</text>
+        <text x="450" y="56" text-anchor="middle" font-size="10" fill="#6B7A99">DEEP mapeia · PEI prioriza · Medalhão organiza · BI e Oráculos ativam a decisão</text>
+        <line x1="60" y1="66" x2="840" y2="66" stroke="#2E5F8A" stroke-width="1.5" opacity="0.3"/>
+        <!-- FONTES -->
+        <rect x="30" y="86" width="112" height="480" rx="10" fill="#E8EDF5" stroke="#9AAAC8" stroke-width="1.5"/>
+        <rect x="30" y="86" width="112" height="32" rx="10" fill="#4A5980"/>
+        <rect x="30" y="104" width="112" height="14" fill="#4A5980"/>
+        <text x="86" y="107" text-anchor="middle" font-size="10.5" font-weight="700" fill="white">FONTES</text>
+        <rect x="46" y="132" width="80" height="36" rx="6" fill="#2E5F8A" opacity="0.15"/>
+        <text x="86" y="147" text-anchor="middle" font-size="9" font-weight="700" fill="#1F3864">ERP</text>
+        <text x="86" y="159" text-anchor="middle" font-size="8" fill="#4A5980">SQL Server</text>
+        <rect x="46" y="176" width="80" height="36" rx="6" fill="#2E5F8A" opacity="0.15"/>
+        <text x="86" y="191" text-anchor="middle" font-size="9" font-weight="700" fill="#1F3864">CRM</text>
+        <text x="86" y="203" text-anchor="middle" font-size="8" fill="#4A5980">Pipedrive / API</text>
+        <rect x="46" y="220" width="80" height="36" rx="6" fill="#2E5F8A" opacity="0.15"/>
+        <text x="86" y="235" text-anchor="middle" font-size="9" font-weight="700" fill="#1F3864">Telefonia</text>
+        <text x="86" y="247" text-anchor="middle" font-size="8" fill="#4A5980">GoTo / API</text>
+        <rect x="46" y="264" width="80" height="36" rx="6" fill="#2E5F8A" opacity="0.15"/>
+        <text x="86" y="279" text-anchor="middle" font-size="9" font-weight="700" fill="#1F3864">Planilhas</text>
+        <text x="86" y="291" text-anchor="middle" font-size="8" fill="#4A5980">Excel / Sheets</text>
+        <rect x="46" y="308" width="80" height="36" rx="6" fill="#2E5F8A" opacity="0.15"/>
+        <text x="86" y="323" text-anchor="middle" font-size="9" font-weight="700" fill="#1F3864">Apps / APIs</text>
+        <text x="86" y="335" text-anchor="middle" font-size="8" fill="#4A5980">Sistemas internos</text>
+        <text x="86" y="375" text-anchor="middle" font-size="8" fill="#4A5980" font-style="italic">Mapear acesso,</text>
+        <text x="86" y="387" text-anchor="middle" font-size="8" fill="#4A5980" font-style="italic">dono, frequência</text>
+        <text x="86" y="399" text-anchor="middle" font-size="8" fill="#4A5980" font-style="italic">e risco antes</text>
+        <text x="86" y="411" text-anchor="middle" font-size="8" fill="#4A5980" font-style="italic">de integrar</text>
+        <rect x="38" y="428" width="96" height="26" rx="5" fill="#1F3864"/>
+        <text x="86" y="439" text-anchor="middle" font-size="8" font-weight="700" fill="white">⚓ Fonte Âncora</text>
+        <text x="86" y="450" text-anchor="middle" font-size="7.5" fill="#a8d4f5">P=5 automático</text>
+        <path d="M 142 326 L 168 326" stroke="#4A5980" stroke-width="2" fill="none" marker-end="url(#arr-gray)"/>
+        <!-- BRONZE -->
+        <rect x="168" y="86" width="108" height="480" rx="10" fill="#FFF8F0" stroke="#C4884A" stroke-width="1.5"/>
+        <rect x="168" y="86" width="108" height="32" rx="10" fill="#7D4C00"/>
+        <rect x="168" y="104" width="108" height="14" fill="#7D4C00"/>
+        <text x="222" y="107" text-anchor="middle" font-size="10.5" font-weight="700" fill="white">BRONZE</text>
+        <text x="222" y="138" text-anchor="middle" font-size="9" font-weight="700" fill="#5C3600">Réplica fiel da fonte</text>
+        <line x1="180" y1="148" x2="264" y2="148" stroke="#C4884A" stroke-width="0.8" opacity="0.5"/>
+        <text x="222" y="165" text-anchor="middle" font-size="8.5" fill="#5C3600" font-weight="700">Estratégia de carga</text>
+        <rect x="178" y="172" width="88" height="22" rx="4" fill="#FFDDB3"/>
+        <text x="222" y="187" text-anchor="middle" font-size="8" fill="#5C3600">Full Truncate</text>
+        <rect x="178" y="198" width="88" height="22" rx="4" fill="#FFDDB3"/>
+        <text x="222" y="213" text-anchor="middle" font-size="8" fill="#5C3600">Incremental</text>
+        <rect x="178" y="224" width="88" height="22" rx="4" fill="#FFDDB3"/>
+        <text x="222" y="239" text-anchor="middle" font-size="8" fill="#5C3600">CDC / Streaming</text>
+        <line x1="180" y1="255" x2="264" y2="255" stroke="#C4884A" stroke-width="0.8" opacity="0.5"/>
+        <text x="222" y="272" text-anchor="middle" font-size="8" fill="#7D4C00" font-style="italic">Espelhar.</text>
+        <text x="222" y="285" text-anchor="middle" font-size="8" fill="#7D4C00" font-style="italic">Sem regra de negócio.</text>
+        <line x1="180" y1="297" x2="264" y2="297" stroke="#C4884A" stroke-width="0.8" opacity="0.5"/>
+        <text x="222" y="314" text-anchor="middle" font-size="8" fill="#5C3600" font-weight="700">Checklist saída</text>
+        <text x="222" y="328" text-anchor="middle" font-size="7.5" fill="#7D4C00">✓ Select reconciliado</text>
+        <text x="222" y="341" text-anchor="middle" font-size="7.5" fill="#7D4C00">✓ Tipos padronizados</text>
+        <text x="222" y="354" text-anchor="middle" font-size="7.5" fill="#7D4C00">✓ Chaves identificadas</text>
+        <text x="222" y="367" text-anchor="middle" font-size="7.5" fill="#7D4C00">✓ Schema versionado</text>
+        <rect x="178" y="426" width="88" height="22" rx="5" fill="#7D4C00"/>
+        <text x="222" y="441" text-anchor="middle" font-size="8" font-weight="700" fill="white">Eng. de Dados</text>
+        <path d="M 276 326 L 302 326" stroke="#C4884A" stroke-width="2" fill="none" marker-end="url(#arr-bronze)"/>
+        <!-- PRATA TRANSACIONAL -->
+        <rect x="302" y="86" width="108" height="480" rx="10" fill="#F3F6FB" stroke="#6B7A99" stroke-width="1.5"/>
+        <rect x="302" y="86" width="108" height="32" rx="10" fill="#4A5568"/>
+        <rect x="302" y="104" width="108" height="14" fill="#4A5568"/>
+        <text x="356" y="100" text-anchor="middle" font-size="9.5" font-weight="700" fill="white">PRATA</text>
+        <text x="356" y="112" text-anchor="middle" font-size="8.5" font-weight="700" fill="#CBD5E0">TRANSACIONAL</text>
+        <text x="356" y="138" text-anchor="middle" font-size="9" font-weight="700" fill="#2D3748">3 funções</text>
+        <rect x="310" y="144" width="92" height="22" rx="4" fill="#CBD5E0"/>
+        <text x="356" y="159" text-anchor="middle" font-size="8" fill="#2D3748" font-weight="700">1. Padronização</text>
+        <text x="356" y="172" text-anchor="middle" font-size="7.5" fill="#4A5568">Datas · Tipos · Nomes</text>
+        <rect x="310" y="180" width="92" height="22" rx="4" fill="#CBD5E0"/>
+        <text x="356" y="195" text-anchor="middle" font-size="8" fill="#2D3748" font-weight="700">2. Chaves</text>
+        <text x="356" y="208" text-anchor="middle" font-size="7.5" fill="#4A5568">PK · Duplicatas · Estab.</text>
+        <rect x="310" y="216" width="92" height="22" rx="4" fill="#CBD5E0"/>
+        <text x="356" y="231" text-anchor="middle" font-size="8" fill="#2D3748" font-weight="700">3. Qualidade</text>
+        <text x="356" y="244" text-anchor="middle" font-size="7.5" fill="#4A5568">Nulos · Outliers · Range</text>
+        <line x1="312" y1="256" x2="400" y2="256" stroke="#6B7A99" stroke-width="0.8" opacity="0.5"/>
+        <text x="356" y="273" text-anchor="middle" font-size="8.5" fill="#2D3748" font-weight="700">Threshold</text>
+        <text x="356" y="287" text-anchor="middle" font-size="7.5" fill="#4A5568">PK: 0 nulos · 0 duplic.</text>
+        <text x="356" y="300" text-anchor="middle" font-size="7.5" fill="#4A5568">Join: &lt;5% nulos</text>
+        <text x="356" y="313" text-anchor="middle" font-size="7.5" fill="#4A5568">Atributo: documentado</text>
+        <line x1="312" y1="324" x2="400" y2="324" stroke="#6B7A99" stroke-width="0.8" opacity="0.5"/>
+        <text x="356" y="341" text-anchor="middle" font-size="8" fill="#2D3748" font-style="italic">Padronizar sem</text>
+        <text x="356" y="354" text-anchor="middle" font-size="8" fill="#4A5568" font-style="italic">mudar o significado</text>
+        <rect x="312" y="426" width="92" height="22" rx="5" fill="#4A5568"/>
+        <text x="356" y="441" text-anchor="middle" font-size="8" font-weight="700" fill="white">Dados · Tech</text>
+        <path d="M 410 326 L 436 326" stroke="#4A5568" stroke-width="2" fill="none" marker-end="url(#arr-silver)"/>
+        <!-- PRATA DE CONTEXTO -->
+        <rect x="436" y="86" width="108" height="480" rx="10" fill="#EEF2FA" stroke="#4A6FA5" stroke-width="1.5"/>
+        <rect x="436" y="86" width="108" height="32" rx="10" fill="#2E5F8A"/>
+        <rect x="436" y="104" width="108" height="14" fill="#2E5F8A"/>
+        <text x="490" y="100" text-anchor="middle" font-size="9.5" font-weight="700" fill="white">PRATA</text>
+        <text x="490" y="112" text-anchor="middle" font-size="8.5" font-weight="700" fill="#a8d4f5">DE CONTEXTO</text>
+        <text x="490" y="138" text-anchor="middle" font-size="9" font-weight="700" fill="#1F3864">Contextos</text>
+        <rect x="444" y="144" width="92" height="18" rx="4" fill="#BFD5EE"/>
+        <text x="490" y="157" text-anchor="middle" font-size="8" fill="#1F3864">Vendas</text>
+        <rect x="444" y="166" width="92" height="18" rx="4" fill="#BFD5EE"/>
+        <text x="490" y="179" text-anchor="middle" font-size="8" fill="#1F3864">Financeiro</text>
+        <rect x="444" y="188" width="92" height="18" rx="4" fill="#BFD5EE"/>
+        <text x="490" y="201" text-anchor="middle" font-size="8" fill="#1F3864">Supply Chain</text>
+        <rect x="444" y="210" width="92" height="18" rx="4" fill="#BFD5EE"/>
+        <text x="490" y="223" text-anchor="middle" font-size="8" fill="#1F3864">Operação · Cliente · BU</text>
+        <line x1="446" y1="237" x2="534" y2="237" stroke="#4A6FA5" stroke-width="0.8" opacity="0.5"/>
+        <text x="490" y="254" text-anchor="middle" font-size="8.5" fill="#1F3864" font-weight="700">Regras de negócio</text>
+        <text x="490" y="268" text-anchor="middle" font-size="7.5" fill="#2E5F8A">Owner definido</text>
+        <text x="490" y="281" text-anchor="middle" font-size="7.5" fill="#2E5F8A">Conflito protocolado</text>
+        <text x="490" y="294" text-anchor="middle" font-size="7.5" fill="#2E5F8A">Versão + vigência</text>
+        <line x1="446" y1="306" x2="534" y2="306" stroke="#4A6FA5" stroke-width="0.8" opacity="0.5"/>
+        <text x="490" y="323" text-anchor="middle" font-size="8" fill="#1F3864" font-style="italic">Joins nascem aqui.</text>
+        <text x="490" y="336" text-anchor="middle" font-size="8" fill="#2E5F8A" font-style="italic">Contexto = pergunta</text>
+        <text x="490" y="349" text-anchor="middle" font-size="8" fill="#2E5F8A" font-style="italic">soberana + owner</text>
+        <rect x="446" y="426" width="92" height="22" rx="5" fill="#2E5F8A"/>
+        <text x="490" y="441" text-anchor="middle" font-size="8" font-weight="700" fill="white">Analytics · CS · BU</text>
+        <path d="M 544 326 L 570 326" stroke="#2E5F8A" stroke-width="2" fill="none" marker-end="url(#arr-blue)"/>
+        <!-- OURO -->
+        <rect x="570" y="86" width="108" height="480" rx="10" fill="#FFFEF0" stroke="#B8860B" stroke-width="1.5"/>
+        <rect x="570" y="86" width="108" height="32" rx="10" fill="#7B5C00"/>
+        <rect x="570" y="104" width="108" height="14" fill="#7B5C00"/>
+        <text x="624" y="107" text-anchor="middle" font-size="10.5" font-weight="700" fill="white">OURO</text>
+        <text x="624" y="138" text-anchor="middle" font-size="9" font-weight="700" fill="#5C4400">Pergunta madura</text>
+        <line x1="580" y1="148" x2="668" y2="148" stroke="#B8860B" stroke-width="0.8" opacity="0.5"/>
+        <text x="624" y="165" text-anchor="middle" font-size="8.5" fill="#5C4400" font-weight="700">Grain obrigatório</text>
+        <text x="624" y="178" text-anchor="middle" font-size="7.5" fill="#7B5C00">O que 1 linha representa</text>
+        <line x1="580" y1="188" x2="668" y2="188" stroke="#B8860B" stroke-width="0.8" opacity="0.5"/>
+        <rect x="580" y="194" width="88" height="22" rx="4" fill="#FFE082"/>
+        <text x="624" y="209" text-anchor="middle" font-size="8" fill="#5C4400">Métricas + Dimensões</text>
+        <rect x="580" y="220" width="88" height="22" rx="4" fill="#FFE082"/>
+        <text x="624" y="235" text-anchor="middle" font-size="8" fill="#5C4400">Cálculos testados</text>
+        <rect x="580" y="246" width="88" height="22" rx="4" fill="#FFE082"/>
+        <text x="624" y="261" text-anchor="middle" font-size="8" fill="#5C4400">Usuário validou</text>
+        <line x1="580" y1="276" x2="668" y2="276" stroke="#B8860B" stroke-width="0.8" opacity="0.5"/>
+        <text x="624" y="293" text-anchor="middle" font-size="8" fill="#5C4400" font-weight="700">Freq. atualização</text>
+        <text x="624" y="306" text-anchor="middle" font-size="7.5" fill="#7B5C00">Diária · Horária</text>
+        <text x="624" y="319" text-anchor="middle" font-size="7.5" fill="#7B5C00">Near real-time</text>
+        <line x1="580" y1="332" x2="668" y2="332" stroke="#B8860B" stroke-width="0.8" opacity="0.5"/>
+        <text x="624" y="349" text-anchor="middle" font-size="8" fill="#5C4400" font-style="italic">Ouro decide.</text>
+        <text x="624" y="362" text-anchor="middle" font-size="7.5" fill="#7B5C00" font-style="italic">Regra aprovada +</text>
+        <text x="624" y="375" text-anchor="middle" font-size="7.5" fill="#7B5C00" font-style="italic">decisão real</text>
+        <rect x="580" y="426" width="88" height="22" rx="5" fill="#7B5C00"/>
+        <text x="624" y="441" text-anchor="middle" font-size="8" font-weight="700" fill="white">BI · Diretoria · Agentes</text>
+        <path d="M 678 326 L 700 326" stroke="#B8860B" stroke-width="2" fill="none" marker-end="url(#arr-gold)"/>
+        <!-- BI -->
+        <rect x="700" y="86" width="168" height="224" rx="10" fill="#E8F4FE" stroke="#1565C0" stroke-width="1.5"/>
+        <rect x="700" y="86" width="168" height="32" rx="10" fill="#1565C0"/>
+        <rect x="700" y="104" width="168" height="14" fill="#1565C0"/>
+        <text x="784" y="107" text-anchor="middle" font-size="10.5" font-weight="700" fill="white">BI</text>
+        <text x="784" y="136" text-anchor="middle" font-size="9" font-weight="700" fill="#0D47A1">Monitoramento recorrente</text>
+        <rect x="712" y="148" width="144" height="18" rx="4" fill="#BBDEFB"/>
+        <text x="784" y="161" text-anchor="middle" font-size="8" fill="#0D47A1">BI Executivo — CEO · Conselho</text>
+        <rect x="712" y="170" width="144" height="18" rx="4" fill="#BBDEFB"/>
+        <text x="784" y="183" text-anchor="middle" font-size="8" fill="#0D47A1">BI por Área — Gestores</text>
+        <rect x="712" y="192" width="144" height="18" rx="4" fill="#BBDEFB"/>
+        <text x="784" y="205" text-anchor="middle" font-size="8" fill="#0D47A1">BI Operacional — Analistas</text>
+        <text x="784" y="232" text-anchor="middle" font-size="8" fill="#0D47A1" font-style="italic">BI mostra o número.</text>
+        <text x="784" y="245" text-anchor="middle" font-size="8" fill="#1565C0" font-style="italic">Looker Studio · Power BI</text>
+        <text x="784" y="258" text-anchor="middle" font-size="7.5" fill="#1565C0" font-style="italic">Metabase · Tableau</text>
+        <path d="M 784 310 L 784 338" stroke="#1565C0" stroke-width="2" fill="none" marker-end="url(#arr-blue2)"/>
+        <!-- ORÁCULOS -->
+        <rect x="700" y="342" width="168" height="224" rx="10" fill="#EDE7F6" stroke="#4A148C" stroke-width="1.5"/>
+        <rect x="700" y="342" width="168" height="32" rx="10" fill="#4A148C"/>
+        <rect x="700" y="360" width="168" height="14" fill="#4A148C"/>
+        <text x="784" y="363" text-anchor="middle" font-size="10.5" font-weight="700" fill="white">ORÁCULOS IA</text>
+        <text x="784" y="390" text-anchor="middle" font-size="9" font-weight="700" fill="#311B92">Decisão conversacional</text>
+        <rect x="712" y="398" width="144" height="18" rx="4" fill="#D1C4E9"/>
+        <text x="784" y="411" text-anchor="middle" font-size="8" fill="#311B92">Executivo · Comercial · Financeiro</text>
+        <rect x="712" y="420" width="144" height="18" rx="4" fill="#D1C4E9"/>
+        <text x="784" y="433" text-anchor="middle" font-size="8" fill="#311B92">Operacional · CS · RH · BU</text>
+        <rect x="712" y="442" width="144" height="18" rx="4" fill="#D1C4E9"/>
+        <text x="784" y="455" text-anchor="middle" font-size="8" fill="#311B92">Oráculo de Dados (técnico)</text>
+        <text x="784" y="480" text-anchor="middle" font-size="8" fill="#311B92" font-style="italic">Oráculo explica o número</text>
+        <text x="784" y="493" text-anchor="middle" font-size="8" fill="#4A148C" font-style="italic">e sugere o próximo passo.</text>
+        <text x="784" y="506" text-anchor="middle" font-size="7.5" fill="#4A148C" font-style="italic">WhatsApp · Slack · Portal</text>
+        <!-- RÉGUA INFERIOR -->
+        <rect x="30" y="578" width="840" height="28" rx="6" fill="#1F3864"/>
+        <text x="450" y="596" text-anchor="middle" font-size="9" fill="white" font-style="italic">Bronze espelha · Prata organiza · Ouro decide · BI mostra · Oráculo conversa</text>
+        <!-- MARKERS -->
+        <defs>
+          <marker id="arr-gray" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#4A5980"/></marker>
+          <marker id="arr-bronze" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#C4884A"/></marker>
+          <marker id="arr-silver" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#4A5568"/></marker>
+          <marker id="arr-blue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#2E5F8A"/></marker>
+          <marker id="arr-gold" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#B8860B"/></marker>
+          <marker id="arr-blue2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#1565C0"/></marker>
+        </defs>
+      </svg>
+    </div>
+    <div class="spacer-lg"></div>
+
+    <div class="contrib">
+      <div class="contrib-header">
+        <span class="contrib-badge">Adição v1.0</span>
+        <span class="contrib-title">Raw e Bronze — critério de separação por perfil de carga</span>
+      </div>
+      <p>A camada Raw como área de pouso independente tem sentido arquitetural claro em cenários de CDC (Change Data Capture) ou streaming, onde os eventos chegam continuamente e precisam ser estabilizados antes de entrar na Bronze. Para cargas batch com full truncate ou incremental por watermark — que são o padrão da maioria dos clientes B2B — Raw e Bronze podem e devem colapsar em uma única camada sem perda de rastreabilidade, reduzindo complexidade desnecessária.</p>
+      <p><strong>Critério de decisão:</strong></p>
+      <ul>
+        <li><strong>Raw obrigatória:</strong> CDC / streaming / near real-time — Raw é a área de pouso dos eventos antes do processamento em Bronze</li>
+        <li><strong>Raw colapsável com Bronze:</strong> batch com full truncate ou incremental por watermark — Bronze já cumpre o papel de registro bruto e rastreável</li>
+      </ul>
+    </div>
+
+    <!-- SEÇÃO 3 -->
+    <h1>3. Diferença Crítica entre Bronze, Prata e Ouro</h1>
+    <p>Bronze não é "dado ruim". Bronze é dado fiel. A função dela é preservar a origem com rastreabilidade. Prata não é somente limpeza. A Prata tem dois momentos: primeiro a Prata Transacional, que padroniza a fonte sem transformar a regra de negócio; depois a Prata de Contexto, que organiza o dado conforme o mundo real da empresa. Ouro não é apenas uma tabela bonita. Ouro é a camada em que a decisão já tem dimensões, métricas, cálculos e regras formalizadas.</p>
+
+    <table>
+      <thead><tr><th>Pergunta</th><th>Bronze</th><th>Prata Transacional</th><th>Prata de Contexto</th><th>Ouro</th></tr></thead>
+      <tbody>
+        <tr><td>O dado bate com a origem?</td><td>Sim, essa é a obrigação.</td><td>Deve continuar auditável.</td><td>Pode consolidar fontes.</td><td>Não é foco principal.</td></tr>
+        <tr><td>Há padronização de nomes e tipos?</td><td>Mínima.</td><td>Sim. Taxonomia oficial.</td><td>Sim, com padrão por contexto.</td><td>Sim, orientada a consumo.</td></tr>
+        <tr><td>Há regra de negócio?</td><td>Não.</td><td>Não deve alterar significado.</td><td>Sim. Aqui a regra nasce.</td><td>Sim. Regra final e cálculos.</td></tr>
+        <tr><td>Pode misturar fontes?</td><td>Não como regra.</td><td>Não no mesmo contexto.</td><td>Sim, quando o contexto exige.</td><td>Normalmente consome um contexto maduro.</td></tr>
+        <tr><td>Serve diretamente para BI?</td><td>Não.</td><td>Somente uso técnico/analytics.</td><td>Pode apoiar análise.</td><td>Sim. Camada preferencial.</td></tr>
+        <tr><td>Serve para agente de gestor?</td><td>Não.</td><td>Não.</td><td>Com cuidado.</td><td>Sim. Padrão recomendado.</td></tr>
+      </tbody>
+    </table>
+
+    <!-- SEÇÃO 4 -->
+    <h1>4. O Novo DEEP Lakehouse</h1>
+    <p>O DEEP Lakehouse amplia o diagnóstico tradicional. Ele continua lendo pessoas, processos e tecnologia, mas adiciona uma quarta lente operacional: dados. O objetivo não é perguntar "que dashboard você quer?". O objetivo é descobrir quais decisões estão travadas porque os dados não conversam, não chegam em tempo hábil ou não são confiáveis.</p>
+
+    <table>
+      <thead><tr><th>Lente DEEP</th><th>O que investigar</th><th>Saída esperada</th></tr></thead>
+      <tbody>
+        <tr><td>Pessoas</td><td>Quem gera dado, quem valida, quem corrige, quem decide, quem sofre com atraso.</td><td>Mapa de donos, usuários, data stewards e patrocinadores.</td></tr>
+        <tr><td>Processos</td><td>Como o trabalho acontece, onde o dado nasce, onde muda, onde quebra e onde vira decisão.</td><td>POPs e fluxos de decisão conectados aos dados.</td></tr>
+        <tr><td>Sistemas</td><td>ERP, CRM, planilhas, apps internos, APIs, bancos, BI atual, sistemas legados.</td><td>Inventário de fontes com acesso, frequência, formato e viabilidade técnica.</td></tr>
+        <tr><td>Dados</td><td>Campos críticos, chaves, granularidade, histórico, qualidade, duplicidade, atrasos, taxonomia.</td><td>Mapa de entidades, tabelas, métricas e riscos de qualidade.</td></tr>
+        <tr><td>Decisões</td><td>Perguntas que a diretoria e áreas precisam responder em tempo real ou quase real.</td><td>Lista de perguntas soberanas por área ou BU.</td></tr>
+        <tr><td>Risco</td><td>LGPD, sigilo, permissões, dados sensíveis, dependências de fornecedores.</td><td>Matriz de acesso, governança e limites de agente.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="contrib">
+      <div class="contrib-header">
+        <span class="contrib-badge">Adição v1.0</span>
+        <span class="contrib-title">Identificação da Fonte Âncora — etapa pré-PEI</span>
+      </div>
+      <p>O inventário de fontes precisa de uma etapa anterior à pontuação PEI: a identificação da <strong>Fonte Âncora</strong>. A Fonte Âncora é a fonte que contém a entidade de negócio central em torno da qual todo o resto se conecta. Sem ela extraída e estável, as outras fontes ficam órfãs — existem como dado isolado, mas não podem ser contextualizadas.</p>
+      <p>Três perguntas para identificá-la:</p>
+      <ul>
+        <li>Qual entidade de negócio é a mais central para as decisões da empresa — cliente, pedido, contrato, ativo?</li>
+        <li>Qual fonte é a origem primária dessa entidade?</li>
+        <li>Qual fonte, se não extraída, torna as outras inúteis ou impossíveis de contextualizar?</li>
+      </ul>
+      <p>A Fonte Âncora entra automaticamente com Prioridade 5 no PEI, independente de qualquer outro critério. Ela também é o argumento técnico para reordenar a entrega quando o cliente quer começar pelo lado errado.</p>
+      <p><strong>Adicionalmente:</strong> o item "acesso concedido" no checklist de fontes precisa de validação técnica real — não apenas confirmação em entrevista. Uma prova de conexão (query de teste executada, volume estimado confirmado) deve ser realizada antes de fechar o PEI de qualquer fonte prioritária.</p>
+    </div>
+
+    <!-- SEÇÃO 5 -->
+    <h1>5. Saídas Obrigatórias do DEEP Lakehouse</h1>
+    <ul class="doc-list">
+      <li><strong>Inventário de fontes de dados:</strong> nome da fonte, tipo, dono, acesso, frequência, mecanismo de extração, histórico e riscos.</li>
+      <li><strong>Identificação da Fonte Âncora:</strong> a fonte que, se não extraída, torna as demais impossíveis de contextualizar. Entrada automática com Prioridade 5 no PEI.</li>
+      <li><strong>Mapa de processos geradores de dados:</strong> onde o dado nasce, quem alimenta, quem valida, onde é consumido.</li>
+      <li><strong>Mapa de entidades de negócio:</strong> cliente, venda, pedido, contrato, produto, unidade, colaborador, operação, ativo, carga, nota, boleto e outras conforme setor.</li>
+      <li><strong>Lista de perguntas soberanas:</strong> perguntas que, se respondidas com confiança e velocidade, mudam a qualidade da gestão.</li>
+      <li><strong>Mapa de qualidade:</strong> duplicidade, campos vazios, divergência entre sistemas, ausência de chave, nomenclatura inconsistente, baixa rastreabilidade.</li>
+      <li><strong>Backlog de Lakehouse:</strong> candidatos a Bronze, Prata Transacional, Prata de Contexto, Ouro, BI e Oráculos.</li>
+      <li><strong>Matriz PEI preenchida:</strong> priorização final do que entra no ciclo.</li>
+    </ul>
+
+    <!-- SEÇÃO 6 -->
+    <h1>6. PEI Lakehouse: Etapa Final do DEEP</h1>
+    <p>O PEI Lakehouse é a matriz de decisão que impede o time de construir tecnologia pelo fascínio técnico. Ele ranqueia cada candidato de entrega por três dimensões: Prioridade, Estabilidade e Iteração.</p>
+
+    <table>
+      <thead><tr><th>Dimensão</th><th>Pergunta central</th><th>O que mede</th><th>Peso sugerido</th></tr></thead>
+      <tbody>
+        <tr><td>P - Prioridade</td><td>Isso destrava uma decisão, reduz custo, protege margem ou gera vantagem executiva agora?</td><td>Impacto no negócio, frequência de uso, valor para diretoria, risco de não agir, relação com POP prioritário.</td><td>45%</td></tr>
+        <tr><td>E - Estabilidade</td><td>A fonte, o conceito, a regra e o dono estão estáveis o suficiente para construir?</td><td>Acesso, qualidade, taxonomia, dono, regra de negócio, chaves, LGPD, confiabilidade da origem.</td><td>30%</td></tr>
+        <tr><td>I - Iteração</td><td>Isso pode ser entregue, validado e melhorado em ciclos curtos?</td><td>Viabilidade de MVP, granularidade do recorte, dependências técnicas, validação com usuário, capacidade de evolução.</td><td>25%</td></tr>
+      </tbody>
+    </table>
+    <p>Fórmula recomendada: Score PEI = (P x 0,45) + (E x 0,30) + (I x 0,25). Cada dimensão vai de 1 a 5. O resultado final pode ser multiplicado por 20 para virar uma nota de 0 a 100.</p>
+
+    <div class="contrib">
+      <div class="contrib-header">
+        <span class="contrib-badge">Adição v1.0</span>
+        <span class="contrib-title">Regra especial: Fonte Âncora no PEI</span>
+      </div>
+      <p>A Fonte Âncora identificada no DEEP recebe <strong>Prioridade = 5 automaticamente</strong> e entra obrigatoriamente no primeiro ciclo de extração, independente do score PEI final. O score ainda é calculado normalmente para fins de planejamento de capacidade e sequenciamento, mas não pode bloquear nem atrasar a extração da âncora. Sem a Fonte Âncora extraída e estável, nenhum outro item do ranking pode ser contextualizado ou cruzado de forma confiável.</p>
+    </div>
+
+    <!-- SEÇÃO 7 -->
+    <h1>7. Escala de Pontuação PEI</h1>
+    <table>
+      <thead><tr><th>Nota</th><th>Prioridade</th><th>Estabilidade</th><th>Iteração</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Baixo impacto ou curiosidade sem decisão associada.</td><td>Fonte instável, sem dono, sem acesso ou regra desconhecida.</td><td>Grande demais, dependências altas, difícil validar.</td></tr>
+        <tr><td>2</td><td>Impacto localizado e pouco frequente.</td><td>Alguns dados existem, mas há divergência relevante.</td><td>Pode virar projeto, mas não ciclo curto.</td></tr>
+        <tr><td>3</td><td>Impacto claro em área específica.</td><td>Fonte acessível e regra parcialmente definida.</td><td>MVP possível com escopo bem cortado.</td></tr>
+        <tr><td>4</td><td>Impacto alto, decisão frequente, dor reconhecida.</td><td>Fonte confiável, dono definido, regra quase madura.</td><td>Entrega rápida com validação objetiva.</td></tr>
+        <tr><td>5</td><td>Impacto executivo, margem, receita, risco ou velocidade de decisão.</td><td>Fonte, dono, regra, acesso e qualidade maduros.</td><td>Entrega pequena, validável e expansível em pouco tempo.</td></tr>
+      </tbody>
+    </table>
+
+    <!-- SEÇÃO 8 -->
+    <h1>8. Travas Executivas do PEI</h1>
+    <p>As travas existem para proteger a entrega. Um item pode ter alta prioridade, mas se estiver instável demais, não deve virar Ouro nem Oráculo imediatamente.</p>
+
+    <table>
+      <thead><tr><th>Condição encontrada</th><th>Decisão obrigatória</th></tr></thead>
+      <tbody>
+        <tr><td>Estabilidade menor que 3</td><td>Não construir camada Ouro nem agente de gestor. Primeiro resolver acesso, dono, qualidade ou regra.</td></tr>
+        <tr><td>Sem dono de negócio</td><td>Não consolidar regra de contexto. Definir owner antes de modelar Prata de Contexto.</td></tr>
+        <tr><td>Regra de negócio contestada</td><td>Não transformar em métrica oficial. Abrir rito de definição com liderança.</td></tr>
+        <tr><td>Fonte sem acesso confiável</td><td>Não prometer near real time. Usar carga manual temporária apenas como ponte validada.</td></tr>
+        <tr><td>Dado sensível sem matriz de permissão</td><td>Não expor em BI nem em mensageria. Definir RBAC, logs e política.</td></tr>
+        <tr><td>Pergunta sem decisão associada</td><td>Não priorizar dashboard. Validar se é curiosidade ou decisão real.</td></tr>
+        <tr><td>Cliente quer agente antes da fundação</td><td>Responder com a regra: antes de agente, criamos clareza; antes de IA, organizamos dado e processo.</td></tr>
+      </tbody>
+    </table>
+
+    <!-- SEÇÃO 9 -->
+    <h1>9. Como o PEI Decide a Camada de Entrega</h1>
+    <table>
+      <thead><tr><th>Score PEI</th><th>Interpretação</th><th>Entrega recomendada</th></tr></thead>
+      <tbody>
+        <tr><td>85 a 100</td><td>Alta prioridade, boa estabilidade e iteração clara.</td><td>Construir no ciclo atual. Pode chegar a Ouro, BI e Oráculo se regra estiver madura.</td></tr>
+        <tr><td>70 a 84</td><td>Bom candidato, mas exige ajuste ou recorte.</td><td>Construir Bronze/Prata e talvez BI inicial. Oráculo apenas com limites claros.</td></tr>
+        <tr><td>55 a 69</td><td>Importante, mas ainda imaturo.</td><td>Mapear, padronizar e preparar Prata. Não prometer Ouro.</td></tr>
+        <tr><td>40 a 54</td><td>Valor incerto ou estabilidade baixa.</td><td>Backlog futuro. Resolver dono, qualidade, acesso ou regra.</td></tr>
+        <tr><td>0 a 39</td><td>Não priorizar agora.</td><td>Registrar como oportunidade, mas não consumir sprint.</td></tr>
+      </tbody>
+    </table>
+
+    <!-- SEÇÃO 10 -->
+    <h1>10. Template da Matriz PEI Lakehouse</h1>
+    <table>
+      <thead><tr><th>Área/BU</th><th>Fonte ou contexto</th><th>Pergunta soberana</th><th>Camada alvo</th><th>P</th><th>E</th><th>I</th><th>Score</th><th>Decisão</th></tr></thead>
+      <tbody>
+        <tr><td>Comercial</td><td>ERP + CRM + planilha de metas</td><td>Qual margem por vendedor, produto e canal no mês?</td><td>Ouro Vendas + BI + Oráculo Comercial</td><td>5</td><td>4</td><td>4</td><td>88</td><td>Ciclo atual</td></tr>
+        <tr><td>Operação</td><td>App interno + planilhas de apontamento</td><td>Qual foi a performance por unidade, ativo, cliente e período?</td><td>Prata Contexto Operação &gt; Ouro Operação</td><td>5</td><td>3</td><td>4</td><td>82</td><td>Ciclo atual com saneamento</td></tr>
+        <tr><td>Financeiro</td><td>ERP financeiro + bancos</td><td>Qual previsão de caixa por centro de custo e vencimento?</td><td>Ouro Financeiro + alerta</td><td>4</td><td>4</td><td>3</td><td>76</td><td>Ciclo atual ou próximo</td></tr>
+        <tr><td>RH</td><td>Planilha + sistema de ponto</td><td>Onde há maior absenteísmo e impacto operacional?</td><td>Prata Pessoas</td><td>3</td><td>2</td><td>3</td><td>55</td><td>Preparar base antes de BI</td></tr>
+      </tbody>
+    </table>
+
+    <!-- SEÇÃO 11 -->
+    <h1>11. Roteiro de Execução em 90 Dias</h1>
+    <table>
+      <thead><tr><th>Período</th><th>Foco</th><th>Entregáveis</th></tr></thead>
+      <tbody>
+        <tr><td>Semanas 1–2</td><td>DEEP Lakehouse</td><td>Entrevistas, inventário de fontes, identificação da Fonte Âncora, mapa de processos, perguntas soberanas, riscos e owners.</td></tr>
+        <tr><td>Semana 2</td><td>PEI final do DEEP</td><td>Matriz PEI, ranking de fontes/contextos/métricas, decisão de ciclo e travas.</td></tr>
+        <tr><td>Semanas 3–4</td><td>Raw + Bronze</td><td>Conexão com fontes prioritárias (Fonte Âncora primeiro), carga inicial, estratégia incremental/CDC quando possível.</td></tr>
+        <tr><td>Semanas 5–6</td><td>Prata Transacional</td><td>Taxonomia, tipos, chaves, deduplicação básica, qualidade, catálogo e documentação.</td></tr>
+        <tr><td>Semanas 6–8</td><td>Prata de Contexto</td><td>Vendas, operação, financeiro, supply chain ou BU escolhida, com regras de negócio pactuadas.</td></tr>
+        <tr><td>Semanas 8–10</td><td>Ouro + BI</td><td>Métricas, dimensões, cálculos, cubos e dashboards executivos/operacionais.</td></tr>
+        <tr><td>Semanas 10–12</td><td>Oráculos + ativação</td><td>Agentes por área, permissões, logs, prompts, treinamento, rituais e go live assistido.</td></tr>
+      </tbody>
+    </table>
+
+    <!-- BRONZE -->
+    <h1>Camada Bronze — Especificação Técnica</h1>
+    <p>A Bronze é o alicerce de tudo. Ela recebe os dados exatamente como são gerados nas fontes — sem filtros, sem interpretações, sem regras de negócio. Qualquer transformação na Bronze quebra a rastreabilidade.</p>
+
+    <div class="contrib">
+      <div class="contrib-header">
+        <span class="contrib-badge">Adição v1.0</span>
+        <span class="contrib-title">Estratégia de carga por perfil de fonte</span>
+      </div>
+      <p>A decisão de estratégia de carga é a mais impactante da Bronze e deve ser tomada no DEEP, antes da extração. Ela afeta custo, latência e a necessidade da camada Raw.</p>
+      <table>
+        <thead><tr><th>Perfil</th><th>Estratégia</th><th>Quando usar</th></tr></thead>
+        <tbody>
+          <tr><td>Fonte pequena e estável</td><td>Full truncate · Select *</td><td>Dimensões, tabelas de referência, cadastros</td></tr>
+          <tr><td>Fonte grande com histórico</td><td>Incremental por watermark · Schema explícito</td><td>Fatos transacionais com updated_at confiável</td></tr>
+          <tr><td>Fonte em tempo real</td><td>CDC · Raw como pouso · Bronze com micro-batch</td><td>Quando latência é requisito de negócio</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="contrib">
+      <div class="contrib-header">
+        <span class="contrib-badge">Adição v1.0</span>
+        <span class="contrib-title">Protocolo de evolução de schema</span>
+      </div>
+      <p>Mudanças de schema na fonte são inevitáveis. Sem protocolo, a Bronze quebra silenciosamente e o problema só aparece quando o dashboard sumiu ou o Oráculo respondeu errado.</p>
+      <ul>
+        <li><strong>Coluna adicionada na origem:</strong> adicionar na Bronze e notificar o time via Oráculo de Dados</li>
+        <li><strong>Coluna removida na origem:</strong> manter na Bronze como nullable com data de deprecação registrada no catálogo</li>
+        <li><strong>Tipo alterado:</strong> versionamento de schema com data de vigência — nunca alterar silenciosamente</li>
+        <li><strong>Endpoint deprecado:</strong> protocolo de substituição ativo antes da quebra, com bridge temporário documentado</li>
+      </ul>
+    </div>
+
+    <!-- PRATA TRANSACIONAL -->
+    <h1>Prata Transacional — Especificação Técnica</h1>
+    <p>Dados padronizados por sistema/fonte. Ordenar o banco. Padronizar sem mudar o significado do dado. A Prata Transacional é a camada mais subestimada do Lakehouse — todo mundo quer chegar na Prata de Contexto. O problema é que tudo que está errado aqui se multiplica nas camadas seguintes.</p>
+
+    <div class="contrib">
+      <div class="contrib-header">
+        <span class="contrib-badge">Adição v1.0</span>
+        <span class="contrib-title">Três funções distintas com entregável próprio</span>
+      </div>
+      <p>A Prata Transacional executa três trabalhos diferentes que precisam ser separados para que o time saiba o que está "pronto":</p>
+      <ul>
+        <li><strong>Padronização de representação:</strong> datas em UTC com timezone, strings sem espaço em branco, booleanos como BOOL (não 'S'/'N'), moeda com NUMERIC de precisão definida, nomes de colunas em snake_case consistente</li>
+        <li><strong>Identificação e validação de chaves:</strong> qual coluna é a chave natural de cada entidade, tem duplicatas, é estável ao longo do tempo, exige chave composta</li>
+        <li><strong>Medição de qualidade por campo:</strong> percentual de nulos, range esperado de valores, outliers que sugerem erro de entrada — documentado para o owner decidir, não para o time técnico corrigir unilateralmente</li>
+      </ul>
+    </div>
+
+    <div class="contrib">
+      <div class="contrib-header">
+        <span class="contrib-badge">Adição v1.0</span>
+        <span class="contrib-title">Threshold de qualidade por categoria de campo</span>
+      </div>
+      <p>O critério "qualidade básica medida" no checklist precisa de threshold explícito para evitar interpretações diferentes entre membros do time:</p>
+      <table>
+        <thead><tr><th>Categoria</th><th>Critério mínimo para avançar para Prata de Contexto</th></tr></thead>
+        <tbody>
+          <tr><td>Campo de chave primária</td><td>Zero nulos · Zero duplicatas — trava técnica, não negociável</td></tr>
+          <tr><td>Campo crítico para join</td><td>Menos de 5% de nulos · Taxa de match com tabela relacionada documentada</td></tr>
+          <tr><td>Campo de atributo</td><td>Percentual de nulos documentado · Sem critério bloqueante — decisão do owner</td></tr>
+        </tbody>
+      </table>
+      <p><strong>Adicionalmente:</strong> fontes grandes com entidades muito diferentes devem ser divididas em domínios na Prata Transacional, com owner por domínio. A divisão é orientada por entidade de negócio, não por volume técnico.</p>
+    </div>
+
+    <!-- PRATA DE CONTEXTO -->
+    <h1>Prata de Contexto — Especificação Técnica</h1>
+    <p>Consolidação por contexto de negócio. Aqui nascem joins, consolidações e regras de negócio. Owner da regra deve estar definido antes de modelar. É a camada onde a arquitetura encontra a política de negócio — cada área tem uma resposta diferente para "o que é uma venda?" ou "quem é cliente ativo?".</p>
+
+    <div class="contrib">
+      <div class="contrib-header">
+        <span class="contrib-badge">Adição v1.0</span>
+        <span class="contrib-title">Protocolo de resolução de conflito entre owners</span>
+      </div>
+      <p>O documento exige que conflitos sejam identificados, mas não define o que fazer quando dois owners discordam. Na prática isso é o cenário mais comum. Sem protocolo, a Prata de Contexto fica bloqueada ou é construída com definição contestada — o que invalida o Ouro e o Oráculo que dependem dela.</p>
+      <p><strong>Regra:</strong> quando dois owners discordam sobre uma regra de negócio, ela não entra em produção até ter arbitragem documentada pelo patrocinador executivo do projeto. A regra contestada fica na Prata de Contexto marcada como rascunho até a resolução formal.</p>
+    </div>
+
+    <div class="contrib">
+      <div class="contrib-header">
+        <span class="contrib-badge">Adição v1.0</span>
+        <span class="contrib-title">Versionamento de regra de negócio com data de vigência</span>
+      </div>
+      <p>Toda mudança de regra na Prata de Contexto tem data de vigência registrada. Análises históricas que cruzam o ponto de mudança precisam de tratamento explícito — filtro por período de vigência ou recálculo com regra histórica. Sem isso, a série histórica torna-se inválida silenciosamente: dados anteriores calculados com uma regra, posteriores com outra, e o gráfico de tendência passa a ser incorreto sem que ninguém perceba.</p>
+    </div>
+
+    <div class="contrib">
+      <div class="contrib-header">
+        <span class="contrib-badge">Adição v1.0</span>
+        <span class="contrib-title">Critério de granularidade de contexto</span>
+      </div>
+      <p>Um contexto é definido pela <strong>pergunta soberana que responde</strong> e pelo <strong>owner que aprova suas regras</strong> — não pelo volume de dados ou número de fontes que consolida. Se vendas e financeiro fazem perguntas diferentes sobre o mesmo dado de pedido, são dois contextos com owners distintos. Se supply chain e produção têm o mesmo owner e perguntas sobrepostas, podem ser um contexto.</p>
+      <p>Evitar os dois erros opostos: criar um contexto por fonte técnica (que é basicamente uma Bronze renomeada) ou criar um contexto gigante sem fronteira que ninguém consegue manter.</p>
+    </div>
+
+    <!-- OURO -->
+    <h1>Camada Ouro — Especificação Técnica</h1>
+    <p>Tabelas finais com dimensões, métricas, cálculos e cubos prontos para decisão. Uma camada Ouro deve representar uma pergunta de negócio madura. O Ouro não é apenas uma tabela bonita — é a camada onde a decisão já tem dimensões, métricas, cálculos e regras formalizadas e aprovadas.</p>
+    <div class="regra-soberana">Dashboard sem definição de métrica é teatro visual. Agente sem dado confiável é risco reputacional automatizado.</div>
+
+    <div class="contrib">
+      <div class="contrib-header">
+        <span class="contrib-badge">Adição v1.0</span>
+        <span class="contrib-title">Grain obrigatório — o que uma linha representa</span>
+      </div>
+      <p>O grain é a decisão mais fundamental de uma tabela Ouro e deve ser documentado antes de qualquer modelagem. Ele define o que uma linha representa — e determina quais dimensões fazem sentido, quais métricas podem ser calculadas e como agregar para o BI e para o Oráculo. Um grain errado pode ser corrigido, mas exige reescrever a tabela inteira e invalidar o histórico.</p>
+      <p><strong>Regra:</strong> toda especificação de tabela Ouro inclui obrigatoriamente a definição do grain antes de entrar em modelagem. Exemplos: "uma linha por item de pedido faturado" ou "uma linha por título por data de vencimento".</p>
+    </div>
+
+    <div class="contrib">
+      <div class="contrib-header">
+        <span class="contrib-badge">Adição v1.0</span>
+        <span class="contrib-title">Critério de pergunta madura para o Ouro</span>
+      </div>
+      <p>Uma pergunta está madura para o Ouro quando atende a três critérios simultaneamente:</p>
+      <ul>
+        <li>É feita com <strong>frequência definida</strong> — semanal, mensal, toda diretoria</li>
+        <li>A <strong>definição está estável e aprovada</strong> pelo owner — não muda a cada resposta</li>
+        <li><strong>Gera uma decisão real</strong> — existe alguém que age diferente com base nesse número</li>
+      </ul>
+      <p>Se a pergunta não atende aos três, ela pertence à Prata de Contexto enquanto amadurece.</p>
+    </div>
+
+    <div class="contrib">
+      <div class="contrib-header">
+        <span class="contrib-badge">Adição v1.0</span>
+        <span class="contrib-title">Frequência de atualização como campo obrigatório</span>
+      </div>
+      <p>A frequência de atualização do Ouro define o teto de todas as camadas abaixo — você não pode ter Ouro near real-time com Bronze em full truncate diário. Por isso deve ser declarada na especificação de cada tabela com seus pré-requisitos de infraestrutura:</p>
+      <ul>
+        <li><strong>Diária:</strong> batch Bronze compatível — padrão para a maioria dos Ouros gerenciais</li>
+        <li><strong>Horária:</strong> incremental obrigatório na Bronze — para alertas operacionais</li>
+        <li><strong>Near real-time:</strong> CDC obrigatório na Bronze e Raw como área de pouso — para Oráculos executivos de alto impacto</li>
+      </ul>
+    </div>
+
+    <!-- BI -->
+    <h1>Camada BI — Especificação Técnica</h1>
+    <p>Dashboards recorrentes e visuais para acompanhamento executivo e operacional. BI mostra o que precisa ser monitorado com frequência. Checklist para entrar no BI: perguntas recorrentes definidas, layout validado, filtro e permissão definidos, cadência de uso combinada.</p>
+
+    <div class="contrib">
+      <div class="contrib-header">
+        <span class="contrib-badge">Adição v1.0</span>
+        <span class="contrib-title">Hierarquia de BI — três níveis com critério de construção</span>
+      </div>
+      <p>O BI não é um entregável único. Tem hierarquia natural que define o que pode ser construído com base na maturidade do Ouro disponível — não no desejo da diretoria.</p>
+      <table>
+        <thead><tr><th>Nível</th><th>Consumidor</th><th>Pré-requisito</th></tr></thead>
+        <tbody>
+          <tr><td>BI Executivo</td><td>CEO, diretores, conselho</td><td>Dois ou mais Ouros de áreas diferentes validados e estáveis</td></tr>
+          <tr><td>BI por Área</td><td>Gerentes e times de cada área</td><td>Ouro da área validado com score PEI ≥ 70</td></tr>
+          <tr><td>BI Operacional</td><td>Analistas e operação</td><td>Pode consumir Prata de Contexto com nota de limitação explícita</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="contrib">
+      <div class="contrib-header">
+        <span class="contrib-badge">Adição v1.0</span>
+        <span class="contrib-title">Divisão de responsabilidade: BI vs Oráculo</span>
+      </div>
+      <p><strong>BI</strong> responde perguntas que a área já sabe que vai fazer — recorrentes, periódicas, monitoramento contínuo. O gestor abre toda segunda-feira e vê o mesmo conjunto de métricas atualizadas. É o painel fixo.</p>
+      <p><strong>Oráculo</strong> responde perguntas que surgem a partir do que o BI mostrou — exploratórias, contextuais, geradas pela curiosidade ou pelo alerta. O gestor viu que a margem caiu e pergunta ao Oráculo por quê. É a conversa sobre o painel.</p>
+      <p>Não é uma escolha entre um e outro — são funções complementares sobre a mesma base de Ouro. O BI e o Oráculo se alimentam mutuamente.</p>
+    </div>
+
+    <!-- SEÇÕES 12–21: ORÁCULOS E GOVERNANÇA -->
+    <h1>12. Oráculos Inteligentes: a Camada Final da Entrega</h1>
+    <p>Os Oráculos são agentes inteligentes por área, BU ou conselho. Eles não substituem o BI. Eles conversam com o BI, explicam variações, respondem perguntas, acionam alertas, resumem cenários e orientam próximos passos. São consequência de um Lakehouse bem feito.</p>
+
+    <table>
+      <thead><tr><th>Oráculo</th><th>Base preferencial</th><th>Perguntas que deve responder</th><th>Canal possível</th></tr></thead>
+      <tbody>
+        <tr><td>Oráculo Executivo</td><td>Gold Conselho, Gold Financeiro, Gold Vendas, Gold Operação</td><td>Como está o negócio hoje? Onde está o maior risco? O que mudou desde a última reunião?</td><td>Portal, WhatsApp, Slack, Email</td></tr>
+        <tr><td>Oráculo Comercial</td><td>Gold Vendas, Prata Cliente, CRM</td><td>Qual vendedor/canal/produto performou melhor? Onde está o gap da meta?</td><td>WhatsApp, Slack, CRM</td></tr>
+        <tr><td>Oráculo Financeiro</td><td>Gold Caixa, Gold Recebíveis, Gold Custos</td><td>Qual o caixa projetado? Quais inadimplências ou centros de custo exigem atenção?</td><td>Email, Slack, BI</td></tr>
+        <tr><td>Oráculo Operacional</td><td>Gold Operação, Prata Supply Chain</td><td>Qual gargalo operacional atrasou a entrega? Qual ativo/unidade perdeu eficiência?</td><td>WhatsApp, Telegram, BI</td></tr>
+        <tr><td>Oráculo de Dados</td><td>Catálogo, logs, Bronze/Prata técnica</td><td>Qual fonte está quebrando? Qual tabela atrasou? Que regra mudou?</td><td>Slack, Jira, Email</td></tr>
+        <tr><td>Oráculo por BU</td><td>Gold específico da BU</td><td>Como está a BU, onde está o risco e qual decisão precisa ser tomada?</td><td>Portal, WhatsApp, Slack</td></tr>
+      </tbody>
+    </table>
+
+    <div class="contrib">
+      <div class="contrib-header">
+        <span class="contrib-badge">Adição v1.0</span>
+        <span class="contrib-title">Arquitetura de conexão LLM-Ouro — três opções com critério</span>
+      </div>
+      <p>O framework prescreve que o Oráculo consome Ouro e BI, mas não especifica como — e a escolha de arquitetura de conexão tem implicação direta de custo, latência e confiabilidade:</p>
+      <ul>
+        <li><strong>SQL generation direto sobre o Ouro:</strong> simples de implementar, mas perigoso — um prompt mal formulado vira query cara e potencialmente errada. Adequado apenas para Oráculos nível 1 com conjunto limitado e controlado de perguntas.</li>
+        <li><strong>Camada semântica intermediária</strong> (dbt Semantic Layer, Cube.js, LookML): o LLM gera queries sobre objetos semânticos pré-definidos, não sobre tabelas brutas. Mais robusto — o Oráculo não precisa "saber" como o Ouro está modelado. Arquitetura recomendada para Oráculos nível 2 e acima.</li>
+        <li><strong>RAG sobre documentação:</strong> quando a resposta não é um número mas uma interpretação de processo, política ou histórico. Complementa os dados estruturados com contexto não estruturado.</li>
+      </ul>
+    </div>
+
+    <!-- SEÇÃO 13 -->
+    <h1>13. Regras de Governança para Agentes</h1>
+    <ul class="doc-list">
+      <li>Agente de gestor deve consumir preferencialmente camada Ouro. Acesso a Prata de Contexto apenas quando houver justificativa e explicação de limite.</li>
+      <li>Agente não deve consultar Bronze ou Raw para responder usuário de negócio. Essas camadas são técnicas.</li>
+      <li>Toda resposta do agente deve informar período, fonte conceitual e grau de confiança quando houver risco de dado incompleto.</li>
+      <li>Toda pergunta sensível deve respeitar permissão por perfil, área, cargo e necessidade de saber.</li>
+      <li>Toda métrica oficial respondida por agente deve ter definição documentada em catálogo.</li>
+      <li>Alertas automáticos precisam ter dono, canal, horário, condição de disparo e critério de falso positivo.</li>
+      <li>Mensageria externa como WhatsApp e Telegram exige ainda mais cuidado com dados sensíveis, logs e autorização.</li>
+    </ul>
+
+    <div class="contrib">
+      <div class="contrib-header">
+        <span class="contrib-badge">Adição v1.0</span>
+        <span class="contrib-title">Protocolo de propagação de mudança de regra de negócio</span>
+      </div>
+      <p>Quando uma regra de negócio muda na Prata de Contexto ou no Ouro, o Prompt Master do Oráculo precisa ser atualizado de forma controlada — caso contrário o Oráculo passa a responder com definição desatualizada enquanto os dados já refletem a nova regra.</p>
+      <p><strong>Protocolo:</strong></p>
+      <ul>
+        <li>Atualizar o contrato semântico com nova definição e data de vigência</li>
+        <li>Atualizar o Prompt Master com a nova definição antes de reativar o Oráculo</li>
+        <li>Alertar que análises históricas que cruzam o ponto de mudança precisam de tratamento explícito</li>
+        <li>Executar subset do QA Supremo (regra de negócio + verdade do dado) antes do go live da nova versão</li>
+      </ul>
+    </div>
+
+    <div class="contrib">
+      <div class="contrib-header">
+        <span class="contrib-badge">Adição v1.0</span>
+        <span class="contrib-title">Oráculo de Dados — especificação própria</span>
+      </div>
+      <p>O Oráculo de Dados tem pré-requisitos completamente diferentes dos outros Oráculos e merece tratamento separado. Ele não consome Ouro de negócio — consome infraestrutura de observabilidade do próprio Lakehouse.</p>
+      <p><strong>Pré-requisitos específicos:</strong></p>
+      <ul>
+        <li>Logs estruturados de cada execução de pipeline (início, fim, linhas processadas, erros)</li>
+        <li>Métricas de qualidade coletadas automaticamente em cada carga (nulos, duplicatas, range)</li>
+        <li>Alertas configurados para falha de fonte, schema drift e atraso de carga</li>
+      </ul>
+      <p><strong>Canal e owner:</strong> Slack ou Jira para o time técnico — não WhatsApp de gestor de negócio. Owner é técnico, não de área de negócio. Sem a infraestrutura de observabilidade listada acima, o Oráculo de Dados não pode ser construído.</p>
+    </div>
+
+    <!-- SEÇÕES 14-21 RESUMIDAS -->
+    <h1>14–21. Modelo de Entrega, RACI, Checklists e Frases Canônicas</h1>
+
+    <h2>Modelo de Entrega Empacotada</h2>
+    <table>
+      <thead><tr><th>Produto interno</th><th>Promessa operacional</th><th>Entrega concreta</th></tr></thead>
+      <tbody>
+        <tr><td>DEEP Lakehouse</td><td>Descobrir onde a empresa está gerindo no escuro.</td><td>Mapa de fontes, processos, dados, decisões, riscos, Fonte Âncora e perguntas soberanas.</td></tr>
+        <tr><td>PEI Lakehouse</td><td>Escolher o que construir primeiro com critério.</td><td>Ranking de fontes, contextos, métricas, dashboards e agentes.</td></tr>
+        <tr><td>Lakehouse Prata</td><td>Transformar dados dispersos em base confiável e reutilizável.</td><td>Raw, Bronze, Prata Transacional e Prata de Contexto priorizadas.</td></tr>
+        <tr><td>Lakehouse Ouro</td><td>Transformar base confiável em decisão.</td><td>Métricas, dimensões, cálculos, cubos e dashboards.</td></tr>
+        <tr><td>BI Executivo</td><td>Mostrar o que precisa ser acompanhado sempre.</td><td>Painéis recorrentes por área, BU e diretoria.</td></tr>
+        <tr><td>Oráculos ICIA</td><td>Permitir que gestores conversem com a empresa.</td><td>Agentes por área/BU em portal, BI ou mensageria.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Checklist de Pronto para Passar de Camada</h2>
+    <table>
+      <thead><tr><th>Transição</th><th>Checklist mínimo</th></tr></thead>
+      <tbody>
+        <tr><td>Fonte &gt; Bronze</td><td>Acesso concedido e validado tecnicamente · Owner definido · Frequência conhecida · Histórico estimado · Risco LGPD mapeado · Estratégia de carga definida (full truncate / incremental / CDC)</td></tr>
+        <tr><td>Bronze &gt; Prata Transacional</td><td>Select da origem reconciliado · Tipos padronizados · Chaves identificadas e validadas (zero nulos, zero duplicatas) · Nomes normalizados · Qualidade básica medida por categoria</td></tr>
+        <tr><td>Prata Transacional &gt; Prata de Contexto</td><td>Contexto de negócio definido · Fontes mapeadas · Joins conhecidos · Owner da regra definido · Conflitos identificados e protocolados</td></tr>
+        <tr><td>Prata de Contexto &gt; Ouro</td><td>Regra de negócio aprovada · Grain documentado · Métrica soberana documentada · Dimensões definidas · Cálculos testados · Usuário validou · Frequência de atualização declarada</td></tr>
+        <tr><td>Ouro &gt; BI</td><td>Perguntas recorrentes definidas · Nível de BI identificado (Executivo / Área / Operacional) · Layout validado · Filtro e permissão definidos · Cadência de uso combinada</td></tr>
+        <tr><td>Ouro/BI &gt; Oráculo</td><td>Base confiável · Arquitetura de conexão definida · Contrato semântico aprovado · Prompt Master versionado · Permissões · Logs · Limites de resposta · Canais e donos de alerta definidos</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Frases Canônicas para o Time</h2>
+    <ul class="doc-list">
+      <li>Antes de criar agente, criamos clareza.</li>
+      <li>Antes de BI, existe regra de negócio.</li>
+      <li>Antes de regra de negócio, existe processo real.</li>
+      <li>Bronze espelha. Prata organiza. Ouro decide. Oráculo conversa.</li>
+      <li>Dashboard sem definição de métrica é teatro visual.</li>
+      <li>Agente sem dado confiável é risco reputacional automatizado.</li>
+      <li>O DEEP mostra onde está a escuridão. O PEI escolhe onde acender primeiro. A Fonte Âncora define onde acender antes de tudo.</li>
+      <li>Lakehouse não é banco de dados. É arquitetura de decisão.</li>
+    </ul>
+
+    <!-- SEÇÕES 22-39: POP ORÁCULOS -->
+    <h1>Anexo Operacional — POP dos Oráculos ICIA VanguardIA</h1>
+    <p><em>Como construir agentes por área e BU que pareçam geniais porque respondem com dado confiável, regra de negócio e tempero executivo.</em></p>
+
+    <h2>22–24. Por que existe, definição e princípios não negociáveis</h2>
+    <p>O Oráculo ICIA não pode ser apenas um chatbot conectado a uma base. Ele precisa ser a camada de conversa inteligente sobre uma empresa que já foi organizada em dados, processos, regras e governança. A genialidade percebida não vem de frases bonitas — vem de uma sequência sistemática: dado confiável, pergunta certa, regra de negócio pactuada, resposta clara, leitura executiva e próximo passo acionável.</p>
+    <div class="regra-soberana">Regra soberana: Oráculo genial não nasce de prompt. Nasce de Lakehouse bem feito, DEEP bem conduzido, PEI bem priorizado e POP bem executado.</div>
+
+    <h2>Princípios não negociáveis</h2>
+    <ul class="doc-list">
+      <li>Sem camada Ouro confiável, o Oráculo deve nascer limitado ou não nascer.</li>
+      <li>Sem regra de negócio documentada, o Oráculo deve responder com ressalva ou pedir validação.</li>
+      <li>Sem dono de dado, não existe métrica oficial.</li>
+      <li>Sem permissão por perfil, não existe Oráculo em mensageria.</li>
+      <li>Sem suite de testes, não existe go live.</li>
+      <li>Sem logs, não existe melhoria contínua.</li>
+      <li>Sem treinamento de uso, o Oráculo vira curiosidade e não rotina.</li>
+      <li>Sem tempero executivo, ele vira um BI falante e não uma camada de decisão.</li>
+    </ul>
+
+    <h2>25–26. POP 001 e Fluxo em 12 Etapas</h2>
+    <p>1. Escolher a área ou BU pelo PEI. 2. Nomear o owner da área. 3. Capturar as perguntas soberanas (15 a 50). 4. Separar pergunta recorrente de exploratória. 5. Fechar contrato semântico. 6. Verificar base Medalhão — se for Bronze/Raw, bloquear uso para negócio. 7. Construir o Oráculo Canvas. 8. Criar o Prompt Master. 9. Implementar o agente. 10. Executar QA Supremo. 11. Fazer go live assistido. 12. Rodar ritual 7-15-30.</p>
+
+    <h2>28. Contrato Semântico do Oráculo</h2>
+    <table>
+      <thead><tr><th>Elemento</th><th>Exemplo de definição obrigatória</th></tr></thead>
+      <tbody>
+        <tr><td>Venda válida</td><td>Pedido faturado? Pedido pago? Pedido entregue? Pedido sem devolução?</td></tr>
+        <tr><td>Cliente ativo</td><td>Comprou nos últimos 30, 60, 90 ou 180 dias? Tem contrato vigente?</td></tr>
+        <tr><td>Margem</td><td>Margem bruta, margem de contribuição ou margem líquida? Inclui frete, imposto, comissão?</td></tr>
+        <tr><td>Atraso</td><td>Atraso sobre SLA, sobre data prometida, sobre prazo legal ou sobre meta interna?</td></tr>
+        <tr><td>Período</td><td>Data de emissão, data de pagamento, data de operação, data de competência ou data de atualização?</td></tr>
+      </tbody>
+    </table>
+
+    <h2>31. Maturidade dos Oráculos</h2>
+    <table>
+      <thead><tr><th>Nível</th><th>Nome</th><th>Capacidade</th><th>Quando usar</th></tr></thead>
+      <tbody>
+        <tr><td>0</td><td>BI com filtros</td><td>Mostra dados. Não conversa.</td><td>Quando a camada Ouro ainda está nascendo.</td></tr>
+        <tr><td>1</td><td>Oráculo Q&A</td><td>Responde perguntas simples sobre indicadores.</td><td>Primeiro MVP por área.</td></tr>
+        <tr><td>2</td><td>Oráculo Analista</td><td>Explica variações, compara períodos e mostra possíveis causas.</td><td>Quando métricas e dimensões estão maduras.</td></tr>
+        <tr><td>3</td><td>Oráculo Conselheiro</td><td>Recomenda ações e simula cenários com limites claros.</td><td>Para diretoria e gerências maduras.</td></tr>
+        <tr><td>4</td><td>Oráculo Operador</td><td>Aciona fluxos, cria tarefas, envia alertas e pede confirmação.</td><td>Quando existe governança e integrações seguras.</td></tr>
+        <tr><td>5</td><td>Oráculo de Conselho</td><td>Integra áreas, resume negócio, aponta riscos e pauta reuniões executivas.</td><td>Quando há Lakehouse robusto e governança multi-área.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>34. Prompt Master Base para Oráculo ICIA</h2>
+    <div class="regra-soberana" style="font-style:normal; font-size: 10pt;">
+      Você é o Oráculo [ÁREA/BU] da [EMPRESA], construído pela VanguardIA dentro do programa ICIA. Sua função é ajudar [PÚBLICO] a tomar decisões melhores com base em dados confiáveis, regras de negócio aprovadas e contexto operacional da empresa. Responda sempre na estrutura: resposta direta, evidência, leitura executiva, próximo passo e limite quando houver. Use apenas fontes autorizadas: [FONTES]. Respeite as regras de negócio: [REGRAS]. Nunca invente dado. Se a informação estiver ausente, incompleta ou fora da permissão do usuário, diga isso com clareza e sugira o melhor caminho para obter ou validar a informação. Fale como um analista senior: claro, direto, prudente, orientado a margem, risco, prazo, cliente e decisão.
+    </div>
+
+    <h2>36. Ritual de Evolução dos Oráculos</h2>
+    <table>
+      <thead><tr><th>Cadência</th><th>Pergunta do ritual</th><th>Saída</th></tr></thead>
+      <tbody>
+        <tr><td>7 dias</td><td>O Oráculo está sendo usado? Que perguntas ele errou ou não respondeu bem?</td><td>Correções de prompt, permissão, fonte e exemplos.</td></tr>
+        <tr><td>15 dias</td><td>Quais perguntas se repetem e deveriam virar BI, alerta ou automação?</td><td>Backlog de melhoria e novos alertas.</td></tr>
+        <tr><td>30 dias</td><td>O Oráculo mudou alguma decisão, reduziu tempo ou aumentou confiança?</td><td>Relatório de valor, novas perguntas soberanas e próximo ciclo PEI.</td></tr>
+        <tr><td>Mensal</td><td>O que mudou na regra, no processo ou na fonte?</td><td>Atualização de contrato semântico, Prompt Master e documentação.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>39. Regra Final para Delegação ao Time</h2>
+    <p>Todo Oráculo entregue pela VanguardIA precisa ser simples de usar e difícil de construir. Essa é a nossa responsabilidade. O cliente não deve sentir a complexidade da arquitetura, mas deve sentir a profundidade dela em cada resposta.</p>
+    <p>CS garante contexto, linguagem, adoção e valor percebido. Tech garante fonte, camada, segurança, engenharia e confiabilidade. Juntos, CS e Tech garantem o tempero VanguardIA: inteligência aplicada com clareza, qualidade e capacidade real de decisão.</p>
+    <div class="regra-soberana">Assinatura operacional: Oráculo genial é aquele que responde certo, explica bem, respeita limite, orienta ação e faz o gestor confiar mais na própria empresa.</div>
+
+    <div class="footer-note">
+      Grupo VanguardIA · Framework DEEP + PEI Lakehouse Medalhão · v1.0 Draft · Maio/2026<br>
+      Grupo VanguardIA · Uso interno · Para importar no Google Docs: drive.google.com → Novo → Fazer upload → Abrir com Google Docs
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

@@ -10,7 +10,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-st.set_page_config(page_title="Financeiro | Nevoni 360°", page_icon="💰", layout="wide")
+st.set_page_config(page_title="Financeiro | Nevoni 360°", page_icon="", layout="wide")
 
 from dashboard.utils.components import inject_css, page_header, kpi_card, section_title, sidebar_brand
 from dashboard.utils.bq_client import query, gold_not_ready, fmt_brl, fmt_pct
@@ -20,7 +20,7 @@ inject_css()
 sidebar_brand()
 
 page_header(
-    title="💰 Setor Financeiro",
+    title="Setor Financeiro",
     subtitle="DRE · KPIs Mensais · Contas a Pagar/Receber · Fluxo de Caixa",
     sources=[{"name": "gold_financeiro", "active": True}],
 )
@@ -48,11 +48,11 @@ if _fim < _ini:
     _fim = _ini
 
 if _mes_atual >= _ini and _mes_atual <= _fim:
-    st.caption(f"ℹ️ Mês corrente ({_mes_atual.strftime('%m/%Y')}) é parcial — ainda em curso.")
+    st.caption(f"ℹMês corrente ({_mes_atual.strftime('%m/%Y')}) é parcial — ainda em curso.")
 
 tab_kpi, tab_dre, tab_cr, tab_cp, tab_liq, tab_fc = st.tabs([
-    "📊 KPIs", "📈 DRE", "📥 Contas a Receber",
-    "📤 Contas a Pagar", "✅ Liquidações", "💧 Fluxo de Caixa",
+    "KPIs", "DRE", "Contas a Receber",
+    "Contas a Pagar", "Liquidações", "Fluxo de Caixa",
 ])
 
 # ── KPIs Mensais ─────────────────────────────────────────────
@@ -156,7 +156,7 @@ with tab_dre:
 # ── Contas a Receber ─────────────────────────────────────────
 with tab_cr:
     section_title("Contas a Receber")
-    st.info("📅 Disponível na Fase 2 (próxima entrega)")
+    st.info("Disponível na Fase 2 (próxima entrega)")
     try:
         df = query(f"""
             SELECT *
@@ -194,7 +194,7 @@ with tab_cr:
 # ── Contas a Pagar ───────────────────────────────────────────
 with tab_cp:
     section_title("Contas a Pagar")
-    st.info("📅 Disponível na Fase 2 (próxima entrega)")
+    st.info("Disponível na Fase 2 (próxima entrega)")
     try:
         df = query(f"""
             SELECT *
@@ -228,7 +228,7 @@ with tab_cp:
 # ── Liquidações ──────────────────────────────────────────────
 with tab_liq:
     section_title("Liquidações por Período")
-    st.info("📅 Disponível na Fase 2 (próxima entrega)")
+    st.info("Disponível na Fase 2 (próxima entrega)")
     try:
         df = query(f"""
             SELECT *
@@ -260,7 +260,7 @@ with tab_liq:
 # ── Fluxo de Caixa ───────────────────────────────────────────
 with tab_fc:
     section_title("Fluxo de Caixa")
-    st.info("📅 Disponível na Fase 2 (próxima entrega)")
+    st.info("Disponível na Fase 2 (próxima entrega)")
     try:
         df = query(f"""
             SELECT *

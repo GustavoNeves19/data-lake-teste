@@ -2405,6 +2405,80 @@
           "type": "BOOL"
         }
       ]
+    },
+    {
+      "name": "activities",
+      "kind": "activities",
+      "bq_table": "activities",
+      "projection": "typed",
+      "write_mode": "truncate",
+      "columns": [
+        {
+          "name": "activity_id",
+          "path": "id",
+          "type": "INT64"
+        },
+        {
+          "name": "type",
+          "path": "type",
+          "type": "STRING"
+        },
+        {
+          "name": "subject",
+          "path": "subject",
+          "type": "STRING"
+        },
+        {
+          "name": "due_date",
+          "path": "due_date",
+          "type": "DATE"
+        },
+        {
+          "name": "due_time",
+          "path": "due_time",
+          "type": "STRING"
+        },
+        {
+          "name": "done",
+          "path": "done",
+          "type": "BOOL"
+        },
+        {
+          "name": "marked_as_done_time",
+          "path": "marked_as_done_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "add_time",
+          "path": "add_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "update_time",
+          "path": "update_time",
+          "type": "TIMESTAMP"
+        },
+        {
+          "name": "user_id",
+          "path": "user_id",
+          "type": "INT64"
+        },
+        {
+          "name": "deal_id",
+          "path": "deal_id",
+          "type": "INT64"
+        },
+        {
+          "name": "person_id",
+          "path": "person_id",
+          "type": "INT64"
+        },
+        {
+          "name": "org_id",
+          "path": "org_id",
+          "type": "INT64"
+        }
+      ]
     }
   ]
 }

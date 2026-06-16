@@ -7,7 +7,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-st.set_page_config(page_title="Engenharia e P&D | Nevoni 360°", page_icon="🔧", layout="wide")
+st.set_page_config(page_title="Engenharia e P&D | Nevoni 360°", page_icon="", layout="wide")
 
 from dashboard.utils.components import inject_css, page_header, kpi_card, section_title, sidebar_brand, coming_soon
 from dashboard.utils.bq_client import query, PROJECT_PROD
@@ -19,7 +19,7 @@ PROJ = PROJECT_PROD
 PRD  = f"{PROJ}.dm_products"
 
 page_header(
-    title="🔧 Engenharia e P&D",
+    title="Engenharia e P&D",
     subtitle="Catálogo de Produtos · Estrutura BOM · Fichas Técnicas · Seriais",
     sources=[
         {"name": "ERP (SQL Server)", "active": True},
@@ -29,9 +29,9 @@ page_header(
 )
 
 tab_cat, tab_bom_eng, tab_roadmap = st.tabs([
-    "📋 Catálogo de Produtos",
-    "🗂️ Estrutura Técnica (BOM)",
-    "🚀 Roadmap P&D",
+    "Catálogo de Produtos",
+    "Estrutura Técnica (BOM)",
+    "Roadmap P&D",
 ])
 
 # ── Tab: Catálogo ────────────────────────────────────────────

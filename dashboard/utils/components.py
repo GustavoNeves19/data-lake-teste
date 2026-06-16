@@ -57,6 +57,30 @@ def kpi_card(
     )
 
 
+def kpi_row(cards: list[dict]):
+    """Linha de KPIs num grid RESPONSIVO (reflui sozinho em telas estreitas).
+
+    cards: lista de dicts {label, value, delta?, delta_dir?, variant?}.
+    Substitui o padrão `st.columns(N) + kpi_card`, que não quebra em mobile.
+    """
+    arrows = {"up": "▲", "down": "▼", "flat": ""}
+    items = []
+    for c in cards:
+        dd = c.get("delta_dir", "flat")
+        delta = c.get("delta", "")
+        delta_html = (
+            f'<div class="kpi-delta delta-{dd}">{arrows.get(dd, "")} {delta}</div>'
+            if delta else ""
+        )
+        items.append(
+            f'<div class="kpi-card {c.get("variant", "")}">'
+            f'<p class="kpi-label">{c["label"]}</p>'
+            f'<p class="kpi-value">{c["value"]}</p>'
+            f'{delta_html}</div>'
+        )
+    st.markdown(f'<div class="kpi-grid">{"".join(items)}</div>', unsafe_allow_html=True)
+
+
 def section_title(text: str):
     st.markdown(f'<p class="section-title">{text}</p>', unsafe_allow_html=True)
 
@@ -94,7 +118,7 @@ def coming_soon(title: str = "Em desenvolvimento", msg: str = ""):
     st.markdown(
         f"""
         <div class="coming-soon-box">
-          <h3>⏳ {title}</h3>
+          <h3>{title}</h3>
           <p>{msg if msg else "Fonte de dados em fase de integração. Silver será criado na próxima sprint."}</p>
         </div>
         """,

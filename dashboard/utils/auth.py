@@ -33,7 +33,7 @@ def require_login():
         return
 
     st.markdown("<div style='max-width:420px;margin:10vh auto 0;'>", unsafe_allow_html=True)
-    st.markdown("### 🔒 Dashboard Nevoni — acesso restrito")
+    st.markdown("### Dashboard Nevoni — acesso restrito")
     st.caption("Use o e-mail e a senha enviados no grupo.")
     with st.form("login_form"):
         email = st.text_input("E-mail")

@@ -9,10 +9,10 @@ import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
 
-st.set_page_config(page_title="Comercial e Compras | Nevoni 360°", page_icon="📦", layout="wide")
+st.set_page_config(page_title="Comercial e Compras | Nevoni 360°", page_icon="", layout="wide")
 
-from dashboard.utils.components import inject_css, page_header, kpi_card, section_title, sidebar_brand
-from dashboard.utils.bq_client import query, query_layer, fmt_brl, fmt_num, fmt_pct, PROJECT_PROD
+from dashboard.utils.components import inject_css, page_header, kpi_card, kpi_row, section_title, sidebar_brand
+from dashboard.utils.bq_client import query, query_layer, fmt_brl, fmt_num, fmt_pct, PROJECT_PROD, data_ultima_carga
 from dashboard.utils.gold_tables import Comercial as G
 
 inject_css()
@@ -49,7 +49,7 @@ GIOVANNA_RESIDUO_FILTER = (
 )
 
 page_header(
-    title="📦 Comercial e Compras",
+    title="Comercial e Compras",
     subtitle="Vendas · Compras · Orçamentos · CRM Funil · Ranking de Clientes",
     sources=[
         {"name": "gold_comercial",   "active": True},
@@ -57,8 +57,13 @@ page_header(
     ],
 )
 
+st.caption(
+    f"📅 Vendas/faturamento: foto de **{data_ultima_carga()} BRT** (última carga do ERP no BigQuery) · "
+    f"Matriz RFV: snapshot do último mês fechado (janela de 12 meses)."
+)
+
 tab_venda, tab_diaria, tab_compra, tab_orc, tab_crm, tab_clientes, tab_rfv = st.tabs([
-    "🛒 Vendas", "📍 Venda Diária", "🏷️ Compras", "📝 Orçamentos", "🤝 Funil CRM", "🏆 Ranking Clientes", "🎯 Matriz RFV",
+    "Vendas", "Gestão à Vista", "Compras", "Orçamentos", "Funil CRM", "Ranking Clientes", "Matriz RFV",
 ])
 
 # ── Vendas ───────────────────────────────────────────────────
@@ -178,24 +183,18 @@ with tab_venda:
             var_mom = ((fat_mes - fat_ant) / fat_ant * 100) if fat_ant else 0
             var_yoy = ((fat_mes - fat_yoy) / fat_yoy * 100) if fat_yoy else 0
 
-            k1, k2, k3, k4, k5 = st.columns(5)
-            with k1: kpi_card("Faturamento", fmt_brl(fat_mes), variant="success")
-            with k2:
-                kpi_card("vs Mês Anterior", fmt_brl(fat_ant),
-                         delta=fmt_pct(var_mom),
-                         delta_dir="up" if var_mom >= 0 else "down",
-                         variant="success" if var_mom >= 0 else "danger")
-            with k3:
-                yoy_label = f"vs {_MES_PT[mes_ano_ant.month]}/{mes_ano_ant.year}"
-                if fat_yoy:
-                    kpi_card(yoy_label, fmt_brl(fat_yoy),
-                             delta=fmt_pct(var_yoy),
-                             delta_dir="up" if var_yoy >= 0 else "down",
-                             variant="success" if var_yoy >= 0 else "danger")
-                else:
-                    kpi_card(yoy_label, "—")
-            with k4: kpi_card("Ticket Médio", fmt_brl(ticket))
-            with k5: kpi_card("Transações", f"{trans_mes:,}".replace(",", "."))
+            yoy_label = f"vs {_MES_PT[mes_ano_ant.month]}/{mes_ano_ant.year}"
+            kpi_row([
+                {"label": "Faturamento", "value": fmt_brl(fat_mes), "variant": "success"},
+                {"label": "vs Mês Anterior", "value": fmt_brl(fat_ant),
+                 "delta": fmt_pct(var_mom), "delta_dir": "up" if var_mom >= 0 else "down"},
+                {"label": yoy_label,
+                 "value": fmt_brl(fat_yoy) if fat_yoy else "—",
+                 "delta": fmt_pct(var_yoy) if fat_yoy else "",
+                 "delta_dir": "up" if var_yoy >= 0 else "down"},
+                {"label": "Ticket Médio", "value": fmt_brl(ticket)},
+                {"label": "Transações", "value": f"{trans_mes:,}".replace(",", ".")},
+            ])
 
             st.markdown("<br>", unsafe_allow_html=True)
 
@@ -254,11 +253,11 @@ with tab_venda:
             with colg2:
                 # Cards por canal — mais limpo que tabela, alinhado com paleta Nevoni.
                 CANAL_VISUAL = {
-                    "Hospitalar":  {"emoji": "🏥", "cor": "#0D2B6B"},
-                    "Marketplace": {"emoji": "🛒", "cor": "#0D8B92"},
-                    "Farmácias":   {"emoji": "💊", "cor": "#7030A0"},
-                    "SAC":         {"emoji": "🛠", "cor": "#C55A11"},
-                    "Outros":      {"emoji": "📦", "cor": "#6B7280"},
+                    "Hospitalar":  {"emoji": "", "cor": "#0D2B6B"},
+                    "Marketplace": {"emoji": "", "cor": "#0D8B92"},
+                    "Farmácias":   {"emoji": "", "cor": "#7030A0"},
+                    "SAC":         {"emoji": "", "cor": "#C55A11"},
+                    "Outros":      {"emoji": "", "cor": "#6B7280"},
                 }
                 cards_html = []
                 for _, r in ag_canal.iterrows():
@@ -308,8 +307,8 @@ with tab_venda:
                         <span>YoY {yoy_html}</span>
                       </div>
                       <div style="display:flex;gap:18px;margin-top:4px;font-size:12px;color:#6B7280;">
-                        <span>📊 <b>{trans}</b> transações</span>
-                        <span>🎯 ticket <b>{tkt}</b></span>
+                        <span><b>{trans}</b> transações</span>
+                        <span>ticket <b>{tkt}</b></span>
                       </div>
                     </div>
                     """)
@@ -379,7 +378,7 @@ with tab_venda:
                 df_total_mes["MoM"] = df_total_mes["MoM"].apply(lambda v: fmt_pct(v) if pd.notna(v) else "—")
                 df_show = df_total_mes[["mes_label", "faturamento_fmt", "MoM"]].copy()
                 df_show.columns = ["Mês", "Faturamento Total", "Δ MoM"]
-                with st.expander("📅 Detalhamento mensal (total)", expanded=False):
+                with st.expander("Detalhamento mensal (total)", expanded=False):
                     st.dataframe(df_show, hide_index=True, use_container_width=True)
 
             st.markdown("<br>", unsafe_allow_html=True)
@@ -520,7 +519,7 @@ with tab_compra:
     with k2: kpi_card("Importação (acumulado)", fmt_brl(imp_brl),
                       delta=("US$ " + f"{imp_usd:,.0f}".replace(",", ".")), delta_dir="flat")
     with k3: kpi_card("Razão Compra/Venda", f"{razao:.1f}%", delta="margem de manufatura saudável", delta_dir="flat", variant="success")
-    with k4: kpi_card("🔴 Concentração Import", f"{conc:.0f}%",
+    with k4: kpi_card("Concentração Import", f"{conc:.0f}%",
                       delta=(top_name[:20] + " (fornecedor único)"), delta_dir="down", variant="danger")
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -590,7 +589,7 @@ with tab_compra:
 # ── Orçamentos ───────────────────────────────────────────────
 with tab_orc:
     section_title("Orçamentos — Pipeline e Conversão")
-    st.caption("⚠️ Orçamento cobre PARTE do funil: Farmácias não orça (manda proposta direto) e "
+    st.caption("Orçamento cobre PARTE do funil: Farmácias não orça (manda proposta direto) e "
                "Hospitalar/SAC às vezes recebem a ordem de compra pronta. Ciclo de venda mediano ≈ 3 dias — "
                "orçamento que não fecha em ~1 semana está parado. Janela: últimos 12 meses (data de criação no ERP).")
 
@@ -619,13 +618,13 @@ with tab_orc:
         r0 = df_okpi.iloc[0]
         ciclo = int(df_cic.iloc[0]["ciclo"]) if (not df_cic.empty and pd.notna(df_cic.iloc[0]["ciclo"])) else 0
         k1, k2, k3, k4 = st.columns(4)
-        with k1: kpi_card("🟢 Pipeline Vivo (≤90d)", fmt_brl(float(r0["pipe"])),
+        with k1: kpi_card("Pipeline Vivo (≤90d)", fmt_brl(float(r0["pipe"])),
                           delta=f'{int(r0["pipe_n"])} orçamentos abertos', delta_dir="flat", variant="success")
         with k2: kpi_card("Conversão (safra madura)", f'{float(r0["conv"]):.1f}%',
                           delta="orçamentos com tempo de fechar", delta_dir="flat")
         with k3: kpi_card("Ciclo de venda (mediana)", f"{ciclo} dias",
                           delta="do orçamento ao faturamento", delta_dir="flat")
-        with k4: kpi_card("🔴 Parados +180d", fmt_brl(float(r0["parado"])),
+        with k4: kpi_card("Parados +180d", fmt_brl(float(r0["parado"])),
                           delta=f'{int(r0["parado_n"])} p/ recuperar ou encerrar', delta_dir="down", variant="danger")
 
         st.markdown("<br>", unsafe_allow_html=True)
@@ -668,7 +667,7 @@ with tab_orc:
                 st.plotly_chart(fig_i, use_container_width=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
-        section_title("🔴 Orçamentos Parados +180 dias — Recuperar ou Encerrar")
+        section_title("Orçamentos Parados +180 dias — Recuperar ou Encerrar")
         st.caption("Com ciclo de venda de ~3 dias, orçamento aberto há +180 dias está morto. "
                    "Lista pra o time decidir: retomar o contato ou dar baixa (limpa o pipeline).")
         df_parados = query(f"""
@@ -808,8 +807,8 @@ with tab_crm:
         with e2:
             kpi_card("Ciclo Médio de Venda", f"{ciclo} dias" if ciclo else "—")
         with e3:
-            kpi_card("🔮 Forecast Ponderado", fmt_brl(forecast_crm), variant="success")
-        st.caption("🔮 Forecast = Pipeline Aberto × Win Rate histórico (modelo simples e explicável). "
+            kpi_card("Forecast Ponderado", fmt_brl(forecast_crm), variant="success")
+        st.caption("Forecast = Pipeline Aberto × Win Rate histórico (modelo simples e explicável). "
                    "Win Rate = ganhos ÷ (ganhos + perdidos), só negócios fechados. "
                    "Ciclo = dias médios entre criação e ganho do deal.")
 
@@ -924,7 +923,7 @@ with tab_clientes:
             with k3:
                 kpi_card("Concentração Top 20%", f"{pct_top20:.0f}%",
                          variant="danger" if pct_top20 >= 80 else "warning")
-            st.caption("📊 Curva ABC: Classe A = clientes que somam 80% do faturamento. "
+            st.caption("Curva ABC: Classe A = clientes que somam 80% do faturamento. "
                        "Concentração alta no Top 20% = risco estratégico (dependência de poucos clientes).")
 
             st.markdown("<br>", unsafe_allow_html=True)
@@ -1241,7 +1240,7 @@ with tab_rfv:
             """)
             data_ok = True
         except Exception as e:
-            st.error(f"Erro ao consultar BigQuery: {e}", icon="🚨")
+            st.error(f"Erro ao consultar BigQuery: {e}", icon="")
             data_ok = False
 
     if not data_ok:
@@ -1260,21 +1259,21 @@ with tab_rfv:
         with c1:
             kpi_card("Total Clientes", f'{int(row["total_clientes"]):,}')
         with c2:
-            kpi_card("🏆 Campeões", f'{int(row["campeoes"]):,}', variant="success")
+            kpi_card("Campeões", f'{int(row["campeoes"]):,}', variant="success")
         with c3:
-            kpi_card("💚 Fiéis", f'{int(row["fieis"]):,}', variant="success")
+            kpi_card("Fiéis", f'{int(row["fieis"]):,}', variant="success")
         with c4:
-            kpi_card("🌱 Fiéis em Potencial", f'{int(row["fp"]):,}', variant="success")
+            kpi_card("Fiéis em Potencial", f'{int(row["fp"]):,}', variant="success")
 
         c5, c6, c7, c8 = st.columns(4)
         with c5:
-            kpi_card("🟣 Não Pode Perder", f'{int(row["nao_pode_perder"]):,}', variant="warning")
+            kpi_card("Não Pode Perder", f'{int(row["nao_pode_perder"]):,}', variant="warning")
         with c6:
-            kpi_card("🔥 Em Risco + Hibernando", f'{int(row["em_risco"]):,}', variant="warning")
+            kpi_card("Em Risco + Hibernando", f'{int(row["em_risco"]):,}', variant="warning")
         with c7:
-            kpi_card("❌ Perdidos", f'{int(row["perdidos"]):,}', variant="danger")
+            kpi_card("Perdidos", f'{int(row["perdidos"]):,}', variant="danger")
         with c8:
-            kpi_card("💰 Faturamento", fmt_brl(float(row["faturamento"])))
+            kpi_card("Faturamento", fmt_brl(float(row["faturamento"])))
 
         data_ref = pd.to_datetime(row["data_referencia"]).strftime("%d/%m/%Y")
         st.markdown(
@@ -1701,7 +1700,7 @@ with tab_rfv:
             else:
                 st.info("Nenhum cliente neste segmento com os filtros selecionados.")
         except Exception as _e_det:
-            st.error(f"Erro ao carregar detalhe do segmento: {_e_det}", icon="🚨")
+            st.error(f"Erro ao carregar detalhe do segmento: {_e_det}", icon="")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -1795,15 +1794,15 @@ with tab_rfv:
     section_title("Alertas de Inteligência Comercial")
 
     ALERT_META = {
-        "OPORTUNIDADE_SEM_CRM":  ("🎯", "Oportunidade sem CRM", "warning",
+        "OPORTUNIDADE_SEM_CRM":  ("", "Oportunidade sem CRM", "warning",
                                    "Clientes topo (Campeões/Fiéis/NPP) sem deal ativo no Pipedrive."),
-        "CHURN_SILENCIOSO":      ("🔕", "Churn Silencioso", "danger",
+        "CHURN_SILENCIOSO":      ("", "Churn Silencioso", "danger",
                                    "Em Risco/Hibernando sem deal e sem contato há 60d+."),
-        "RECUPERACAO_ANDAMENTO": ("🔄", "Recuperação em Andamento", "success",
+        "RECUPERACAO_ANDAMENTO": ("", "Recuperação em Andamento", "success",
                                    "Em Risco/Hibernando com deal aberto, sinal positivo de reativação."),
-        "REATIVACAO_ALTO_VALOR": ("💰", "Reativação Alto Valor", "warning",
+        "REATIVACAO_ALTO_VALOR": ("", "Reativação Alto Valor", "warning",
                                    "Perdidos com faturamento histórico acima de R$ 50k."),
-        "FORA_DO_RADAR_CRM":     ("📡", "Fora do Radar CRM", "danger",
+        "FORA_DO_RADAR_CRM":     ("", "Fora do Radar CRM", "danger",
                                    "Clientes ativos no ERP sem correspondência no Pipedrive."),
     }
 
@@ -1812,7 +1811,7 @@ with tab_rfv:
         for i, (_, ar) in enumerate(df_alertas.iterrows()):
             if i >= 5:
                 break
-            meta = ALERT_META.get(ar["tipo_alerta"], ("⚠️", ar["tipo_alerta"], "", ""))
+            meta = ALERT_META.get(ar["tipo_alerta"], ("", ar["tipo_alerta"], "", ""))
             with cols_a[i]:
                 kpi_card(
                     label=f"{meta[0]} {meta[1]}",
@@ -1823,7 +1822,7 @@ with tab_rfv:
                 )
         st.markdown("<br>", unsafe_allow_html=True)
         for _, ar in df_alertas.iterrows():
-            meta = ALERT_META.get(ar["tipo_alerta"], ("⚠️", ar["tipo_alerta"], "", ""))
+            meta = ALERT_META.get(ar["tipo_alerta"], ("", ar["tipo_alerta"], "", ""))
             st.markdown(
                 f"<small><b>{meta[0]} {meta[1]}:</b> {meta[3]}</small>",
                 unsafe_allow_html=True,
@@ -1835,7 +1834,7 @@ with tab_rfv:
 
         alert_tipos_disponiveis = df_alertas["tipo_alerta"].tolist()
         alert_labels = {
-            t: f'{ALERT_META.get(t, ("⚠️", t, "", ""))[0]} {ALERT_META.get(t, ("⚠️", t, "", ""))[1]}'
+            t: f'{ALERT_META.get(t, ("", t, "", ""))[0]} {ALERT_META.get(t, ("", t, "", ""))[1]}'
             for t in alert_tipos_disponiveis
         }
         ad_c1, _ad_c2 = st.columns([3, 5])
@@ -1904,7 +1903,7 @@ with tab_rfv:
                     """)
 
                     if not df_alerta_det.empty:
-                        meta = ALERT_META.get(tipo_alerta_sel, ("⚠️", tipo_alerta_sel, "", ""))
+                        meta = ALERT_META.get(tipo_alerta_sel, ("", tipo_alerta_sel, "", ""))
                         _qtd = len(df_alerta_det)
                         _fat = float(df_alerta_det["faturamento"].sum())
                         _a1, _a2, _a3 = st.columns(3)
@@ -1945,94 +1944,14 @@ with tab_rfv:
                     else:
                         st.info("Nenhum cliente neste alerta com os filtros atuais.")
                 except Exception as _e_alert:
-                    st.error(f"Erro ao carregar detalhes do alerta: {_e_alert}", icon="🚨")
+                    st.error(f"Erro ao carregar detalhes do alerta: {_e_alert}", icon="")
 
 # ── Venda Diária ─────────────────────────────────────────────
 with tab_diaria:
-    section_title("Venda Diária — Fluxo de Pedidos do Dia")
-    st.caption("Pedidos que entraram no dia, por vendedor / cliente / canal / valor. "
-               "Em produção atualiza a cada 15 minutos (com o horário de cada pedido). "
-               "Mockup: exibindo a última carga disponível — o horário entra quando ligarmos o incremento de 15 min.")
-
-    _CANAL_D = """CASE
-        WHEN o.salesperson_group_code='FA' THEN 'Hospitalar'
-        WHEN o.salesperson_group_code='FR' THEN 'Farmácias'
-        WHEN o.salesperson_group_code='PC' THEN 'SAC'
-        WHEN o.salesperson_group_code='EC' OR o.salesperson_group_code IS NULL THEN 'Marketplace'
-        ELSE 'Outros' END"""
-
-    try:
-        _dia = pd.to_datetime(query(f"SELECT MAX(order_date) AS d FROM `{ORDERS}.fact_sales_order`")["d"].iloc[0]).date()
-    except Exception:
-        _dia = None
-
-    if _dia is None:
-        st.info("Sem dados de pedidos.")
-    else:
-        st.markdown(f"**📅 Dia de referência:** {_dia.strftime('%d/%m/%Y')}  ·  "
-                    f"⏱️ *última atualização: carga diária (em produção: a cada 15 min)*")
-
-        df_dia = query(f"""
-            SELECT
-              o.order_number       AS pedido,
-              o.salesperson_name   AS vendedor,
-              p.partner_name       AS cliente,
-              {_CANAL_D}           AS canal,
-              o.product_amount     AS valor
-            FROM `{ORDERS}.fact_sales_order` o
-            JOIN `{ORDERS}.dim_operation_nature` n
-              ON n.nature_code = o.nature_code AND n.financial_flag <> 'N'
-            LEFT JOIN `{PROJ}.dm_partners.dim_partner` p USING (partner_code)
-            WHERE o.order_date = DATE('{_dia}')
-              AND o.salesperson_group_code IN ('FA', 'FR', 'PC')
-            ORDER BY o.order_number DESC
-        """)
-        if df_dia.empty:
-            st.info("Nenhum pedido de vendedor neste dia.")
-        else:
-            df_dia["valor"] = pd.to_numeric(df_dia["valor"], errors="coerce").fillna(0)
-            _tot = float(df_dia["valor"].sum()); _n = len(df_dia); _nv = df_dia["vendedor"].nunique()
-
-            k1, k2, k3, k4 = st.columns(4)
-            with k1: kpi_card("Vendido no dia", fmt_brl(_tot), variant="success")
-            with k2: kpi_card("Pedidos no dia", f"{_n}")
-            with k3: kpi_card("Ticket médio", fmt_brl(_tot / _n if _n else 0))
-            with k4: kpi_card("Vendedores ativos", f"{_nv}")
-
-            st.markdown("<br>", unsafe_allow_html=True)
-            colf, colv = st.columns([3, 2])
-            with colf:
-                section_title("Pedidos do Dia")
-                df_show_d = df_dia.copy()
-                df_show_d["valor"] = df_show_d["valor"].apply(fmt_brl)
-                df_show_d.columns = ["Pedido", "Vendedor", "Cliente", "Canal", "Valor"]
-                st.dataframe(df_show_d, hide_index=True, use_container_width=True)
-            with colv:
-                section_title("Por Vendedor")
-                ag_v = df_dia.groupby("vendedor", as_index=False).agg(
-                    pedidos=("pedido", "count"), total=("valor", "sum")).sort_values("total", ascending=False)
-                fig_v = px.bar(ag_v, x="total", y="vendedor", orientation="h",
-                               labels={"total": "R$", "vendedor": ""}, text="pedidos",
-                               color_discrete_sequence=["#1E1882"])
-                fig_v.update_traces(texttemplate="%{text} ped", textposition="outside")
-                fig_v.update_layout(plot_bgcolor="white", paper_bgcolor="white",
-                                    yaxis=dict(autorange="reversed"), margin=dict(t=8, l=8, r=44, b=8),
-                                    xaxis=dict(range=[0, float(ag_v["total"].max()) * 1.25]) if len(ag_v) else {})
-                st.plotly_chart(fig_v, use_container_width=True)
-
-            df_mkt_d = query(f"""
-                SELECT COUNT(*) AS n, SUM(o.product_amount) AS v
-                FROM `{ORDERS}.fact_sales_order` o
-                JOIN `{ORDERS}.dim_operation_nature` n
-                  ON n.nature_code = o.nature_code AND n.financial_flag <> 'N'
-                WHERE o.order_date = DATE('{_dia}')
-                  AND (o.salesperson_group_code = 'EC' OR o.salesperson_group_code IS NULL)
-            """)
-            if not df_mkt_d.empty and pd.notna(df_mkt_d["n"].iloc[0]) and int(df_mkt_d["n"].iloc[0]) > 0:
-                _mn = int(df_mkt_d["n"].iloc[0])
-                _mv = float(pd.to_numeric(df_mkt_d["v"].iloc[0], errors="coerce") or 0)
-                st.caption(f"🛒 Marketplace no dia (e-commerce, sem vendedor): {_mn} pedidos · {fmt_brl(_mv)} "
-                           "— exibido à parte por ser automático.")
+    # Aba "Gestão à Vista" — substitui o antigo mockup "Venda Diária" (decisão 15/06).
+    # Painel completo (meta, ritmo, ranking %, pipeline, atividades) em utils/gestao_vista_view.
+    from dashboard.utils import gestao_vista_view
+    gestao_vista_view.render(key_prefix="gv_tab")
 
 st.markdown("---")
 st.caption("gold_comercial + silver_comercial (RFV) · sapient-metrics-492914-m7")

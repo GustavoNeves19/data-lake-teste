@@ -1,0 +1,51 @@
+{
+  "source": "MIRO",
+  "dataset": "miro_raw",
+  "connector": "miro",
+  "auth": "bearer_static",
+  "entities": [
+    {
+      "name": "boards",
+      "bq_table": "boards",
+      "projection": "envelope",
+      "write_mode": "truncate",
+      "endpoint": "/boards",
+      "record_id_path": "id",
+      "event_at_path": "modifiedAt"
+    },
+    {
+      "name": "items",
+      "bq_table": "items",
+      "projection": "envelope",
+      "write_mode": "truncate",
+      "endpoint": "/boards/{board_id}/items",
+      "record_id_path": "id",
+      "event_at_path": "modifiedAt",
+      "record_columns": [
+        { "name": "board_id", "type": "STRING", "key": "_board_id" }
+      ]
+    },
+    {
+      "name": "board_members",
+      "bq_table": "board_members",
+      "projection": "envelope",
+      "write_mode": "truncate",
+      "endpoint": "/boards/{board_id}/members",
+      "record_id_path": "id",
+      "record_columns": [
+        { "name": "board_id", "type": "STRING", "key": "_board_id" }
+      ]
+    },
+    {
+      "name": "tags",
+      "bq_table": "tags",
+      "projection": "envelope",
+      "write_mode": "truncate",
+      "endpoint": "/boards/{board_id}/tags",
+      "record_id_path": "id",
+      "record_columns": [
+        { "name": "board_id", "type": "STRING", "key": "_board_id" }
+      ]
+    }
+  ]
+}

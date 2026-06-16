@@ -69,7 +69,7 @@ Grupo: Nevoni + Vanguardia Academy.
 - `dm_orders.fact_sales_order` — vendas brutas (use somente se Silver/Gold não cobrirem)
 - `dm_partners.dim_partner` — todos os clientes (incluindo excluídos com YDATEXC NOT NULL)
 
-## ⚠️ Regras de Negócio RFV (Reunião 28/05/2026)
+## Regras de Negócio RFV (Reunião 28/05/2026)
 
 ### Famílias (4)
 - **HOSPITALAR** — grupo FA do ERP (5 vendedores titulares)
@@ -141,7 +141,7 @@ WHERE order_status IN (3, 4)
   AND n.financial_flag <> 'N'                          -- exclui devoluções e similares
 ```
 
-## ⚠️ Regra Crítica — Grain de silver_com_rfv_*
+## Regra Crítica — Grain de silver_com_rfv_*
 
 Tabelas RFV têm grain partner_name × rfv_familia × rfv_salesperson × data_referencia. Um cliente em mais de uma carteira aparece em + de 1 linha.
 
@@ -152,7 +152,7 @@ Tabelas RFV têm grain partner_name × rfv_familia × rfv_salesperson × data_re
 
 **Exemplo correto:**
 ```sql
--- ✅ Campeões Hospitalar (todas as 4 carteiras + Eduardo)
+-- Campeões Hospitalar (todas as 4 carteiras + Eduardo)
 SELECT
   partner_name,
   STRING_AGG(DISTINCT rfv_salesperson, ', ' ORDER BY rfv_salesperson) AS vendedores,
@@ -229,7 +229,7 @@ def oracle_ask(user_message: str) -> str:
 
     client = _get_client()
     if not client:
-        return "⚠️ Configure a chave da OpenAI para ativar o Oráculo."
+        return "Configure a chave da OpenAI para ativar o Oráculo."
 
     if "oracle_messages" not in st.session_state:
         st.session_state.oracle_messages = []
@@ -249,7 +249,7 @@ def oracle_ask(user_message: str) -> str:
         )
         answer = response.choices[0].message.content or ""
     except Exception as e:
-        answer = f"❌ Erro na OpenAI: `{e}`"
+        answer = f"Erro na OpenAI: `{e}`"
         st.session_state.oracle_messages.append({"role": "assistant", "content": answer})
         return answer
 
@@ -259,13 +259,13 @@ def oracle_ask(user_message: str) -> str:
             df = bq_query(sql)
             if not df.empty:
                 result_md = df.head(20).to_markdown(index=False)
-                answer += f"\n\n**📊 Resultado:**\n{result_md}"
+                answer += f"\n\n**Resultado:**\n{result_md}"
                 if len(df) > 20:
                     answer += f"\n\n_... e mais {len(df) - 20} linhas._"
             else:
-                answer += "\n\n_📊 Query executada — nenhum resultado retornado._"
+                answer += "\n\n_Query executada — nenhum resultado retornado._"
         except Exception as e:
-            answer += f"\n\n⚠️ _Erro ao executar query: {e}_"
+            answer += f"\n\n_Erro ao executar query: {e}_"
 
     st.session_state.oracle_messages.append({"role": "assistant", "content": answer})
     return answer
