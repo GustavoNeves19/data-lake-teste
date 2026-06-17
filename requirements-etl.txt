@@ -20,6 +20,9 @@ google-cloud-bigquery==3.28.0
 google-cloud-bigquery-storage==2.27.0
 google-auth==2.36.0
 
+# === HTTP / APIs (conectores de ingestão: Pipedrive, ClickUp, Miro, Umbler, Gmail)
+requests==2.32.3
+
 # === Configuration Management
 python-dotenv==1.0.1
 
