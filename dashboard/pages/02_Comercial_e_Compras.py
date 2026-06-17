@@ -982,11 +982,6 @@ with tab_clientes:
 
 # RFV Matrix
 with tab_rfv:
-    # Força limpeza única do cache após o rebuild dos snapshots históricos (26/05/2026)
-    if "rfv_cache_cleared_v2" not in st.session_state:
-        st.cache_data.clear()
-        st.session_state["rfv_cache_cleared_v2"] = True
-
     section_title("Matriz RFV — Recência × Frequência × Valor")
 
     SILVER_COM = f"{PROJ}.silver_comercial"

@@ -63,7 +63,7 @@ _pal = ["#185FA5", "#1D9E75", "#BA7517", "#7F77DD", "#D85A30", "#0F6E56", "#A33D
 def brl_k(v: float) -> str:
     v = float(v or 0)
     if abs(v) >= 1_000_000:
-        return f"R$ {v/1_000_000:.2f}M".replace(".", ",")
+        return f"R$ {v/1_000_000:.1f}M".replace(".", ",")
     if abs(v) >= 1_000:
         return f"R$ {v/1_000:.0f}k"
     return f"R$ {v:.0f}"
@@ -174,22 +174,22 @@ def _eng_reversa_card(badge_n, titulo, eng: dict) -> str:
     if not eng or eng.get("contatos_mes", 0) <= 0:
         return card(badge_n, "#F1EFE8", "#444441", titulo,
             '<div class="gv-sub" style="padding:8px 0;">Sem parâmetros de conversão pra esta visão.</div>'
-            '<div class="gv-note">Taxas do Alves não cadastradas pra este canal</div>')
+            '<div class="gv-note">Taxas do Alves não cadastradas pra este canal</div>', wide=True)
     linhas = [("Vendas necessárias", eng["vendas"]), ("Fechamentos", eng["fechamentos"]),
               ("Negociações", eng["negociacoes"]), ("Orçamentos", eng["orcamentos"]),
               ("Conexões", eng["conexoes"]), ("Contatos no mês", eng["contatos_mes"])]
     funil = "".join(
-        f'<div style="display:flex;justify-content:space-between;font-size:12px;margin:3px 0;">'
-        f'<span style="color:#8A8A99;">{lbl}</span>'
-        f'<span style="color:#15151F;font-weight:600;">{v:,.0f}</span></div>'
+        f'<div class="gv-eng-row"><span class="lbl">{lbl}</span>'
+        f'<span class="val">{v:,.0f}</span></div>'
         for lbl, v in linhas)
     inner = (
-        f'<div class="gv-hero" style="font-size:24px;">{eng["contatos_dia"]:.0f}'
+        f'<div class="gv-hero gv-effort">{eng["contatos_dia"]:.0f}'
         f'<span style="font-size:13px;color:#8A8A99;font-weight:400;"> contatos/dia</span></div>'
         f'<div class="gv-sub">esforço do time pra bater {fmt_brl(eng["meta"])}</div>'
-        f'<div style="margin-top:9px;">{funil}</div>')
+        f'<div class="gv-eng-funil">{funil}</div>')
     return card(badge_n, "#F1EFE8", "#444441", titulo,
-                inner + '<div class="gv-note">Funil reverso: meta ÷ ticket ÷ taxas de conversão (planilha Alves)</div>')
+                inner + '<div class="gv-note">Funil reverso: meta ÷ ticket ÷ taxas de conversão (planilha Alves)</div>',
+                wide=True)
 
 
 def render(key_prefix: str = "gv"):
@@ -200,10 +200,10 @@ def render(key_prefix: str = "gv"):
                 f'<p class="s">Marketplace fora · Geral = Hospitalar + Farmácia · SAC entra no Hospitalar em julho</p></div>',
                 unsafe_allow_html=True)
 
-    # ── controles: visão · mês · vendedor (só filtra atividades por tipo) ────
-    # Filtro de período (intervalo) removido (reunião 16/06, Vinícius: confundia
-    # por cada bloco mostrar uma data diferente). Tudo no mês; só o seletor de
-    # vendedor corta o bloco "Atividades por tipo" (pedido do Alves).
+    # ── controles: visão · mês ───────────────────────────────────────────────
+    # Filtro de período (intervalo) e seletor de vendedor removidos: o painel é
+    # panorâmico (a equipe de relance), não análise individual — o seletor só
+    # cortava 1 dos 9 blocos (Atividades por tipo) e confundia. Tudo no mês.
     try:
         dfm = query(f"""
             SELECT DISTINCT DATE_TRUNC(o.invoice_date, MONTH) m
@@ -216,19 +216,7 @@ def render(key_prefix: str = "gv"):
         st.error(f"Erro ao listar meses: {e}")
         return
 
-    try:
-        dfv = query(f"""
-            SELECT DISTINCT u.name FROM `{CRM}.activities` a
-            JOIN `{CRM}.dim_crm_user` u ON u.user_id = a.user_id
-            WHERE UPPER(u.name) NOT LIKE 'EDUARDO%' AND UPPER(u.name) NOT LIKE 'KARINA%'
-              AND UPPER(u.name) NOT LIKE 'VICTOR%' AND UPPER(u.name) NOT LIKE 'CLARICE%'
-            ORDER BY 1
-        """)
-        vend_opts = ["Todos"] + dfv["name"].dropna().astype(str).tolist()
-    except Exception:
-        vend_opts = ["Todos"]
-
-    c1, c2, c3 = st.columns([3, 1, 1.5])
+    c1, c2 = st.columns([4, 1])
     with c1:
         view_label = st.radio("Visão", list(VIEWS), horizontal=True,
                               label_visibility="collapsed", key=f"{key_prefix}_view")
@@ -236,9 +224,7 @@ def render(key_prefix: str = "gv"):
     with c2:
         mes_sel = st.selectbox("Mês", meses, format_func=lambda d: f"{MESES_PT[d.month]}/{d.year}",
                                label_visibility="collapsed", key=f"{key_prefix}_mes")
-    with c3:
-        vend_at = st.selectbox("Atividades: vendedor", vend_opts,
-                               label_visibility="collapsed", key=f"{key_prefix}_vendat")
+    vend_at = "Todos"   # painel panorâmico: Atividades por tipo mostra a equipe toda
 
     mes_ini = mes_sel
     mes_fim = date(mes_sel.year + (mes_sel.month == 12), (mes_sel.month % 12) + 1, 1)
@@ -388,10 +374,11 @@ def render(key_prefix: str = "gv"):
         for i, (_, r) in enumerate(df_at.iterrows()):
             nome = TIPO_ATIV.get(r["tipo"], r["tipo"])
             w = max(r["concl"] / vmax * 100, 3)
+            late = f'<span class="gv-ativ-late">{r["atras"]} atras</span>' if r["atras"] > 0 else ''
             rows += (f'<div class="gv-rk-row"><div class="gv-rk-top">'
                      f'<span style="color:#15151F;">{nome}</span>'
-                     f'<span style="color:#8A8A99;">{r["concl"]} · '
-                     f'<span style="color:#DC2626;">{r["atras"]} atras</span></span></div>'
+                     f'<span style="display:flex;gap:7px;align-items:center;">'
+                     f'<span class="gv-ativ-done">{r["concl"]}</span>{late}</span></div>'
                      f'<div class="gv-bar-track"><div class="gv-bar-fill" '
                      f'style="width:{w:.0f}%;background:{_pal[i % len(_pal)]};"></div></div></div>')
         nota = (f"Ranqueado por feitas · {'toda a equipe' if vend_at == 'Todos' else vend_at}")
@@ -408,10 +395,11 @@ def render(key_prefix: str = "gv"):
         rows = ""
         for i, (_, r) in enumerate(df_av.iterrows()):
             w = max(r["concl"] / vmax * 100, 3)
+            late = f'<span class="gv-ativ-late">{r["atras"]} atras</span>' if r["atras"] > 0 else ''
             rows += (f'<div class="gv-rk-row"><div class="gv-rk-top">'
                      f'<span style="color:#15151F;">{r["vend"]}</span>'
-                     f'<span style="color:#8A8A99;">{r["concl"]} · '
-                     f'<span style="color:#DC2626;">{r["atras"]} atras</span></span></div>'
+                     f'<span style="display:flex;gap:7px;align-items:center;">'
+                     f'<span class="gv-ativ-done">{r["concl"]}</span>{late}</span></div>'
                      f'<div class="gv-bar-track"><div class="gv-bar-fill" '
                      f'style="width:{w:.0f}%;background:{_pal[i % len(_pal)]};"></div></div></div>')
         nota = "Feitas no período · atrasadas (sem data no Pipedrive)"

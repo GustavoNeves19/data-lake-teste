@@ -128,36 +128,53 @@ html, body, [class*="css"], .stMarkdown, button, input, textarea, select {
 
 /* ── Painel de Gestão à Vista ─────────────────────────────────── */
 .gv-band {
-    background: #1E1882; color: #fff; border-radius: 12px;
-    padding: 16px 22px; margin-bottom: 16px;
+    background: #1E1882; color: #fff; border-radius: 14px;
+    padding: 20px 26px; margin-bottom: 18px;
     display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
 }
-.gv-band .t  { font-size: 18px; font-weight: 600; letter-spacing: -.01em; margin: 0; }
+.gv-band .t  { font-size: 21px; font-weight: 600; letter-spacing: -.01em; margin: 0; }
 .gv-band .s  { font-size: 13px; color: rgba(255,255,255,.66); margin: 0; }
 .gv-foot {
-    background: #1E1882; color: #fff; border-radius: 12px; padding: 13px 22px; margin-top: 16px;
-    font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 10px;
+    background: #EEF0FF; color: #1E1882; border-radius: 14px; padding: 14px 22px; margin-top: 18px;
+    font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 10px;
 }
-.gv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
-.gv-card { background: #fff; border: 1px solid #ECECF3; border-radius: 12px; padding: 15px 17px; }
+/* grid mais arejado: trilho 300px + gap 18 (resolve o "apertado") */
+.gv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+.gv-card {
+    background: #fff; border: 1px solid #ECECF3; border-radius: 14px; padding: 20px 22px;
+    box-shadow: 0 1px 2px rgba(30,24,130,.04);
+}
 .gv-card.gv-wide { grid-column: span 2; }
-.gv-chan { display: flex; gap: 8px; margin-top: 10px; }
-.gv-chan > div { flex: 1; background: #F7F7FB; border-radius: 8px; padding: 8px; text-align: center; }
+@media (max-width: 720px) { .gv-card.gv-wide { grid-column: span 1; } }
+.gv-chan { display: flex; gap: 10px; margin-top: 12px; }
+.gv-chan > div { flex: 1; background: #F7F7FB; border-radius: 8px; padding: 9px; text-align: center; }
 .gv-chan .lbl { font-size: 10.5px; color: #8A8A99; }
-.gv-chan .val { font-size: 14px; font-weight: 600; color: #15151F; }
-.gv-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.gv-chan .val { font-size: 15px; font-weight: 600; color: #15151F; }
+.gv-head { display: flex; align-items: center; gap: 9px; margin-bottom: 14px; }
 .gv-badge { width: 22px; height: 22px; border-radius: 50%; font-size: 12px; font-weight: 600;
     display: inline-flex; align-items: center; justify-content: center; flex: none; }
-.gv-title { font-size: 12.5px; color: #8A8A99; font-weight: 600; }
-.gv-hero  { font-size: 26px; font-weight: 600; color: #15151F; letter-spacing: -.02em; line-height: 1.1; }
-.gv-sub   { font-size: 12px; color: #8A8A99; margin-top: 4px; }
+/* título = rótulo de seção (degrau claro acima de sub/note) */
+.gv-title { font-size: 11px; color: #6B6B7A; font-weight: 700; letter-spacing: .045em; text-transform: uppercase; }
+.gv-hero  { font-size: 28px; font-weight: 600; color: #15151F; letter-spacing: -.02em; line-height: 1.1;
+    font-variant-numeric: tabular-nums; }
+.gv-hero.gv-effort { color: #1E1882; }   /* nº de esforço usa o índigo da marca */
+.gv-sub   { font-size: 12.5px; color: #6B6B7A; margin-top: 5px; }
 .gv-bar-track { height: 6px; background: #F0F0F5; border-radius: 4px; overflow: hidden; }
 .gv-bar-fill  { height: 100%; border-radius: 4px; }
-.gv-rk-row { margin-bottom: 7px; }
-.gv-rk-top { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 2px; }
+.gv-rk-row { margin-bottom: 9px; }
+.gv-rk-top { display: flex; justify-content: space-between; font-size: 12.5px; margin-bottom: 3px; gap: 10px; }
+/* funil da engenharia reversa: separado do hero, ritmo tabular */
+.gv-eng-funil { margin-top: 14px; padding-top: 12px; border-top: 1px solid #F0F0F5; }
+.gv-eng-row { display: flex; justify-content: space-between; font-size: 12.5px; margin: 6px 0;
+    font-variant-numeric: tabular-nums; }
+.gv-eng-row .lbl { color: #8A8A99; }
+.gv-eng-row .val { color: #15151F; font-weight: 600; }
+/* atividades: concluído x atrasado legíveis (atraso = cobrança) */
+.gv-ativ-done { color: #15151F; font-weight: 600; font-variant-numeric: tabular-nums; }
+.gv-ativ-late { color: #DC2626; font-weight: 600; background: #FEECEC; padding: 1px 7px; border-radius: 6px; font-size: 11px; }
 .gv-stage { height: 22px; border-radius: 4px; display: flex; align-items: center;
     justify-content: space-between; padding: 0 10px; color: #fff; font-size: 12px; margin-bottom: 3px; }
-.gv-note { font-size: 11px; color: #B0B0BC; margin-top: 8px; }
+.gv-note { font-size: 11px; color: #A6A6B2; margin-top: 10px; padding-top: 8px; border-top: 1px dashed #F0F0F5; }
 
 /* Esconde chrome do Streamlit */
 #MainMenu  { visibility: hidden; }

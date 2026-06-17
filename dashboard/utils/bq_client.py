@@ -57,14 +57,15 @@ def get_client(project: str = PROJECT_PROD) -> bigquery.Client:
     return bigquery.Client(project=project)
 
 
-@st.cache_data(ttl=3600, show_spinner=False)
+@st.cache_data(ttl=14400, show_spinner=False)
 def query(sql: str, project: str = PROJECT_PROD) -> pd.DataFrame:
-    """Executa SQL no BigQuery e cacheia por 1 hora."""
+    """Executa SQL no BigQuery e cacheia por 4h (a carga do ERP roda ~3x/dia,
+    não a cada hora — TTL maior evita cold-cache desnecessário sem mudar valor)."""
     client = get_client(project)
     return client.query(sql).to_dataframe()
 
 
-@st.cache_data(ttl=600, show_spinner=False)
+@st.cache_data(ttl=3600, show_spinner=False)
 def data_ultima_carga(project: str = PROJECT_PROD) -> str:
     """Data/hora (BRT) da última carga do fact_sales_order — frescor REAL dos dados
     de vendas/faturamento. Usar pra exibir 'Dados de ...' em vez da data de hoje."""
