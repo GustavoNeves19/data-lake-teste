@@ -4,6 +4,12 @@ import streamlit as st
 
 st.set_page_config(page_title="Jurídico | Nevoni 360°", page_icon="", layout="wide")
 
+import sys
+from pathlib import Path
+_ROOT = Path(__file__).resolve().parents[2]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
 from dashboard.utils.components import inject_css, page_header, sidebar_brand, coming_soon
 inject_css()
 sidebar_brand()

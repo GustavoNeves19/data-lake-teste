@@ -11,6 +11,12 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+import sys
+from pathlib import Path
+_ROOT = Path(__file__).resolve().parents[2]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
 from dashboard.utils.components import inject_css, sidebar_brand
 from dashboard.utils.oracle import oracle_ask, oracle_is_ready
 

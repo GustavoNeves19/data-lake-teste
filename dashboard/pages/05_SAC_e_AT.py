@@ -9,6 +9,12 @@ import plotly.express as px
 
 st.set_page_config(page_title="SAC e AT | Nevoni 360°", page_icon="", layout="wide")
 
+import sys
+from pathlib import Path
+_ROOT = Path(__file__).resolve().parents[2]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
 from dashboard.utils.components import inject_css, page_header, kpi_card, section_title, sidebar_brand, coming_soon
 from dashboard.utils.bq_client import query_layer, PROJECT_PROD
 from dashboard.utils.gold_tables import SAC as G
