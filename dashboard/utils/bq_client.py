@@ -57,18 +57,48 @@ def get_client(project: str = PROJECT_PROD) -> bigquery.Client:
     return bigquery.Client(project=project)
 
 
-@st.cache_data(ttl=14400, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
+def _data_version(project: str = PROJECT_PROD) -> str:
+    """Carimbo de frescor BARATO (só metadado, sem custo de query no BQ): o
+    last_modified das tabelas que o dashboard lê. Muda a cada carga nova.
+    Serve de CHAVE do cache pesado → quando entra carga, o cache se refaz sozinho.
+    TTL 5min = a tela 'percebe' a carga nova em até 5min, sem ninguém limpar cache
+    na mão e sem reconsultar o BigQuery à toa (entre cargas o valor não muda)."""
+    try:
+        client = get_client(project)
+        marcos = []
+        for t in (f"{project}.gold_comercial.gold_com_cliente_360",   # gold = última coisa que a carga grava
+                  f"{project}.dm_orders.fact_sales_order"):
+            try:
+                marcos.append(str(client.get_table(t).modified))
+            except Exception:
+                pass
+        return "|".join(marcos) if marcos else "na"
+    except Exception:
+        return "na"
+
+
 def query(sql: str, project: str = PROJECT_PROD) -> pd.DataFrame:
-    """Executa SQL no BigQuery e cacheia por 4h (a carga do ERP roda ~3x/dia,
-    não a cada hora — TTL maior evita cold-cache desnecessário sem mudar valor)."""
+    """Executa SQL no BigQuery. O resultado é cacheado, mas a chave inclui o
+    carimbo de frescor (_data_version): entrou carga nova → a chave muda → a tela
+    se atualiza SOZINHA em até 5min, sem 'Clear cache'/'Reboot' na mão. Entre
+    cargas, bate no cache (rápido, sem custo)."""
+    return _query_cached(sql, _data_version(project), project)
+
+
+@st.cache_data(ttl=14400, show_spinner=False)
+def _query_cached(sql: str, version: str, project: str = PROJECT_PROD) -> pd.DataFrame:
+    # 'version' (sem underscore) entra na chave do cache de propósito: muda com a
+    # carga e força o refresh. Entre cargas fica estável e o cache de 4h segura.
     client = get_client(project)
     return client.query(sql).to_dataframe()
 
 
-@st.cache_data(ttl=3600, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
 def data_ultima_carga(project: str = PROJECT_PROD) -> str:
     """Data/hora (BRT) da última carga do fact_sales_order — frescor REAL dos dados
-    de vendas/faturamento. Usar pra exibir 'Dados de ...' em vez da data de hoje."""
+    de vendas/faturamento. Usar pra exibir 'Dados de ...' em vez da data de hoje.
+    TTL 5min pra o label acompanhar a carga (a query embaixo já é versionada)."""
     try:
         df = query(
             f"SELECT FORMAT_TIMESTAMP('%d/%m/%Y %Hh%M', MAX(loaded_at), 'America/Sao_Paulo') AS dt "

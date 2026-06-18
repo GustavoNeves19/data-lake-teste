@@ -30,11 +30,13 @@ BQ_DATASET = os.getenv("BQ_DATASET")
 BQ_LOCATION = os.getenv("BQ_LOCATION", "us-east1")
 
 # ── Pipeline ─────────────────────────────────────────────
-BATCH_SIZE = int(os.getenv("BATCH_SIZE"))
-LOG_LEVEL = os.getenv("LOG_LEVEL")
-ENVIRONMENT = os.getenv("ENVIRONMENT")
-MAX_RETRIES = int(os.getenv("MAX_RETRIES"))
-RETRY_DELAY = int(os.getenv("RETRY_DELAY_SECONDS"))
+# defaults explícitos: variável opcional faltando NÃO derruba o import (era um
+# foot-gun — int(os.getenv(...)) com env vazia estourava TypeError).
+BATCH_SIZE = int(os.getenv("BATCH_SIZE", "50000"))
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
+MAX_RETRIES = int(os.getenv("MAX_RETRIES", "3"))
+RETRY_DELAY = int(os.getenv("RETRY_DELAY_SECONDS", "5"))
 QUERY_TIMEOUT_SECONDS = int(os.getenv("QUERY_TIMEOUT_SECONDS", "300"))   # 5 min
 LOCK_TIMEOUT_MS = int(os.getenv("LOCK_TIMEOUT_MS", "5000"))              # 5 seg
 
