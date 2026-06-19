@@ -129,6 +129,23 @@ def coming_soon(title: str = "Em construção", msg: str = ""):
     )
 
 
+def _logo_html() -> str:
+    """Logo oficial da Nevoni em SVG inline (vetorial, nítido em qualquer tela,
+    self-contained — sem arquivo nem base64). Círculo no índigo da marca (#1E1882)
+    + anel branco + 'n'."""
+    return (
+        '<svg viewBox="0 0 120 120" width="60" height="60" role="img" aria-label="Nevoni" '
+        'style="display:inline-block; margin-bottom:8px;">'
+        '<circle cx="60" cy="60" r="58" fill="#1E1882"/>'
+        '<circle cx="60" cy="60" r="49.5" fill="none" stroke="#ffffff" stroke-width="2.4" opacity="0.9"/>'
+        '<g fill="#ffffff">'
+        '<rect x="44" y="58" width="9" height="24" rx="4.5"/>'
+        '<rect x="67" y="58" width="9" height="24" rx="4.5"/>'
+        '<path d="M44 60 A16 16 0 0 1 76 60 L67 60 A7 7 0 0 0 53 60 Z"/>'
+        '</g></svg>'
+    )
+
+
 def sidebar_brand():
     """Logo e informações de contexto na sidebar."""
     # Gate de acesso (no-op se auth não configurado em st.secrets). Como toda página
@@ -136,15 +153,9 @@ def sidebar_brand():
     from dashboard.utils.auth import require_login, logout_button
     require_login()
     st.sidebar.markdown(
-        """
+        f"""
         <div style="text-align:center; padding: 16px 0 8px;">
-          <div style="
-            width: 56px; height: 56px; border-radius: 50%;
-            background: white; display: inline-flex;
-            align-items: center; justify-content: center;
-            font-size: 28px; font-weight: 900;
-            color: #1E1882; margin-bottom: 8px;
-          ">N</div>
+          {_logo_html()}
           <div style="color:white; font-size:16px; font-weight:700;">Nevoni</div>
           <div style="color:rgba(255,255,255,0.5); font-size:11px;">Dashboard 360°</div>
         </div>
