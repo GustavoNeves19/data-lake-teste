@@ -114,12 +114,15 @@ def sector_card(
     )
 
 
-def coming_soon(title: str = "Em desenvolvimento", msg: str = ""):
+def coming_soon(title: str = "Em construção", msg: str = ""):
+    """Card neutro de setor em construção (cadeado). Sem vermelho, sem jargão
+    técnico — é tela de executivo: o que ainda não tem dado aparece travado e limpo."""
     st.markdown(
         f"""
         <div class="coming-soon-box">
+          <span class="lock">🔒</span>
           <h3>{title}</h3>
-          <p>{msg if msg else "Fonte de dados em fase de integração. Silver será criado na próxima sprint."}</p>
+          <p>{msg if msg else "Este setor está em construção. Em breve disponível aqui."}</p>
         </div>
         """,
         unsafe_allow_html=True,

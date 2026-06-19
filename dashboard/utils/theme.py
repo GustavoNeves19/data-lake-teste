@@ -39,6 +39,17 @@ html, body, [class*="css"], .stMarkdown, button, input, textarea, select {
 [data-testid="stSidebarNav"] a span { color: rgba(255,255,255,0.66) !important; font-size: 13.5px; }
 [data-testid="stSidebarNav"] a[aria-selected="true"] span { color: #fff !important; font-weight: 600; }
 [data-testid="stSidebarNav"] a[aria-selected="true"] { background: rgba(255,255,255,0.10) !important; border-radius: 7px; }
+/* Botão na sidebar escura (ex.: "Sair") — sem isto o texto fica claro sobre fundo
+   escuro e some (botão "transparente"). Garante contraste. */
+[data-testid="stSidebar"] .stButton > button {
+    color: #fff !important;
+    background: rgba(255,255,255,0.10) !important;
+    border: 1px solid rgba(255,255,255,0.30) !important;
+}
+[data-testid="stSidebar"] .stButton > button:hover {
+    background: rgba(255,255,255,0.20) !important;
+    border-color: rgba(255,255,255,0.50) !important;
+}
 
 /* Page header — banda sólida, plana (sem gradiente de template) */
 .page-header {
@@ -109,6 +120,7 @@ html, body, [class*="css"], .stMarkdown, button, input, textarea, select {
     background: #fff; border-radius: 12px; padding: 48px 24px; text-align: center;
     border: 1px solid #ECECF3;
 }
+.coming-soon-box .lock { font-size: 30px; line-height: 1; display: block; margin-bottom: 12px; opacity: .5; }
 .coming-soon-box h3 { color: #6B7280; margin-bottom: 8px; font-weight: 600; }
 .coming-soon-box p  { color: #9CA3AF; font-size: 14px; }
 

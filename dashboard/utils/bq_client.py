@@ -111,16 +111,11 @@ def data_ultima_carga(project: str = PROJECT_PROD) -> str:
 
 
 def gold_not_ready(table: str, msg: str = "") -> None:
-    """Exibe card padrão quando uma tabela Gold ainda não existe."""
-    import streamlit as st
-    default = (
-        f"A tabela Gold `{table.split('.')[-1]}` ainda não foi criada. "
-        "Construa a transformação Silver → Gold e a tabela aparecerá automaticamente aqui."
-    )
-    st.info(
-        f"**Gold em construção**\n\n{msg or default}\n\n`{table}`",
-        icon="",
-    )
+    """Card neutro de 'em construção' (cadeado) quando um indicador ainda não existe.
+    Sem vermelho e sem nome de tabela técnico — é tela de executivo. O param `table`
+    é mantido por compatibilidade com os call-sites (não é mais exibido)."""
+    from dashboard.utils.components import coming_soon
+    coming_soon("Em construção", msg or "Este indicador está em construção. Em breve disponível aqui.")
 
 
 def query_layer(gold_sql: str, bronze_sql: str, label: str = "") -> tuple[pd.DataFrame, str]:
@@ -141,8 +136,10 @@ def query_layer(gold_sql: str, bronze_sql: str, label: str = "") -> tuple[pd.Dat
         try:
             df = query(bronze_sql)
             return df, "bronze"
-        except Exception as e:
-            st.error(f"Erro ao consultar Bronze: {e}", icon="")
+        except Exception:
+            # Tela de executivo: setor sem dado vira cadeado limpo, nunca erro vermelho.
+            from dashboard.utils.components import coming_soon
+            coming_soon("Em construção", "Este painel está em construção. Em breve disponível aqui.")
             return pd.DataFrame(), "error"
 
 
