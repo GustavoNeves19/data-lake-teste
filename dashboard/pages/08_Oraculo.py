@@ -25,8 +25,10 @@ sidebar_brand()
 
 # ── Sidebar: input da chave OpenAI ────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("### Chave OpenAI")
+    # Chave vem do Secret (produção) → nada de chave aparece pro executivo.
+    # O campo só surge se NÃO houver chave (dev/fallback), pra colar na sessão.
     if not oracle_is_ready():
+        st.markdown("### Chave OpenAI")
         key_input = st.text_input(
             "Cole `sk-...`",
             type="password",
@@ -35,11 +37,6 @@ with st.sidebar:
         )
         if key_input:
             st.session_state["openai_api_key"] = key_input
-            st.rerun()
-    else:
-        st.success("Oráculo ativo")
-        if st.button("Limpar chave", use_container_width=True):
-            st.session_state.pop("openai_api_key", None)
             st.rerun()
 
 # ── Header ────────────────────────────────────────────────────────────────────
@@ -122,7 +119,7 @@ for msg in st.session_state.oracle_messages:
         with st.chat_message("user"):
             st.markdown(msg["content"])
     else:
-        with st.chat_message("assistant", avatar=""):
+        with st.chat_message("assistant"):
             st.markdown(msg["content"])
 
 # ── Input de chat (fixo no rodapé da página) ─────────────────────────────────
@@ -130,7 +127,7 @@ if prompt := st.chat_input("Pergunte ao Oráculo sobre os dados da Nevoni..."):
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    with st.chat_message("assistant", avatar=""):
+    with st.chat_message("assistant"):
         with st.spinner("O Oráculo está consultando os dados..."):
             resposta = oracle_ask(prompt)
         st.markdown(resposta)
