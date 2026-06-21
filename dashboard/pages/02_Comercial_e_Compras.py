@@ -1241,7 +1241,7 @@ with tab_rfv:
             """)
             data_ok = True
         except Exception as e:
-            st.error(f"Erro ao consultar BigQuery: {e}", icon="")
+            st.error(f"Erro ao consultar BigQuery: {e}")
             data_ok = False
 
     if not data_ok:
@@ -1701,7 +1701,7 @@ with tab_rfv:
             else:
                 st.info("Nenhum cliente neste segmento com os filtros selecionados.")
         except Exception as _e_det:
-            st.error(f"Erro ao carregar detalhe do segmento: {_e_det}", icon="")
+            st.error(f"Erro ao carregar detalhe do segmento: {_e_det}")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -1945,7 +1945,7 @@ with tab_rfv:
                     else:
                         st.info("Nenhum cliente neste alerta com os filtros atuais.")
                 except Exception as _e_alert:
-                    st.error(f"Erro ao carregar detalhes do alerta: {_e_alert}", icon="")
+                    st.error(f"Erro ao carregar detalhes do alerta: {_e_alert}")
 
 # ── Venda Diária ─────────────────────────────────────────────
 with tab_diaria:

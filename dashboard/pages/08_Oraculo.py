@@ -75,7 +75,6 @@ if not oracle_is_ready():
     st.info(
         "**O Oráculo aguarda sua chave.**\n\n"
         "Cole sua chave OpenAI (`sk-...`) na sidebar para ativar o chat.",
-        icon="",
     )
     st.stop()
 
