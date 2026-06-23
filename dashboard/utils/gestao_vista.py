@@ -28,7 +28,11 @@ FERIADOS: list[date] = [
 # ── Metas PROVISÓRIAS (trocar pelos números oficiais do Alves) ───
 # Fonte oficial: insights do Pipedrive (Alves preenche todo mês). Plano B: ERP.
 META_EQUIPE: dict[str, float] = {
-    "GERAL":      1_018_000.0,   # Marketplace fora · Geral = Hospitalar + Farmácia (soma das metas individuais)
+    # Geral agora INCLUI o Marketplace (decisão Alves, call 23/06: "pra meta tem que ter").
+    # 1.568.000 é a meta geral que o Alves citou na call (provisória, igual as demais —
+    # trocar pelos números oficiais de junho). O realizado do Geral também passa a somar
+    # o Marketplace (EC + vendas sem grupo). Nas visões por canal, o Marketplace fica fora.
+    "GERAL":      1_568_000.0,
     "HOSPITALAR": 900_000.0,
     "FARMACIA":   100_000.0,
 }

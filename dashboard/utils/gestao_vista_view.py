@@ -197,7 +197,7 @@ def render(key_prefix: str = "gv"):
     st.markdown(f'<div class="gv-band"><div><p class="t">Painel de Gestão à Vista</p>'
                 f'<p class="s">Meta · ritmo · pipeline da equipe de vendas · '
                 f'dados de {data_ultima_carga()} BRT</p></div>'
-                f'<p class="s">Marketplace fora · Geral = Hospitalar + Farmácia · SAC entra no Hospitalar em julho</p></div>',
+                f'<p class="s">Geral inclui Marketplace · visões por canal sem Marketplace · SAC entra no Hospitalar em julho</p></div>',
                 unsafe_allow_html=True)
 
     # ── controles: visão · mês ───────────────────────────────────────────────
@@ -247,15 +247,23 @@ def render(key_prefix: str = "gv"):
         """)
         faturado_mes = float(df_fat["v"].iloc[0] or 0)
 
-        # faturamento por canal (FA/FR/PC) — eng. reversa + realizado por canal no bloco 1
+        # faturamento por canal (FA/FR/PC + Marketplace) — realizado por canal no bloco 1.
+        # Marketplace (MKT) = EC (e-commerce) + vendas sem grupo (Mercado Livre/Shopee);
+        # entra só no Geral (Alves 23/06). LI/licitação fica fora pelo WHERE.
         df_grp = query(f"""
-            SELECT o.salesperson_group_code g, SUM(o.product_amount) v
+            SELECT
+              CASE WHEN o.salesperson_group_code IN ('FA','FR','PC')
+                   THEN o.salesperson_group_code ELSE 'MKT' END g,
+              SUM(o.product_amount) v
             FROM `{ORDERS}.fact_sales_order` o {NAT_JOIN}
-            WHERE o.salesperson_group_code IN ('FA','FR','PC')
+            WHERE (o.salesperson_group_code IN ('FA','FR','PC','EC') OR o.salesperson_group_code IS NULL)
               AND o.invoice_date >= '{mes_ini}' AND o.invoice_date < '{mes_fim}'
             GROUP BY 1
         """)
         fat_grp = {r["g"]: float(r["v"] or 0) for _, r in df_grp.iterrows()}
+        # Geral soma o Marketplace no realizado (Alves 23/06); visões por canal não.
+        if view_key == "GERAL":
+            faturado_mes += fat_grp.get("MKT", 0.0)
 
         # realizado por vendedor (visão, sem Eduardo/Karina) — base dos 2 rankings
         df_rk = query(f"""
@@ -314,11 +322,16 @@ def render(key_prefix: str = "gv"):
     cards = []
 
     # 1 — % da meta da equipe (gauge) + realizado por canal (Vinícius 16/06)
+    # Marketplace só aparece no Geral (Alves 23/06: nas visões por canal ele fica fora).
+    _mkt_chip = (f'<div><div class="lbl">Marketplace</div>'
+                 f'<div class="val">{brl_k(fat_grp.get("MKT", 0))}</div></div>'
+                 if view_key == "GERAL" else "")
     chan = (
         f'<div class="gv-chan">'
         f'<div><div class="lbl">Hospitalar</div><div class="val">{brl_k(fat_grp.get("FA", 0))}</div></div>'
         f'<div><div class="lbl">Farmácia</div><div class="val">{brl_k(fat_grp.get("FR", 0))}</div></div>'
         f'<div><div class="lbl">SAC</div><div class="val">{brl_k(fat_grp.get("PC", 0))}</div></div>'
+        f'{_mkt_chip}'
         f'</div>')
     cards.append(card("1", "#E1F5EE", "#0F6E56", "% da meta da equipe",
         f'<div style="display:flex;align-items:center;gap:14px;">{gauge_svg(pct_meta)}'
