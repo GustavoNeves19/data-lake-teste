@@ -169,26 +169,33 @@ def _pipe_card(badge_n, titulo, stats: dict) -> str:
     return card(badge_n, "#E6F1FB", "#0C447C", titulo, inner + f'<div class="gv-note">{nota}</div>')
 
 
-def _eng_reversa_card(badge_n, titulo, eng: dict) -> str:
-    """Funil reverso do Alves: a partir da meta, quanto de esforço (contatos/dia etc.)."""
-    if not eng or eng.get("contatos_mes", 0) <= 0:
+def _eng_reversa_card(badge_n, titulo, users: list) -> str:
+    """Funil reverso do Alves, POR USUÁRIO (decisão 23/06): o total do time no topo
+    (hero) e, abaixo, cada vendedor com sua meta e o esforco (contatos/dia) pra bater."""
+    if not users:
         return card(badge_n, "#F1EFE8", "#444441", titulo,
-            '<div class="gv-sub" style="padding:8px 0;">Sem parâmetros de conversão pra esta visão.</div>'
-            '<div class="gv-note">Taxas do Alves não cadastradas pra este canal</div>', wide=True)
-    linhas = [("Vendas necessárias", eng["vendas"]), ("Fechamentos", eng["fechamentos"]),
-              ("Negociações", eng["negociacoes"]), ("Orçamentos", eng["orcamentos"]),
-              ("Conexões", eng["conexoes"]), ("Contatos no mês", eng["contatos_mes"])]
-    funil = "".join(
-        f'<div class="gv-eng-row"><span class="lbl">{lbl}</span>'
-        f'<span class="val">{v:,.0f}</span></div>'
-        for lbl, v in linhas)
+            '<div class="gv-sub" style="padding:8px 0;">Sem vendedor com meta nesta visao.</div>'
+            '<div class="gv-note">Metas do Pipedrive + taxas da planilha do Alves</div>', wide=True)
+    meta_tot = sum(u["meta"] for u in users)
+    cd_tot   = sum(u["contatos_dia"] for u in users)
+    vmax = max((u["contatos_dia"] for u in users), default=1) or 1
     inner = (
-        f'<div class="gv-hero gv-effort">{eng["contatos_dia"]:.0f}'
-        f'<span style="font-size:13px;color:#8A8A99;font-weight:400;"> contatos/dia</span></div>'
-        f'<div class="gv-sub">esforço do time pra bater {fmt_brl(eng["meta"])}</div>'
-        f'<div class="gv-eng-funil">{funil}</div>')
+        f'<div class="gv-hero gv-effort">{cd_tot:.0f}'
+        f'<span style="font-size:13px;color:#8A8A99;font-weight:400;"> contatos/dia (time)</span></div>'
+        f'<div class="gv-sub">esforço do time pra bater {fmt_brl(meta_tot)}</div>'
+        '<div style="margin-top:12px;">')
+    for u in users:
+        flag = (' <span style="font-size:11px;color:#854F0B;background:#FAEEDA;'
+                'padding:1px 6px;border-radius:6px;">aprox.</span>') if u["aprox"] else ''
+        w = max(u["contatos_dia"] / vmax * 100, 3)
+        inner += (f'<div class="gv-rk-row"><div class="gv-rk-top">'
+                  f'<span style="color:#15151F;">{u["nome"]}{flag}</span>'
+                  f'<span style="color:#8A8A99;">{brl_k(u["meta"])} · {u["contatos_dia"]:.0f}/dia</span></div>'
+                  f'<div class="gv-bar-track"><div class="gv-bar-fill" '
+                  f'style="width:{w:.0f}%;background:#7E746B;"></div></div></div>')
+    inner += '</div>'
     return card(badge_n, "#F1EFE8", "#444441", titulo,
-                inner + '<div class="gv-note">Funil reverso: meta ÷ ticket ÷ taxas de conversão (planilha Alves)</div>',
+                inner + '<div class="gv-note">Por vendedor: meta (Pipedrive) ÷ ticket ÷ taxas de conversão (planilha Alves)</div>',
                 wide=True)
 
 
@@ -278,6 +285,21 @@ def render(key_prefix: str = "gv"):
             GROUP BY 1, 2 ORDER BY 3 DESC LIMIT 10
         """)
         df_rk["v"] = df_rk["v"].astype(float)
+
+        # agrupamento vendedor->família vindo do ERP (YGRUVEN), pra a engenharia reversa
+        # por usuário sem hardcode (regra Diego 23/06). Prefere FA quando há 2 cadastros.
+        try:
+            df_grupo = query(f"""
+                SELECT salesperson_name nome, salesperson_group_code g
+                FROM `{ORDERS}.dim_salesperson`
+                WHERE is_active AND salesperson_group_code IN ('FA','FR','PC')
+                QUALIFY ROW_NUMBER() OVER (PARTITION BY salesperson_name
+                    ORDER BY CASE salesperson_group_code
+                        WHEN 'FA' THEN 1 WHEN 'FR' THEN 2 ELSE 3 END) = 1
+            """)
+            grupo_de = {r["nome"]: r["g"] for _, r in df_grupo.iterrows()}
+        except Exception:
+            grupo_de = {}
 
         stats_hosp  = _pipeline_stats(PIPE_HOSP, STAGES_HOSP)
         stats_farma = _pipeline_stats(PIPE_FARMA, STAGES_FARMA)
@@ -371,9 +393,27 @@ def render(key_prefix: str = "gv"):
     cards.append(_pipe_card("4", "Pipeline aberto — Hospitalar", stats_hosp))
     cards.append(_pipe_card("5", "Pipeline aberto — Farmácia", stats_farma))
 
-    # 6 e 7 — Engenharia reversa (funil reverso do Alves, por canal)
-    cards.append(_eng_reversa_card("6", "Engenharia reversa — Hospitalar", gv.eng_reversa_canal("HOSPITALAR")))
-    cards.append(_eng_reversa_card("7", "Engenharia reversa — Farmácia", gv.eng_reversa_canal("FARMACIA")))
+    # 6 e 7 — Engenharia reversa POR USUÁRIO (Alves 23/06): meta do Pipe + taxas da
+    # planilha do Alves + agrupamento do ERP (sem hardcode, regra Diego). Kauan Ramos
+    # aproximado pela média do Hospitalar até o Alves cadastrar a taxa dele.
+    def _eng_familia(grupo_cod):
+        users = []
+        for nome_norm, metas in gv.METAS_VENDEDOR.items():
+            if grupo_de.get(nome_norm) != grupo_cod:
+                continue
+            meta_ind = metas.get(mes_key)
+            if not meta_ind:
+                continue
+            taxas = gv.TAXAS_CONVERSAO.get(nome_norm)
+            aprox = taxas is None
+            if aprox:
+                taxas = gv.taxas_aproximadas_hospitalar()
+            f = gv.eng_reversa_funil(meta_ind, taxas, du_total)
+            users.append({"nome": nome_norm.title(), "aprox": aprox, **f})
+        users.sort(key=lambda u: u["meta"], reverse=True)
+        return users
+    cards.append(_eng_reversa_card("6", "Engenharia reversa — Hospitalar", _eng_familia("FA")))
+    cards.append(_eng_reversa_card("7", "Engenharia reversa — Farmácia", _eng_familia("FR")))
 
     # 8 — Atividades por TIPO (ranqueadas)
     if df_at is not None and not df_at.empty:

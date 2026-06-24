@@ -88,45 +88,44 @@ def venda_necessaria_dia(meta: float, realizado: float, ref: date) -> float:
     return falta / dias_uteis_restantes(ref)
 
 
-# ── Engenharia reversa — parâmetros do Alves (planilha "Engenharia reversa.xlsx", 16/06) ──
-# Por vendedor: meta, ticket médio (3 meses) e as 5 taxas de conversão do funil.
-# Funil reverso: vendas = meta/ticket → fechamentos = vendas/tx_fech → negociações = fech/tx_neg
-#   → orçamentos = neg/tx_orc → conexões = orç/tx_con → contatos/mês = conexões/tx_cont → /dia = /22.
-ENG_REVERSA: dict[str, dict] = {
-    "RICHARD LUCAS":               {"meta": 45951.40,  "ticket": 876.14,  "tx_fech": 0.83, "tx_neg": 0.92, "tx_orc": 0.27, "tx_con": 0.75, "tx_cont": 0.54},
-    "KAUA RODRIGUES":              {"meta": 262620.90, "ticket": 3616.23, "tx_fech": 0.65, "tx_neg": 0.74, "tx_orc": 0.50, "tx_con": 0.96, "tx_cont": 0.72},
-    "GUILHERME DE AQUINO MARQUES": {"meta": 333209.90, "ticket": 6248.33, "tx_fech": 1.00, "tx_neg": 0.95, "tx_orc": 0.70, "tx_con": 0.77, "tx_cont": 0.36},
-    "CAUA RIBEIRO":                {"meta": 32236.65,  "ticket": 859.80,  "tx_fech": 0.92, "tx_neg": 1.00, "tx_orc": 0.38, "tx_con": 0.31, "tx_cont": 0.46},
-    "GEOVANA GOMES":               {"meta": 57815.43,  "ticket": 739.20,  "tx_fech": 0.92, "tx_neg": 0.87, "tx_orc": 0.38, "tx_con": 0.98, "tx_cont": 0.36},
-}
-ENG_CANAL: dict[str, list[str]] = {
-    "HOSPITALAR": ["GUILHERME DE AQUINO MARQUES", "KAUA RODRIGUES", "RICHARD LUCAS"],
-    "FARMACIA":   ["CAUA RIBEIRO"],
+# ── Engenharia reversa — POR USUÁRIO (reunião 23/06) ──────────────────────────
+# Decisões: (Alves) quebrar a reversa por VENDEDOR, não por família; (Diego) NÃO
+# hardcodar o agrupamento — quem é de qual família vem do ERP (YGRUVEN do
+# dim_salesperson), o código só consulta. Por isso aqui ficam SÓ as taxas de
+# conversão + ticket (da planilha "Engenharia reversa.xlsx" do Alves). A META vem
+# do Pipedrive (METAS_VENDEDOR) e o GRUPO vem do ERP (resolvido na view).
+# Funil reverso: vendas = meta/ticket → fechamentos = vendas/tx_fech → negociações
+#   = fech/tx_neg → orçamentos = neg/tx_orc → conexões = orç/tx_con → contatos/mês
+#   = conexões/tx_cont → contatos/dia = /dias_úteis. Nomes = UPPER do ERP.
+TAXAS_CONVERSAO: dict[str, dict] = {
+    "RICHARD LUCAS":               {"ticket": 876.14,  "tx_fech": 0.83, "tx_neg": 0.92, "tx_orc": 0.27, "tx_con": 0.75, "tx_cont": 0.54},
+    "KAUA RODRIGUES":              {"ticket": 3616.23, "tx_fech": 0.65, "tx_neg": 0.74, "tx_orc": 0.50, "tx_con": 0.96, "tx_cont": 0.72},
+    "GUILHERME DE AQUINO MARQUES": {"ticket": 6248.33, "tx_fech": 1.00, "tx_neg": 0.95, "tx_orc": 0.70, "tx_con": 0.77, "tx_cont": 0.36},
+    "CAUA RIBEIRO":                {"ticket": 859.80,  "tx_fech": 0.92, "tx_neg": 1.00, "tx_orc": 0.38, "tx_con": 0.31, "tx_cont": 0.46},
+    "GEOVANA GOMES":               {"ticket": 739.20,  "tx_fech": 0.92, "tx_neg": 0.87, "tx_orc": 0.38, "tx_con": 0.98, "tx_cont": 0.36},
 }
 
+FAMILIA_LABEL = {"FA": "Hospitalar", "FR": "Farmácia", "PC": "SAC"}
 
-def eng_reversa_funil(p: dict, dias_uteis: int = 22) -> dict:
-    """Funil reverso do Alves a partir de meta + ticket + 5 taxas de conversão."""
-    vendas = p["meta"] / p["ticket"] if p.get("ticket") else 0.0
-    fech = vendas / p["tx_fech"] if p.get("tx_fech") else 0.0
-    neg  = fech   / p["tx_neg"]  if p.get("tx_neg")  else 0.0
-    orc  = neg    / p["tx_orc"]  if p.get("tx_orc")  else 0.0
-    con  = orc    / p["tx_con"]  if p.get("tx_con")  else 0.0
-    cont = con    / p["tx_cont"] if p.get("tx_cont") else 0.0
-    return {"meta": p["meta"], "vendas": vendas, "fechamentos": fech, "negociacoes": neg,
+
+def taxas_aproximadas_hospitalar() -> dict:
+    """Kauan Ramos ainda não está na planilha do Alves. Até ele cadastrar, aproximo
+    as taxas + ticket pela MÉDIA do Hospitalar (Guilherme + Kauã + Richard)."""
+    base = [TAXAS_CONVERSAO[v] for v in
+            ("GUILHERME DE AQUINO MARQUES", "KAUA RODRIGUES", "RICHARD LUCAS")]
+    chaves = ("ticket", "tx_fech", "tx_neg", "tx_orc", "tx_con", "tx_cont")
+    return {k: round(sum(b[k] for b in base) / len(base), 4) for k in chaves}
+
+
+def eng_reversa_funil(meta: float, taxas: dict, dias_uteis: int = 22) -> dict:
+    """Funil reverso de UM vendedor: meta (Pipe) + ticket + 5 taxas (planilha Alves)."""
+    t = taxas or {}
+    vendas = meta / t["ticket"] if t.get("ticket") else 0.0
+    fech = vendas / t["tx_fech"] if t.get("tx_fech") else 0.0
+    neg  = fech   / t["tx_neg"]  if t.get("tx_neg")  else 0.0
+    orc  = neg    / t["tx_orc"]  if t.get("tx_orc")  else 0.0
+    con  = orc    / t["tx_con"]  if t.get("tx_con")  else 0.0
+    cont = con    / t["tx_cont"] if t.get("tx_cont") else 0.0
+    return {"meta": meta, "vendas": vendas, "fechamentos": fech, "negociacoes": neg,
             "orcamentos": orc, "conexoes": con, "contatos_mes": cont,
             "contatos_dia": cont / dias_uteis if dias_uteis else 0.0}
-
-
-def eng_reversa_canal(canal_key: str, dias_uteis: int = 22) -> dict:
-    """Soma o funil reverso dos vendedores de um canal (Hospitalar/Farmácia)."""
-    agg = {k: 0.0 for k in ("meta", "vendas", "fechamentos", "negociacoes",
-                            "orcamentos", "conexoes", "contatos_mes", "contatos_dia")}
-    for v in ENG_CANAL.get(canal_key, []):
-        p = ENG_REVERSA.get(v)
-        if not p:
-            continue
-        f = eng_reversa_funil(p, dias_uteis)
-        for k in agg:
-            agg[k] += f[k]
-    return agg
