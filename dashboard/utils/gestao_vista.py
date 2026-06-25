@@ -8,7 +8,7 @@ de junho no WhatsApp (segunda-feira) — trocar só os números em METAS_*.
 Regras de cálculo fechadas na reunião:
   - projeção_esperada = (meta / dias_úteis_mês) * dia_útil_corrente
   - venda_necessaria_dia = (meta - realizado) / dias_úteis_restantes
-  - dias quebrados por DIAS ÚTEIS (não por 30); feriados contam.
+  - dias quebrados por DIAS ÚTEIS = seg-sex MENOS feriados (Alves confirmou 25/06/2026).
 """
 from __future__ import annotations
 

@@ -389,9 +389,42 @@ def render(key_prefix: str = "gv"):
         f'<div class="gv-note">% do ritmo até hoje · meta diária = mensal ÷ {du_total} dias úteis '
         f'(dia útil {du_corr}/{du_total}) · remanescente rola pro dia seguinte</div>'))
 
-    # 4 e 5 — Pipelines abertas (Hospitalar + Farmácia)
-    cards.append(_pipe_card("4", "Pipeline aberto — Hospitalar", stats_hosp))
-    cards.append(_pipe_card("5", "Pipeline aberto — Farmácia", stats_farma))
+    # 4 — Venda necessária por dia, por vendedor (Alves 23/06; dias úteis seg-sex menos
+    # feriado, confirmado 25/06). = (meta − realizado) ÷ dias úteis restantes do mês.
+    du_rest = gv.dias_uteis_restantes(ref)
+    vnd = []
+    for _, r in df_rk.iterrows():
+        meta_ind = gv.METAS_VENDEDOR.get(r["nome_norm"], {}).get(mes_key)
+        if not meta_ind:
+            continue
+        vnd.append((r["nome"], gv.venda_necessaria_dia(meta_ind, r["v"], ref), r["v"] >= meta_ind))
+    vnd.sort(key=lambda x: x[1], reverse=True)
+    if vnd:
+        vmax_d = max((v for _, v, _ in vnd), default=1.0) or 1.0
+        rows_vnd = ""
+        for nome, vdia, batida in vnd:
+            if batida:
+                rows_vnd += (f'<div class="gv-rk-row"><div class="gv-rk-top">'
+                             f'<span style="color:#15151F;">{nome}</span>'
+                             f'<span style="color:#1D9E75;font-weight:600;">✓ meta batida</span></div>'
+                             f'<div class="gv-bar-track"><div class="gv-bar-fill" '
+                             f'style="width:100%;background:#1D9E75;"></div></div></div>')
+            else:
+                w = max(vdia / vmax_d * 100, 4)
+                rows_vnd += (f'<div class="gv-rk-row"><div class="gv-rk-top">'
+                             f'<span style="color:#15151F;">{nome}</span>'
+                             f'<span style="color:#3C3489;font-weight:600;">{fmt_brl(vdia)}/dia</span></div>'
+                             f'<div class="gv-bar-track"><div class="gv-bar-fill" '
+                             f'style="width:{w:.0f}%;background:#6D5FD6;"></div></div></div>')
+    else:
+        rows_vnd = '<div class="gv-sub" style="padding:8px 0;">Sem vendedor com meta nesta visão.</div>'
+    cards.append(card("4", "#EEEDFE", "#3C3489", "Venda necessária por dia", rows_vnd +
+        f'<div class="gv-note">(meta − realizado) ÷ {du_rest} dias úteis restantes · '
+        f'seg-sex sem feriado · ordenado pelo que falta mais por dia</div>'))
+
+    # 5 e 6 — Pipelines abertas (Hospitalar + Farmácia)
+    cards.append(_pipe_card("5", "Pipeline aberto — Hospitalar", stats_hosp))
+    cards.append(_pipe_card("6", "Pipeline aberto — Farmácia", stats_farma))
 
     # 6 e 7 — Engenharia reversa POR USUÁRIO (Alves 23/06): meta do Pipe + taxas da
     # planilha do Alves + agrupamento do ERP (sem hardcode, regra Diego). Kauan Ramos
@@ -412,10 +445,10 @@ def render(key_prefix: str = "gv"):
             users.append({"nome": nome_norm.title(), "aprox": aprox, **f})
         users.sort(key=lambda u: u["meta"], reverse=True)
         return users
-    cards.append(_eng_reversa_card("6", "Engenharia reversa — Hospitalar", _eng_familia("FA")))
-    cards.append(_eng_reversa_card("7", "Engenharia reversa — Farmácia", _eng_familia("FR")))
+    cards.append(_eng_reversa_card("7", "Engenharia reversa — Hospitalar", _eng_familia("FA")))
+    cards.append(_eng_reversa_card("8", "Engenharia reversa — Farmácia", _eng_familia("FR")))
 
-    # 8 — Atividades por TIPO (ranqueadas)
+    # 9 — Atividades por TIPO (ranqueadas)
     if df_at is not None and not df_at.empty:
         df_at["concl"] = df_at["concl"].astype(int)
         df_at["atras"] = df_at["atras"].astype(int)
@@ -438,9 +471,9 @@ def render(key_prefix: str = "gv"):
     else:
         rows = '<div class="gv-sub" style="padding:8px 0;">crm_raw.activities indisponível.</div>'
         nota = "Ingestão de atividades pendente"
-    cards.append(card("8", "#FAEEDA", "#854F0B", "Atividades por tipo", rows + f'<div class="gv-note">{nota}</div>'))
+    cards.append(card("9", "#FAEEDA", "#854F0B", "Atividades por tipo", rows + f'<div class="gv-note">{nota}</div>'))
 
-    # 9 — Atividades por VENDEDOR (novo)
+    # 10 — Atividades por VENDEDOR (novo)
     if df_av is not None and not df_av.empty:
         df_av["concl"] = df_av["concl"].astype(int)
         df_av["atras"] = df_av["atras"].astype(int)
@@ -459,7 +492,7 @@ def render(key_prefix: str = "gv"):
     else:
         rows = '<div class="gv-sub" style="padding:8px 0;">Sem atividades por vendedor.</div>'
         nota = "Mapeamento user_id → vendedor (dim_crm_user)"
-    cards.append(card("9", "#FAEEDA", "#854F0B", "Atividades por vendedor", rows + f'<div class="gv-note">{nota}</div>'))
+    cards.append(card("10", "#FAEEDA", "#854F0B", "Atividades por vendedor", rows + f'<div class="gv-note">{nota}</div>'))
 
     st.markdown(f'<div class="gv-grid">{"".join(cards)}</div>', unsafe_allow_html=True)
     st.markdown('<div class="gv-foot">★ Nosso foco, nosso resultado — disciplina todos os dias, '
