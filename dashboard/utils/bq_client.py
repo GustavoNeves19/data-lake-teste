@@ -68,7 +68,8 @@ def _data_version(project: str = PROJECT_PROD) -> str:
         client = get_client(project)
         marcos = []
         for t in (f"{project}.gold_comercial.gold_com_cliente_360",   # gold = última coisa que a carga grava
-                  f"{project}.dm_orders.fact_sales_order"):
+                  f"{project}.dm_orders.fact_sales_order",
+                  f"{project}.crm_raw.activities"):                    # CRM sobe de hora em hora (Gestão à Vista lê crm_raw direto)
             try:
                 marcos.append(str(client.get_table(t).modified))
             except Exception:
