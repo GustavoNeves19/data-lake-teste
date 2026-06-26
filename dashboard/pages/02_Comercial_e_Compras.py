@@ -192,23 +192,22 @@ with tab_venda:
 
             yoy_label = f"vs {_MES_PT[mes_ano_ant.month]}/{mes_ano_ant.year}"
 
-            # Projeção (Vinícius 26/06): onde a equipe DEVERIA estar HOJE para bater a meta
-            # = meta mensal ÷ dias úteis × dias úteis já decorridos. Substitui "Transações"
-            # e vai como 1º card. No mês corrente usa hoje; em mês fechado usa o fim do mês
-            # (projeção = meta cheia → % atingido vira % da meta do mês).
+            # Projeção (Vinícius 26/06): onde a equipe DEVERIA estar HOJE = meta mensal ÷
+            # dias úteis × dias úteis decorridos. SÓ aparece no MÊS CORRENTE: em mês fechado
+            # não existe projeção (o número final já é o faturamento obtido) e a meta default
+            # vale só pro mês atual — então o card some nos meses passados (correção 26/06).
             hoje_ = pd.Timestamp.today().date()
-            if mes_ref.year == hoje_.year and mes_ref.month == hoje_.month:
-                ref_proj = hoje_
-            else:
-                ref_proj = (pd.Timestamp(mes_ref) + pd.offsets.MonthEnd(0)).date()
-            meta_geral_mes = metas_store.meta_do_mes("GERAL", mes_ref)
-            proj_esperada = gv.projecao_esperada(meta_geral_mes, ref_proj)
-            pct_proj = (fat_mes / proj_esperada) if proj_esperada else 0.0
-
-            kpi_row([
-                {"label": "Projeção (esperado até hoje)", "value": fmt_brl(proj_esperada),
-                 "delta": f"{pct_proj*100:.0f}% atingido",
-                 "delta_dir": "up" if fat_mes >= proj_esperada else "down"},
+            eh_corrente = (mes_ref.year == hoje_.year and mes_ref.month == hoje_.month)
+            cards_kpi = []
+            if eh_corrente:
+                meta_geral_mes = metas_store.meta_do_mes("GERAL", mes_ref)
+                proj_esperada = gv.projecao_esperada(meta_geral_mes, hoje_)
+                pct_proj = (fat_mes / proj_esperada) if proj_esperada else 0.0
+                cards_kpi.append(
+                    {"label": "Projeção (esperado até hoje)", "value": fmt_brl(proj_esperada),
+                     "delta": f"{pct_proj*100:.0f}% do esperado",
+                     "delta_dir": "up" if fat_mes >= proj_esperada else "down"})
+            cards_kpi += [
                 {"label": "Faturamento", "value": fmt_brl(fat_mes), "variant": "success"},
                 {"label": "vs Mês Anterior", "value": fmt_brl(fat_ant),
                  "delta": fmt_pct(var_mom), "delta_dir": "up" if var_mom >= 0 else "down"},
@@ -217,9 +216,12 @@ with tab_venda:
                  "delta": fmt_pct(var_yoy) if fat_yoy else "",
                  "delta_dir": "up" if var_yoy >= 0 else "down"},
                 {"label": "Ticket Médio", "value": fmt_brl(ticket)},
-            ])
-            st.caption("Projeção = meta mensal ÷ dias úteis × dias úteis decorridos "
-                       "(onde a equipe deveria estar hoje para bater a meta).")
+            ]
+            kpi_row(cards_kpi)
+            if eh_corrente:
+                st.caption("Projeção = meta mensal ÷ dias úteis × dias úteis decorridos "
+                           "(onde a equipe deveria estar hoje para bater a meta). "
+                           "Só no mês corrente — em mês fechado vale o faturamento obtido.")
 
             st.markdown("<br>", unsafe_allow_html=True)
 
@@ -451,9 +453,10 @@ with tab_venda:
 
     # ═══ Consulta por período exato (pedido Alves 09/06) ══════════════════
     st.markdown("---")
-    section_title("Faturamento por Período Exato")
-    st.caption("Escolha um intervalo de datas (ex: semana passada, dia 15 ao 20). "
-               "Mesma metodologia validada — faturamento por data da nota (yValPro).")
+    section_title("Vendas e Faturamento por Período Exato")
+    st.caption("Escolha um intervalo de datas. São dois números, de propósito diferentes: "
+               "**Vendas** = pedidos emitidos (data do pedido) — é o que o calendário acima soma e reconcilia. "
+               "**Faturamento** = notas emitidas (data da nota). A tabela por canal abaixo é o faturamento.")
     try:
         _maxd = pd.to_datetime(query(
             f"SELECT MAX(invoice_date) AS d FROM `{ORDERS}.fact_sales_order` WHERE invoice_date IS NOT NULL"
@@ -492,10 +495,24 @@ with tab_venda:
             df_per["pedidos"] = pd.to_numeric(df_per["pedidos"], errors="coerce").fillna(0).astype(int)
             tot_fat = float(df_per["faturamento"].sum())
             tot_ped = int(df_per["pedidos"].sum())
-            pk1, pk2, pk3 = st.columns(3)
-            with pk1: kpi_card("Faturamento no período", fmt_brl(tot_fat))
-            with pk2: kpi_card("Pedidos", f"{tot_ped:,}".replace(",", "."))
-            with pk3: kpi_card("Ticket médio", fmt_brl(tot_fat / tot_ped if tot_ped else 0))
+            # Vendas (pedidos) pela MESMA régua do calendário (order_date) pro intervalo,
+            # pra os dois painéis reconciliarem: aqui o range exato, lá a grade do mês.
+            try:
+                _vp = query(f"""
+                    SELECT SUM(o.product_amount) v
+                    FROM `{ORDERS}.fact_sales_order` o
+                    JOIN `{ORDERS}.dim_operation_nature` n
+                      ON n.nature_code = o.nature_code AND n.financial_flag <> 'N'
+                    WHERE o.order_date BETWEEN '{dt_ini}' AND '{dt_fim}'
+                """)
+                tot_vendas = float(_vp["v"].iloc[0] or 0)
+            except Exception:
+                tot_vendas = 0.0
+            pk1, pk2, pk3, pk4 = st.columns(4)
+            with pk1: kpi_card("Vendas (pedidos)", fmt_brl(tot_vendas))
+            with pk2: kpi_card("Faturamento (notas)", fmt_brl(tot_fat))
+            with pk3: kpi_card("Pedidos", f"{tot_ped:,}".replace(",", "."))
+            with pk4: kpi_card("Ticket médio", fmt_brl(tot_fat / tot_ped if tot_ped else 0))
             df_show_per = df_per.copy()
             df_show_per["faturamento"] = df_show_per["faturamento"].apply(fmt_brl)
             df_show_per.columns = ["Canal", "Pedidos", "Faturamento"]

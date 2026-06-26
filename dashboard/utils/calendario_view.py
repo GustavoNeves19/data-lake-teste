@@ -44,6 +44,7 @@ _CSS = """
 .cv-chip{display:inline-block;font-size:12px;font-weight:600;padding:3px 7px;border-radius:6px;line-height:1.2;}
 .cv-green{background:#10B981;color:#fff;}
 .cv-amber{background:#FDE68A;color:#8A5A00;}
+.cv-neutral{background:#EEF0F6;color:#3C3489;}
 .cv-foot{border:1px solid #E6E6F0;border-top:none;border-radius:0 0 12px 12px;padding:14px 18px;background:#fff;}
 .cv-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;}
 .cv-st .l{font-size:11px;color:#8A8A99;}
@@ -96,7 +97,16 @@ def render_calendario(mes_ref: date, key_prefix: str = "cal") -> None:
     eh_corrente = (mes_ref.year == hoje.year and mes_ref.month == hoje.month)
     ref = hoje if eh_corrente else date.fromordinal(mes_fim.toordinal() - 1)
 
-    meta      = metas_store.meta_do_mes("GERAL", mes_ref)
+    # Meta: usa a GRAVADA do mês; senão o default SÓ no mês corrente (junho). Mês fechado
+    # sem meta definida não exibe meta/projeção (não fabrica o default p/ meses passados).
+    meta_stored = metas_store.meta_armazenada("GERAL", mes_ref)
+    if meta_stored is not None:
+        meta, tem_meta = meta_stored, True
+    elif eh_corrente:
+        meta, tem_meta = float(gv.META_EQUIPE.get("GERAL", 0.0)), True
+    else:
+        meta, tem_meta = 0.0, False
+
     du        = gv.dias_uteis_mes(ref)
     du_corr   = gv.dia_util_corrente(ref)
     meta_dia  = meta / du if du else 0.0
@@ -105,74 +115,99 @@ def render_calendario(mes_ref: date, key_prefix: str = "cal") -> None:
     dias_rest = max(du - du_corr, 0) if eh_corrente else 0
     rem_dia   = rem_total / dias_rest if dias_rest else 0.0
     pct       = (vendas / meta) if meta else 0.0
-    proj      = gv.projecao_esperada(meta, ref)
     ultima    = data_ultima_carga()
 
     # ── grade do calendário (semana começando no DOMINGO) ───────────────────
+    # Pinta verde/âmbar por meta SÓ quando há meta confiável do mês; senão chip neutro.
     semanas = _cal.Calendar(firstweekday=6).monthdayscalendar(mes_ref.year, mes_ref.month)
     linhas = ""
     for semana in semanas:
         cels = ""
         wtot = 0.0
         for i, d in enumerate(semana):
-            we = " we" if i in (0, 6) else ""
+            we = "we" if i in (0, 6) else ""
             if d == 0:
                 cels += '<td class="empty"></td>'
                 continue
             val = diario.get(d, 0.0)
             wtot += val
             if val > 0:
-                cls = "cv-green" if val >= meta_dia else "cv-amber"
+                cls = ("cv-green" if val >= meta_dia else "cv-amber") if tem_meta else "cv-neutral"
                 chip = f'<div class="cv-chip {cls}">{_brl(val)}</div>'
             else:
                 chip = ""
-            cels += f'<td class="{we.strip()}"><div class="cv-day">{d}</div>{chip}</td>'
+            cels += f'<td class="{we}"><div class="cv-day">{d}</div>{chip}</td>'
         cels += f'<td class="wtot">{_brl(wtot) if wtot else "R$ 0"}</td>'
         linhas += f"<tr>{cels}</tr>"
 
     ths = "".join(
         f'<th class="{"we" if i in (0,6) else ""}">{nome}</th>' for i, nome in enumerate(DIAS)
     ) + '<th class="tot">TOTAL</th>'
-
     titulo = f"Vendas Diárias — {MESES[mes_ref.month]}/{mes_ref.year}"
-    rem_txt = (f'<div class="cv-st"><div class="l">Remanescente</div>'
-               f'<div class="v">{_brl(rem_dia)}</div><div class="s">por dia · {dias_rest} dias úteis</div></div>'
-               if dias_rest else
-               '<div class="cv-st"><div class="l">Remanescente</div><div class="v">—</div>'
-               '<div class="s">mês encerrado</div></div>')
 
-    html = (
-        _CSS +
-        f'<div class="cv-wrap"><div class="cv-bar">{titulo}</div>'
-        f'<table class="cv-tab"><thead><tr>{ths}</tr></thead><tbody>{linhas}</tbody></table>'
-        f'<div class="cv-foot">'
-        f'<div class="cv-stats">'
-        f'<div class="cv-st"><div class="l">Meta diária</div><div class="v">{_brl(meta_dia)}</div>'
-        f'<div class="s">meta mensal ÷ {du} dias úteis</div></div>'
-        f'<div class="cv-st"><div class="l">Vendas (pedidos)</div><div class="v">{_brl(vendas)}</div>'
-        f'<div class="s">emissão de pedido no mês</div></div>'
-        f'<div class="cv-st"><div class="l">Meta mensal</div><div class="v">{_brl(meta)}</div>'
-        f'<div class="s">editável na Gestão à Vista</div></div>'
-        f'</div>'
-        f'<div class="cv-stats">{rem_txt}'
-        f'<div class="cv-st"><div class="l">Falta para a meta</div><div class="v">{_brl(rem_total)}</div>'
-        f'<div class="s">meta − vendas</div></div>'
-        f'<div class="cv-st"><div class="l">Atingido</div><div class="v">{pct*100:.0f}%</div>'
-        f'<div class="s">vendas ÷ meta mensal</div></div></div>'
-        f'<div class="cv-prog"><div class="cv-prog-fill" style="width:{min(pct,1)*100:.0f}%;"></div>'
-        f'<div class="cv-prog-lbl">{pct*100:.0f}%</div></div>'
-        f'<div class="cv-fresh">Foto da última carga · {ultima} BRT — o ERP da equipe atualiza ao vivo; '
-        f'os números se igualam a cada carga.</div>'
-        f'</div>'
-        # ── faixa de faturamento (emissão de nota) ──────────────────────────
-        f'<div class="cv-bar2">Faturamento — {MESES[mes_ref.month]}/{mes_ref.year}</div>'
-        f'<div class="cv-fat">'
-        f'<div class="cv-st"><div class="l">Projeção (esperado até hoje)</div><div class="v">{_brl(proj)}</div>'
-        f'<div class="s">meta ÷ dias úteis × dias decorridos</div></div>'
-        f'<div class="cv-st"><div class="l">Faturamento (notas)</div><div class="v">{_brl(faturado)}</div>'
-        f'<div class="s">emissão de nota no mês</div></div>'
-        f'</div></div>'
-    )
+    if tem_meta:
+        rem_txt = (f'<div class="cv-st"><div class="l">Remanescente</div>'
+                   f'<div class="v">{_brl(rem_dia)}</div><div class="s">por dia · {dias_rest} dias úteis</div></div>'
+                   if dias_rest else
+                   '<div class="cv-st"><div class="l">Remanescente</div><div class="v">—</div>'
+                   '<div class="s">mês encerrado</div></div>')
+        foot = (
+            f'<div class="cv-foot"><div class="cv-stats">'
+            f'<div class="cv-st"><div class="l">Meta diária</div><div class="v">{_brl(meta_dia)}</div>'
+            f'<div class="s">meta mensal ÷ {du} dias úteis</div></div>'
+            f'<div class="cv-st"><div class="l">Vendas (pedidos)</div><div class="v">{_brl(vendas)}</div>'
+            f'<div class="s">emissão de pedido no mês</div></div>'
+            f'<div class="cv-st"><div class="l">Meta mensal</div><div class="v">{_brl(meta)}</div>'
+            f'<div class="s">editável na Gestão à Vista</div></div></div>'
+            f'<div class="cv-stats">{rem_txt}'
+            f'<div class="cv-st"><div class="l">Falta para a meta</div><div class="v">{_brl(rem_total)}</div>'
+            f'<div class="s">meta − vendas</div></div>'
+            f'<div class="cv-st"><div class="l">Atingido</div><div class="v">{pct*100:.0f}%</div>'
+            f'<div class="s">vendas ÷ meta mensal</div></div></div>'
+            f'<div class="cv-prog"><div class="cv-prog-fill" style="width:{min(pct,1)*100:.0f}%;"></div>'
+            f'<div class="cv-prog-lbl">{pct*100:.0f}%</div></div>'
+            f'<div class="cv-fresh">Foto da última carga · {ultima} BRT — o ERP da equipe atualiza ao vivo; '
+            f'os números se igualam a cada carga.</div></div>'
+        )
+        # Projeção SÓ no mês corrente; mês fechado mostra apenas o faturamento obtido.
+        if eh_corrente:
+            proj = gv.projecao_esperada(meta, ref)
+            fat_box = (
+                '<div class="cv-fat">'
+                f'<div class="cv-st"><div class="l">Projeção (esperado até hoje)</div>'
+                f'<div class="v">{_brl(proj)}</div>'
+                f'<div class="s">meta ÷ dias úteis × dias decorridos</div></div>'
+                f'<div class="cv-st"><div class="l">Faturamento (notas)</div>'
+                f'<div class="v">{_brl(faturado)}</div>'
+                f'<div class="s">emissão de nota no mês</div></div></div>'
+            )
+        else:
+            fat_box = (
+                '<div class="cv-fat" style="grid-template-columns:1fr;">'
+                f'<div class="cv-st"><div class="l">Faturamento do mês (fechado)</div>'
+                f'<div class="v">{_brl(faturado)}</div>'
+                f'<div class="s">emissão de nota — total realizado no mês</div></div></div>'
+            )
+    else:
+        # mês fechado sem meta definida: só os realizados + dica pra definir a meta
+        foot = (
+            f'<div class="cv-foot"><div class="cv-stats" style="grid-template-columns:1fr 1fr;">'
+            f'<div class="cv-st"><div class="l">Vendas (pedidos)</div><div class="v">{_brl(vendas)}</div>'
+            f'<div class="s">emissão de pedido no mês</div></div>'
+            f'<div class="cv-st"><div class="l">Faturamento (notas)</div><div class="v">{_brl(faturado)}</div>'
+            f'<div class="s">emissão de nota no mês</div></div></div>'
+            f'<div class="cv-fresh">Mês fechado sem meta definida — defina a meta de '
+            f'{MESES[mes_ref.month]} na Gestão à Vista para ver meta diária, progresso e projeção. '
+            f'Foto da última carga · {ultima} BRT.</div></div>'
+        )
+        fat_box = ""
+
+    html = (_CSS + f'<div class="cv-wrap"><div class="cv-bar">{titulo}</div>'
+            f'<table class="cv-tab"><thead><tr>{ths}</tr></thead><tbody>{linhas}</tbody></table>'
+            + foot)
+    if fat_box:
+        html += f'<div class="cv-bar2">Faturamento — {MESES[mes_ref.month]}/{mes_ref.year}</div>' + fat_box
+    html += '</div>'
     st.markdown(html, unsafe_allow_html=True)
 
 

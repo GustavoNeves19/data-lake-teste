@@ -57,6 +57,14 @@ def meta_do_mes(view_key: str, mes: date) -> float:
     return float(val) if val is not None else float(gv.META_EQUIPE.get(view_key, 0.0))
 
 
+def meta_armazenada(view_key: str, mes: date):
+    """Meta GRAVADA para o mês (None se nunca foi definida). Diferente de meta_do_mes,
+    que cai no default: aqui dá pra saber se o número é real daquele mês ou só o
+    fallback — meses passados não devem exibir meta/projeção fabricada com o default."""
+    val = _metas_do_mes(mes.replace(day=1).isoformat()).get(view_key)
+    return float(val) if val is not None else None
+
+
 def set_meta(view_key: str, mes: date, valor: float, updated_by: str) -> None:
     """Grava (upsert) a meta da view para o mês e busta o cache de leitura."""
     _ensure_table()
