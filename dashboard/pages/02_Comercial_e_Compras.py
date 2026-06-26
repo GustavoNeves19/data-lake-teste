@@ -504,6 +504,7 @@ with tab_venda:
     # ═══ Calendário de Vendas Diárias (reunião 26/06, Vinícius) ════════════
     st.markdown("---")
     calendario_view.render_calendario(mes_ref, key_prefix="vendas_cal")
+    calendario_view.render_faturamento_mensal()
 
 # ── Compras ──────────────────────────────────────────────────
 with tab_compra:
