@@ -71,10 +71,11 @@ def dia_util_corrente(ref: date) -> int:
 
 
 def dias_uteis_restantes(ref: date) -> int:
-    """Dias úteis que ainda faltam no mês A PARTIR de `ref` (exclui o próprio dia
-    já contado como decorrido). Mínimo 1 para não dividir por zero."""
+    """Dias úteis que ainda faltam no mês CONTANDO o próprio dia `ref` (decisão do
+    Alves 26/06: hoje ainda é dia útil, então entra na conta). Mínimo 1."""
     total = dias_uteis_mes(ref)
-    return max(total - dia_util_corrente(ref), 1)
+    # dia_util_corrente já inclui hoje; o +1 devolve o "hoje" como dia restante.
+    return max(total - dia_util_corrente(ref) + 1, 1)
 
 
 def projecao_esperada(meta: float, ref: date) -> float:

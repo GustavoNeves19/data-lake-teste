@@ -419,7 +419,7 @@ def render(key_prefix: str = "gv"):
     else:
         rows_vnd = '<div class="gv-sub" style="padding:8px 0;">Sem vendedor com meta nesta visão.</div>'
     cards.append(card("4", "#EEEDFE", "#3C3489", "Venda necessária por dia", rows_vnd +
-        f'<div class="gv-note">(meta − realizado) ÷ {du_rest} dias úteis restantes · '
+        f'<div class="gv-note">(meta − realizado) ÷ {du_rest} dias úteis restantes (contando hoje) · '
         f'seg-sex sem feriado · ordenado pelo que falta mais por dia</div>'))
 
     # 5 e 6 — Pipelines abertas (Hospitalar + Farmácia)
