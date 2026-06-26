@@ -20,7 +20,7 @@ if str(_ROOT) not in sys.path:
 from dashboard.utils.components import inject_css, page_header, kpi_card, kpi_row, section_title, sidebar_brand
 from dashboard.utils.bq_client import query, query_layer, fmt_brl, fmt_num, fmt_pct, PROJECT_PROD, data_ultima_carga
 from dashboard.utils.gold_tables import Comercial as G
-from dashboard.utils import gestao_vista as gv, metas_store
+from dashboard.utils import gestao_vista as gv, metas_store, calendario_view
 
 inject_css()
 sidebar_brand()
@@ -500,6 +500,10 @@ with tab_venda:
             df_show_per["faturamento"] = df_show_per["faturamento"].apply(fmt_brl)
             df_show_per.columns = ["Canal", "Pedidos", "Faturamento"]
             st.dataframe(df_show_per, hide_index=True, use_container_width=True)
+
+    # ═══ Calendário de Vendas Diárias (reunião 26/06, Vinícius) ════════════
+    st.markdown("---")
+    calendario_view.render_calendario(mes_ref, key_prefix="vendas_cal")
 
 # ── Compras ──────────────────────────────────────────────────
 with tab_compra:
