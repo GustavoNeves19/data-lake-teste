@@ -15,7 +15,7 @@ from datetime import date
 
 import streamlit as st
 
-from dashboard.utils.bq_client import query, PROJECT_PROD
+from dashboard.utils.bq_client import query, data_ultima_carga, PROJECT_PROD
 from dashboard.utils import gestao_vista as gv, metas_store
 
 PROJ = PROJECT_PROD
@@ -53,6 +53,8 @@ _CSS = """
 .cv-prog-fill{height:100%;background:#10B981;}
 .cv-prog-lbl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   font-weight:700;color:#15151F;font-size:14px;}
+.cv-fresh{font-size:11px;color:#A6A6B2;margin-top:11px;padding-top:8px;border-top:1px dashed #F0F0F5;
+  text-align:center;}
 .cv-bar2{background:#1E1882;color:#fff;text-align:center;font-weight:600;font-size:15px;padding:9px;
   border-radius:12px;margin-top:16px;}
 .cv-fat{display:grid;grid-template-columns:1fr 1fr;gap:12px;border:1px solid #E6E6F0;border-top:none;
@@ -104,6 +106,7 @@ def render_calendario(mes_ref: date, key_prefix: str = "cal") -> None:
     rem_dia   = rem_total / dias_rest if dias_rest else 0.0
     pct       = (vendas / meta) if meta else 0.0
     proj      = gv.projecao_esperada(meta, ref)
+    ultima    = data_ultima_carga()
 
     # ── grade do calendário (semana começando no DOMINGO) ───────────────────
     semanas = _cal.Calendar(firstweekday=6).monthdayscalendar(mes_ref.year, mes_ref.month)
@@ -158,6 +161,8 @@ def render_calendario(mes_ref: date, key_prefix: str = "cal") -> None:
         f'<div class="s">vendas ÷ meta mensal</div></div></div>'
         f'<div class="cv-prog"><div class="cv-prog-fill" style="width:{min(pct,1)*100:.0f}%;"></div>'
         f'<div class="cv-prog-lbl">{pct*100:.0f}%</div></div>'
+        f'<div class="cv-fresh">Foto da última carga · {ultima} BRT — o ERP da equipe atualiza ao vivo; '
+        f'os números se igualam a cada carga.</div>'
         f'</div>'
         # ── faixa de faturamento (emissão de nota) ──────────────────────────
         f'<div class="cv-bar2">Faturamento — {MESES[mes_ref.month]}/{mes_ref.year}</div>'
