@@ -58,3 +58,42 @@ def logout_button():
         if st.sidebar.button("Sair", key="_logout_btn", use_container_width=True):
             st.session_state["_auth_ok"] = False
             st.rerun()
+
+
+# ── Permissão de EDIÇÃO de meta (2º nível, reunião 26/06) ─────────────────────
+# Liberada só para os e-mails da liderança (Vinícius + Ops). Credencial em
+# st.secrets["meta_editor"] — Gustavo preenche no Streamlit Cloud, NUNCA no repo:
+#
+#     [meta_editor]
+#     emails   = "vinicius@...,ops@..."   # lista separada por vírgula
+#     password = "..."
+#
+# Enquanto não estiver configurado, a edição simplesmente não aparece (sem regressão).
+
+def _editor_creds():
+    """Lê (emails_permitidos, senha) de st.secrets['meta_editor']. ([], '') se ausente."""
+    try:
+        a = st.secrets["meta_editor"]
+        emails = [e.strip().lower() for e in str(a.get("emails", "")).split(",") if e.strip()]
+        return emails, str(a.get("password", ""))
+    except Exception:
+        return [], ""
+
+
+def meta_editor_enabled() -> bool:
+    """True se a edição de meta está configurada (há senha em secrets)."""
+    _, pwd = _editor_creds()
+    return bool(pwd)
+
+
+def current_meta_editor():
+    """E-mail do editor logado nesta sessão (ou None)."""
+    return st.session_state.get("_meta_editor_email")
+
+
+def check_meta_editor(email: str, pwd: str) -> bool:
+    """Valida e-mail (na allowlist) + senha de edição."""
+    emails, pwd_ok = _editor_creds()
+    if not pwd_ok:
+        return False
+    return email.strip().lower() in emails and pwd == pwd_ok

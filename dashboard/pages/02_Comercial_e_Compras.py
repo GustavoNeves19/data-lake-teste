@@ -20,6 +20,7 @@ if str(_ROOT) not in sys.path:
 from dashboard.utils.components import inject_css, page_header, kpi_card, kpi_row, section_title, sidebar_brand
 from dashboard.utils.bq_client import query, query_layer, fmt_brl, fmt_num, fmt_pct, PROJECT_PROD, data_ultima_carga
 from dashboard.utils.gold_tables import Comercial as G
+from dashboard.utils import gestao_vista as gv, metas_store
 
 inject_css()
 sidebar_brand()
@@ -190,7 +191,24 @@ with tab_venda:
             var_yoy = ((fat_mes - fat_yoy) / fat_yoy * 100) if fat_yoy else 0
 
             yoy_label = f"vs {_MES_PT[mes_ano_ant.month]}/{mes_ano_ant.year}"
+
+            # Projeção (Vinícius 26/06): onde a equipe DEVERIA estar HOJE para bater a meta
+            # = meta mensal ÷ dias úteis × dias úteis já decorridos. Substitui "Transações"
+            # e vai como 1º card. No mês corrente usa hoje; em mês fechado usa o fim do mês
+            # (projeção = meta cheia → % atingido vira % da meta do mês).
+            hoje_ = pd.Timestamp.today().date()
+            if mes_ref.year == hoje_.year and mes_ref.month == hoje_.month:
+                ref_proj = hoje_
+            else:
+                ref_proj = (pd.Timestamp(mes_ref) + pd.offsets.MonthEnd(0)).date()
+            meta_geral_mes = metas_store.meta_do_mes("GERAL", mes_ref)
+            proj_esperada = gv.projecao_esperada(meta_geral_mes, ref_proj)
+            pct_proj = (fat_mes / proj_esperada) if proj_esperada else 0.0
+
             kpi_row([
+                {"label": "Projeção (esperado até hoje)", "value": fmt_brl(proj_esperada),
+                 "delta": f"{pct_proj*100:.0f}% atingido",
+                 "delta_dir": "up" if fat_mes >= proj_esperada else "down"},
                 {"label": "Faturamento", "value": fmt_brl(fat_mes), "variant": "success"},
                 {"label": "vs Mês Anterior", "value": fmt_brl(fat_ant),
                  "delta": fmt_pct(var_mom), "delta_dir": "up" if var_mom >= 0 else "down"},
@@ -199,8 +217,9 @@ with tab_venda:
                  "delta": fmt_pct(var_yoy) if fat_yoy else "",
                  "delta_dir": "up" if var_yoy >= 0 else "down"},
                 {"label": "Ticket Médio", "value": fmt_brl(ticket)},
-                {"label": "Transações", "value": f"{trans_mes:,}".replace(",", ".")},
             ])
+            st.caption("Projeção = meta mensal ÷ dias úteis × dias úteis decorridos "
+                       "(onde a equipe deveria estar hoje para bater a meta).")
 
             st.markdown("<br>", unsafe_allow_html=True)
 

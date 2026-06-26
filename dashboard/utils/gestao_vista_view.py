@@ -17,7 +17,7 @@ import pandas as pd
 from datetime import date
 
 from dashboard.utils.bq_client import query, fmt_brl, PROJECT_PROD, data_ultima_carga
-from dashboard.utils import gestao_vista as gv
+from dashboard.utils import gestao_vista as gv, metas_store, auth
 
 PROJ   = PROJECT_PROD
 ORDERS = f"{PROJ}.dm_orders"
@@ -170,33 +170,96 @@ def _pipe_card(badge_n, titulo, stats: dict) -> str:
 
 
 def _eng_reversa_card(badge_n, titulo, users: list) -> str:
-    """Funil reverso do Alves, POR USUÁRIO (decisão 23/06): o total do time no topo
-    (hero) e, abaixo, cada vendedor com sua meta e o esforco (contatos/dia) pra bater."""
+    """Funil de engenharia reversa do GRUPO (reunião 26/06, Vinícius): cascata vertical
+    Meta → vendas necessárias → oportunidades → contatos, com as taxas de conversão entre
+    as etapas. Agrega os vendedores do grupo (meta do Pipedrive + ticket/taxas da planilha
+    do Alves). As taxas mostradas são as EFETIVAS do grupo (blended). O número de etapas
+    do funil (orçamento/contato) casa com o que o Alves vai mandar do Pipedrive."""
     if not users:
         return card(badge_n, "#F1EFE8", "#444441", titulo,
-            '<div class="gv-sub" style="padding:8px 0;">Sem vendedor com meta nesta visao.</div>'
+            '<div class="gv-sub" style="padding:8px 0;">Sem vendedor com meta nesta visão.</div>'
             '<div class="gv-note">Metas do Pipedrive + taxas da planilha do Alves</div>', wide=True)
+
     meta_tot = sum(u["meta"] for u in users)
-    cd_tot   = sum(u["contatos_dia"] for u in users)
-    vmax = max((u["contatos_dia"] for u in users), default=1) or 1
+    vendas   = sum(u.get("vendas", 0.0)        for u in users)
+    orc      = sum(u.get("orcamentos", 0.0)    for u in users)
+    cont_mes = sum(u.get("contatos_mes", 0.0)  for u in users)
+    cont_dia = sum(u.get("contatos_dia", 0.0)  for u in users)
+    ticket   = meta_tot / vendas if vendas else 0.0
+    tx_v     = (vendas / orc) if orc else 0.0          # oportunidade (orçamento) → venda
+    tx_o     = (orc / cont_mes) if cont_mes else 0.0   # contato → oportunidade
+    aprox_any = any(u.get("aprox") for u in users)
+
+    def _n(x):
+        return f"{int(round(x)):,}".replace(",", ".")
+
+    base = cont_mes or 1.0
+    # Funil vertical: contatos no topo (mais largo) afunilando até as vendas. A largura
+    # de cada faixa é ∝ à magnitude; a taxa de conversão fica como legenda da transição.
+    etapas = [
+        ("#6F655C", "Contatos",      _n(cont_mes), f"{_n(cont_dia)}/dia",          100.0),
+        ("#8C8176", "Oportunidades", _n(orc),      f"{tx_o*100:.0f}% dos contatos", max(orc / base * 100, 34)),
+        ("#AAA093", "Vendas",        _n(vendas),   f"{tx_v*100:.0f}% das oport.",   max(vendas / base * 100, 22)),
+    ]
     inner = (
-        f'<div class="gv-hero gv-effort">{cd_tot:.0f}'
-        f'<span style="font-size:13px;color:#8A8A99;font-weight:400;"> contatos/dia (time)</span></div>'
-        f'<div class="gv-sub">esforço do time pra bater {fmt_brl(meta_tot)}</div>'
-        '<div style="margin-top:12px;">')
-    for u in users:
-        flag = (' <span style="font-size:11px;color:#854F0B;background:#FAEEDA;'
-                'padding:1px 6px;border-radius:6px;">aprox.</span>') if u["aprox"] else ''
-        w = max(u["contatos_dia"] / vmax * 100, 3)
-        inner += (f'<div class="gv-rk-row"><div class="gv-rk-top">'
-                  f'<span style="color:#15151F;">{u["nome"]}{flag}</span>'
-                  f'<span style="color:#8A8A99;">{brl_k(u["meta"])} · {u["contatos_dia"]:.0f}/dia</span></div>'
-                  f'<div class="gv-bar-track"><div class="gv-bar-fill" '
-                  f'style="width:{w:.0f}%;background:#7E746B;"></div></div></div>')
+        f'<div class="gv-hero" style="font-size:20px;">{fmt_brl(meta_tot)}'
+        f'<span style="font-size:13px;color:#8A8A99;font-weight:400;"> meta do grupo</span></div>'
+        f'<div class="gv-sub">ticket médio {fmt_brl(ticket)} · funil necessário pra bater a meta no mês</div>'
+        '<div style="margin-top:12px;display:flex;flex-direction:column;align-items:center;gap:6px;">'
+    )
+    for cor, rotulo, valor, sub, w in etapas:
+        inner += (
+            f'<div style="width:{w:.0f}%;min-width:130px;background:{cor};color:#fff;'
+            f'border-radius:8px;padding:9px 14px;display:flex;justify-content:space-between;'
+            f'align-items:baseline;box-shadow:0 1px 2px rgba(0,0,0,.10);">'
+            f'<span style="font-weight:600;font-size:13px;">{rotulo}</span>'
+            f'<span style="font-size:18px;font-weight:700;">{valor}</span></div>'
+            f'<div style="font-size:11px;color:#8A8A99;">{sub}</div>'
+        )
     inner += '</div>'
+    flag = (' <span style="font-size:11px;color:#854F0B;background:#FAEEDA;'
+            'padding:1px 6px;border-radius:6px;">taxas aprox.</span>') if aprox_any else ''
     return card(badge_n, "#F1EFE8", "#444441", titulo,
-                inner + '<div class="gv-note">Por vendedor: meta (Pipedrive) ÷ ticket ÷ taxas de conversão (planilha Alves)</div>',
-                wide=True)
+                inner + f'<div class="gv-note">Meta (Pipedrive) ÷ ticket ÷ taxas de conversão '
+                        f'(planilha Alves){flag}</div>', wide=True)
+
+
+def _meta_editor_ui(view_key, view_label, mes_sel, meta_atual, key_prefix):
+    """Expander de edição da meta mensal da equipe — só liberado pra liderança
+    (Vinícius + Ops) via senha de edição (st.secrets[meta_editor]). Grava no BQ
+    (metas_store) com o e-mail do editor no log. Reunião 26/06."""
+    rotulo = f"{MESES_PT[mes_sel.month]}/{mes_sel.year}"
+    editor = auth.current_meta_editor()
+    with st.expander(f"⚙️ Editar meta da equipe — {view_label} · {rotulo}"):
+        if not editor:
+            with st.form(f"{key_prefix}_meta_unlock"):
+                em = st.text_input("Seu e-mail")
+                pw = st.text_input("Senha de edição", type="password")
+                if st.form_submit_button("Desbloquear edição"):
+                    if auth.check_meta_editor(em, pw):
+                        st.session_state["_meta_editor_email"] = em.strip().lower()
+                        st.rerun()
+                    else:
+                        st.error("E-mail não autorizado ou senha incorreta.")
+            return
+        st.caption(f"Editando como {editor} · valor atual {fmt_brl(meta_atual)}")
+        with st.form(f"{key_prefix}_meta_set"):
+            novo = st.number_input(f"Meta de {view_label} para {rotulo} (R$)",
+                                   min_value=0.0, value=float(meta_atual),
+                                   step=1000.0, format="%.0f")
+            ca, cb = st.columns(2)
+            salvar = ca.form_submit_button("Salvar meta", use_container_width=True)
+            sair   = cb.form_submit_button("Sair da edição", use_container_width=True)
+        if salvar:
+            try:
+                metas_store.set_meta(view_key, mes_sel, float(novo), editor)
+                st.success(f"Meta de {view_label} ({rotulo}) atualizada para {fmt_brl(novo)}.")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Não foi possível salvar: {e}")
+        if sair:
+            st.session_state.pop("_meta_editor_email", None)
+            st.rerun()
 
 
 def render(key_prefix: str = "gv"):
@@ -239,10 +302,17 @@ def render(key_prefix: str = "gv"):
     eh_mes_corrente = (mes_sel.year == hoje.year and mes_sel.month == hoje.month)
     ref = hoje if eh_mes_corrente else date.fromordinal(mes_fim.toordinal() - 1)
 
-    meta = gv.META_EQUIPE[view_key]
+    # Meta da equipe vinda do BigQuery (editável pela liderança) com fallback no default.
+    meta = metas_store.meta_do_mes(view_key, mes_sel)
     mes_key = f"{mes_sel.year:04d}-{mes_sel.month:02d}"
     du_total = gv.dias_uteis_mes(ref)
     du_corr  = gv.dia_util_corrente(ref)
+
+    # Edição da meta mensal pela liderança (Vinícius + Ops). Gate por st.secrets
+    # [meta_editor]; se não configurado, nada aparece (sem regressão). Só a meta da
+    # EQUIPE/grupo é editável — as individuais seguem vindo do Pipedrive.
+    if auth.meta_editor_enabled():
+        _meta_editor_ui(view_key, view_label, mes_sel, meta, key_prefix)
 
     with st.spinner("Consultando BigQuery..."):
         # faturamento do mês (visão) — COM canceladas (até o Fred confirmar)
