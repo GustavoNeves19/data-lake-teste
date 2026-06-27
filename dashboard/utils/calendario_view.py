@@ -56,10 +56,6 @@ _CSS = """
   font-weight:700;color:#15151F;font-size:14px;}
 .cv-fresh{font-size:11px;color:#A6A6B2;margin-top:11px;padding-top:8px;border-top:1px dashed #F0F0F5;
   text-align:center;}
-.cv-bar2{background:#1E1882;color:#fff;text-align:center;font-weight:600;font-size:15px;padding:9px;
-  border-radius:12px;margin-top:16px;}
-.cv-fat{display:grid;grid-template-columns:1fr 1fr;gap:12px;border:1px solid #E6E6F0;border-top:none;
-  border-radius:0 0 12px 12px;padding:14px 18px;background:#fff;}
 </style>
 """
 
@@ -72,7 +68,7 @@ def render_calendario(mes_ref: date, key_prefix: str = "cal") -> None:
     """Renderiza o calendário de vendas diárias + a faixa de faturamento do mês."""
     mes_fim = date(mes_ref.year + (mes_ref.month == 12), (mes_ref.month % 12) + 1, 1)
 
-    # vendas por dia (emissão de pedido) + faturamento do mês (emissão de nota)
+    # vendas por dia (emissão de pedido)
     try:
         dfd = query(f"""
             SELECT o.order_date d, SUM(o.product_amount) v
@@ -81,17 +77,11 @@ def render_calendario(mes_ref: date, key_prefix: str = "cal") -> None:
               AND o.order_date IS NOT NULL
             GROUP BY 1
         """)
-        dff = query(f"""
-            SELECT SUM(o.product_amount) v
-            FROM `{ORD}.fact_sales_order` o {NAT}
-            WHERE o.invoice_date >= '{mes_ref}' AND o.invoice_date < '{mes_fim}'
-        """)
     except Exception as e:
         st.warning(f"Não foi possível montar o calendário: {e}")
         return
 
     diario = {d.day: float(v or 0) for d, v in zip(dfd["d"], dfd["v"])}
-    faturado = float(dff["v"].iloc[0] or 0)
 
     hoje = date.today()
     eh_corrente = (mes_ref.year == hoje.year and mes_ref.month == hoje.month)
@@ -169,45 +159,20 @@ def render_calendario(mes_ref: date, key_prefix: str = "cal") -> None:
             f'<div class="cv-fresh">Foto da última carga · {ultima} BRT — o ERP da equipe atualiza ao vivo; '
             f'os números se igualam a cada carga.</div></div>'
         )
-        # Projeção SÓ no mês corrente; mês fechado mostra apenas o faturamento obtido.
-        if eh_corrente:
-            proj = gv.projecao_esperada(meta, ref)
-            fat_box = (
-                '<div class="cv-fat">'
-                f'<div class="cv-st"><div class="l">Projeção (esperado até hoje)</div>'
-                f'<div class="v">{_brl(proj)}</div>'
-                f'<div class="s">meta ÷ dias úteis × dias decorridos</div></div>'
-                f'<div class="cv-st"><div class="l">Faturamento (notas)</div>'
-                f'<div class="v">{_brl(faturado)}</div>'
-                f'<div class="s">emissão de nota no mês</div></div></div>'
-            )
-        else:
-            fat_box = (
-                '<div class="cv-fat" style="grid-template-columns:1fr;">'
-                f'<div class="cv-st"><div class="l">Faturamento do mês (fechado)</div>'
-                f'<div class="v">{_brl(faturado)}</div>'
-                f'<div class="s">emissão de nota — total realizado no mês</div></div></div>'
-            )
     else:
-        # mês fechado sem meta definida: só os realizados + dica pra definir a meta
+        # mês fechado sem meta definida: só as vendas + dica pra definir a meta
         foot = (
-            f'<div class="cv-foot"><div class="cv-stats" style="grid-template-columns:1fr 1fr;">'
+            f'<div class="cv-foot"><div class="cv-stats" style="grid-template-columns:1fr;">'
             f'<div class="cv-st"><div class="l">Vendas (pedidos)</div><div class="v">{_brl(vendas)}</div>'
-            f'<div class="s">emissão de pedido no mês</div></div>'
-            f'<div class="cv-st"><div class="l">Faturamento (notas)</div><div class="v">{_brl(faturado)}</div>'
-            f'<div class="s">emissão de nota no mês</div></div></div>'
+            f'<div class="s">emissão de pedido no mês</div></div></div>'
             f'<div class="cv-fresh">Mês fechado sem meta definida — defina a meta de '
             f'{MESES[mes_ref.month]} na Gestão à Vista para ver meta diária, progresso e projeção. '
             f'Foto da última carga · {ultima} BRT.</div></div>'
         )
-        fat_box = ""
 
     html = (_CSS + f'<div class="cv-wrap"><div class="cv-bar">{titulo}</div>'
             f'<table class="cv-tab"><thead><tr>{ths}</tr></thead><tbody>{linhas}</tbody></table>'
-            + foot)
-    if fat_box:
-        html += f'<div class="cv-bar2">Faturamento — {MESES[mes_ref.month]}/{mes_ref.year}</div>' + fat_box
-    html += '</div>'
+            + foot + '</div>')
     st.markdown(html, unsafe_allow_html=True)
 
 
