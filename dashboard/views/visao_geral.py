@@ -1,365 +1,201 @@
 """
-Dashboard 360° Nevoni — Página Principal / Visão Geral
-Mostra a maturidade real do Data Lake e KPIs disponíveis hoje.
-"""
+Nevoni 360° — Visão Geral / Monitor de Cargas.
 
+Substitui o antigo despejo de números Bronze (sem regra de negócio) por um painel
+de OPERAÇÃO do Data Lake: até quando cada fonte está fresca, a cadência programada
+de carga e o histórico das execuções (horários que subiram).
+Fontes: `.modified` das tabelas-chave (frescor universal, inclusive ERP) +
+`ops.ingestion_runs` (log append-only das ingestões de API/CRM).
+"""
 import sys
 from pathlib import Path
-_ROOT = str(Path(__file__).resolve().parent.parent)
+_ROOT = str(Path(__file__).resolve().parents[2])   # raiz do projeto
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
+import datetime as dt
+
+import pandas as pd
 import streamlit as st
-from datetime import date
 
-from dashboard.utils.branding import FAVICON
+from dashboard.utils.components import page_header, section_title
+from dashboard.utils.bq_client import query, get_client, PROJECT_PROD
+
+P = PROJECT_PROD
+
+# Fonte/camada → (rótulo, tabela, idade "saudável" em minutos)
+FONTES = [
+    ("ERP · Vendas e pedidos",   f"{P}.dm_orders.fact_sales_order",            240),
+    ("CRM · Pipedrive",          f"{P}.crm_raw.activities",                     90),
+    ("Silver · RFV",             f"{P}.silver_comercial.silver_com_rfv_score", 360),
+    ("Gold · Cliente 360",       f"{P}.gold_comercial.gold_com_cliente_360",   360),
+    ("ERP · Clientes",           f"{P}.dm_partners.dim_partner",              1440),
+    ("ERP · Produtos / SKUs",    f"{P}.dm_products.dim_item",                 1440),
+]
 
 
-from dashboard.utils.components import inject_css, page_header, kpi_card, kpi_row, sector_card, section_title, sidebar_brand
-from dashboard.utils.bq_client import query, fmt_brl, PROJECT_PROD, data_ultima_carga
+@st.cache_data(ttl=60, show_spinner=False)
+def _frescor():
+    """last_modified (UTC, ISO) de cada tabela-chave. Metadado barato, sem custo de query."""
+    cl = get_client()
+    out = []
+    for rotulo, tid, thr in FONTES:
+        try:
+            m = cl.get_table(tid).modified
+            out.append((rotulo, m.isoformat(), thr))
+        except Exception:
+            out.append((rotulo, None, thr))
+    return out
 
 
-PROJ   = PROJECT_PROD
-ORDERS = f"{PROJ}.dm_orders"
-QUOTES = f"{PROJ}.dm_quotes"
-PAY    = f"{PROJ}.dm_payments"
-PROD   = f"{PROJ}.dm_production"
-INV    = f"{PROJ}.dm_inventory"
-IMP    = f"{PROJ}.dm_imports"
-PRD    = f"{PROJ}.dm_products"
-PART   = f"{PROJ}.dm_partners"
+def _idade_txt(mins: int) -> str:
+    if mins < 60:
+        return f"há {mins} min"
+    h, m = divmod(mins, 60)
+    if h < 24:
+        return f"há {h}h{m:02d}"
+    d, h = divmod(h, 24)
+    return f"há {d}d{h:02d}h"
 
-# ── Header ───────────────────────────────────────────────────
+
+def _cor(mins: int, thr: int) -> str:
+    if mins <= thr:
+        return "#10B981"        # verde — dentro do esperado
+    if mins <= thr * 2:
+        return "#D97706"        # âmbar — atrasando
+    return "#DC2626"            # vermelho — parado
+
+
+_CSS = """
+<style>
+.mc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:4px 0 8px;}
+.mc-card{background:#fff;border:1px solid #ECECF3;border-left-width:4px;border-radius:12px;padding:14px 16px;
+  box-shadow:0 1px 2px rgba(30,24,130,.04);}
+.mc-top{display:flex;align-items:center;gap:8px;}
+.mc-dot{width:9px;height:9px;border-radius:50%;flex:none;}
+.mc-lbl{font-size:12px;color:#6B6B7A;font-weight:600;}
+.mc-val{font-size:20px;font-weight:700;color:#15151F;margin-top:7px;font-variant-numeric:tabular-nums;}
+.mc-age{font-size:12px;margin-top:3px;}
+.cad-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:4px;}
+.cad-card{background:#F7F7FB;border-radius:10px;padding:12px 14px;}
+.cad-card .t{font-size:11px;color:#8A8A99;}
+.cad-card .v{font-size:15px;font-weight:700;color:#1E1882;margin-top:4px;}
+.cad-card .s{font-size:11px;color:#A6A6B2;margin-top:2px;}
+</style>
+"""
+
+
+def _proxima(agora_brt):
+    erp_times = [(6, 20), (9, 20), (12, 20), (15, 20), (17, 20)]
+    nxt = None
+    for h, m in erp_times:
+        t = agora_brt.replace(hour=h, minute=m, second=0, microsecond=0)
+        if t > agora_brt:
+            nxt = t
+            break
+    if nxt is None:
+        nxt = (agora_brt + dt.timedelta(days=1)).replace(hour=6, minute=20, second=0, microsecond=0)
+    if agora_brt.minute < 20:
+        crm = agora_brt.replace(minute=20, second=0, microsecond=0)
+    else:
+        crm = (agora_brt + dt.timedelta(hours=1)).replace(minute=20, second=0, microsecond=0)
+    return nxt.strftime("%H:%M"), crm.strftime("%H:%M")
+
+
+# ── Cabeçalho ─────────────────────────────────────────────────────────────────
 page_header(
-    title="Nevoni 360° — Visão Gerencial Integrada",
-    subtitle=f"Dados de {data_ultima_carga()} BRT · vendas/faturamento · {PROJECT_PROD}",
+    title="Monitor de Cargas — Data Lake",
+    subtitle="Frescor de cada fonte, cadência programada e histórico das execuções",
     sources=[
         {"name": "ERP (SQL Server)", "active": True},
         {"name": "CRM (Pipedrive)",  "active": True},
         {"name": "GoTo Connect",     "active": True},
         {"name": "Umbler",           "active": True},
         {"name": "Gmail",            "active": True},
-        {"name": "Miro",             "active": False},
-        {"name": "ClickUp",          "active": False},
+        {"name": "Miro",             "active": True},
+        {"name": "ClickUp",          "active": True},
     ],
 )
 
-# ── Mensagem de contexto ─────────────────────────────────────
+# ── Frescor por fonte/camada ──────────────────────────────────────────────────
+section_title("Frescor das fontes")
+st.caption("Quão recente está o dado de cada camada. Verde = dentro do ritmo esperado · "
+           "âmbar = atrasando · vermelho = parado.")
+
+now_utc = dt.datetime.now(dt.timezone.utc)
+cards = ""
+for rotulo, iso, thr in _frescor():
+    if iso is None:
+        cards += (f'<div class="mc-card" style="border-left-color:#C9C9D4;">'
+                  f'<div class="mc-top"><span class="mc-dot" style="background:#C9C9D4;"></span>'
+                  f'<span class="mc-lbl">{rotulo}</span></div>'
+                  f'<div class="mc-val">—</div><div class="mc-age" style="color:#A6A6B2;">sem leitura</div></div>')
+        continue
+    m = dt.datetime.fromisoformat(iso)
+    mins = int((now_utc - m).total_seconds() // 60)
+    cor = _cor(mins, thr)
+    brt = (m - dt.timedelta(hours=3)).strftime("%d/%m · %H:%M")
+    cards += (f'<div class="mc-card" style="border-left-color:{cor};">'
+              f'<div class="mc-top"><span class="mc-dot" style="background:{cor};"></span>'
+              f'<span class="mc-lbl">{rotulo}</span></div>'
+              f'<div class="mc-val">{brt}</div>'
+              f'<div class="mc-age" style="color:{cor};font-weight:600;">{_idade_txt(mins)} BRT</div></div>')
+st.markdown(_CSS + f'<div class="mc-grid">{cards}</div>', unsafe_allow_html=True)
+
+# ── Cadência programada ───────────────────────────────────────────────────────
+agora_brt = now_utc - dt.timedelta(hours=3)
+prox_erp, prox_crm = _proxima(agora_brt)
+section_title("Cadência programada")
 st.markdown(
-    """
-    <div style="
-        background: linear-gradient(135deg, #EEF0FF 0%, #F5F3FF 100%);
-        border-left: 4px solid #1E1882;
-        border-radius: 10px;
-        padding: 16px 20px;
-        margin-bottom: 20px;
-    ">
-        <p style="margin:0; font-size:14px; color:#1E1882; font-weight:700;">
-            O Data Lake Nevoni já tem dados reais em todos os setores operacionais
-        </p>
-        <p style="margin:6px 0 0; font-size:13px; color:#374151;">
-            Mesmo com apenas o setor Financeiro em nível Silver, os dados Bronze do ERP cobrem
-            Comercial, Produção, Estoque e Engenharia com volume histórico expressivo.
-            Os números abaixo são <strong>reais</strong>, extraídos diretamente do BigQuery.
-        </p>
-    </div>
-    """,
+    f'<div class="cad-grid">'
+    f'<div class="cad-card"><div class="t">Sincronização do ERP</div><div class="v">5× ao dia</div>'
+    f'<div class="s">06:20 · 09:20 · 12:20 · 15:20 · 17:20 BRT</div></div>'
+    f'<div class="cad-card"><div class="t">CRM (Pipedrive)</div><div class="v">De hora em hora</div>'
+    f'<div class="s">nas horas comerciais (:20)</div></div>'
+    f'<div class="cad-card"><div class="t">Carga completa</div><div class="v">1× madrugada</div>'
+    f'<div class="s">03:20 BRT · todos os domínios</div></div>'
+    f'<div class="cad-card"><div class="t">Próxima sincronização ERP</div><div class="v">{prox_erp} BRT</div>'
+    f'<div class="s">próximo CRM às {prox_crm}</div></div>'
+    f'</div>',
     unsafe_allow_html=True,
 )
+st.caption("O ERP do Fred sobe 06/09/12/15/17 BRT; a gente dispara 15min depois, pra carga dele terminar. "
+           "Entre as sincronizações, só o CRM sobe (a Gestão à Vista lê o CRM direto).")
 
-# ── KPIs executivos reais ─────────────────────────────────────
-section_title("Dados disponíveis hoje — Bronze ERP")
+# ── Histórico de execuções (CRM / APIs) ───────────────────────────────────────
+section_title("Histórico de execuções")
+st.caption("Log das ingestões de API/CRM (`ops.ingestion_runs`). O ERP entra pelo frescor acima, "
+           "pois roda por um pipeline próprio.")
+try:
+    resumo = query(f"""
+        SELECT source AS Fonte,
+               FORMAT_DATETIME('%d/%m %H:%M', DATETIME(MAX(finished_at), 'America/Sao_Paulo')) AS `Última carga`,
+               TIMESTAMP_DIFF(CURRENT_TIMESTAMP(), MAX(finished_at), MINUTE) AS _min,
+               COUNTIF(DATE(DATETIME(finished_at, 'America/Sao_Paulo')) = CURRENT_DATE('America/Sao_Paulo')) AS `Cargas hoje`
+        FROM `{P}.ops.ingestion_runs`
+        GROUP BY source
+        ORDER BY MAX(finished_at) DESC
+    """)
+    if not resumo.empty:
+        resumo["Há"] = resumo["_min"].apply(lambda x: _idade_txt(int(x)))
+        st.dataframe(resumo[["Fonte", "Última carga", "Há", "Cargas hoje"]],
+                     hide_index=True, use_container_width=True)
+except Exception as e:
+    st.warning(f"Não foi possível ler o resumo de execuções: {e}")
 
-with st.spinner("Consultando BigQuery..."):
-    erros = []
-
-    # Faturamento 2025
+with st.expander("Ver as últimas 20 execuções (detalhe)"):
     try:
-        df = query(f"""
-            SELECT SUM(total_amount) v, COUNT(*) n
-            FROM `{ORDERS}.fact_sales_order`
-            WHERE invoice_date BETWEEN '2025-01-01' AND '2025-12-31'
+        det = query(f"""
+            SELECT FORMAT_DATETIME('%d/%m %H:%M:%S', DATETIME(finished_at, 'America/Sao_Paulo')) AS Quando,
+                   source AS Fonte, entity AS Entidade, status AS Status,
+                   rows_loaded AS Linhas, ROUND(seconds, 1) AS Segundos
+            FROM `{P}.ops.ingestion_runs`
+            ORDER BY finished_at DESC
+            LIMIT 20
         """)
-        fat_2025   = float(df["v"].iloc[0] or 0)
-        ped_2025   = int(df["n"].iloc[0] or 0)
+        st.dataframe(det, hide_index=True, use_container_width=True)
     except Exception as e:
-        fat_2025 = ped_2025 = None; erros.append(str(e))
-
-    # Histórico liquidado
-    try:
-        df = query(f"SELECT SUM(paid_amount) v, COUNT(*) n FROM `{PAY}.fact_settled_title`")
-        liq_total = float(df["v"].iloc[0] or 0)
-        liq_n     = int(df["n"].iloc[0] or 0)
-    except Exception as e:
-        liq_total = liq_n = None; erros.append(str(e))
-
-    # Estoque
-    try:
-        df = query(f"""
-            SELECT COUNT(*) n, SUM(general_balance) geral, SUM(available_balance) disponivel
-            FROM `{INV}.snapshot_inventory_balance`
-            WHERE general_balance > 0
-        """)
-        est_itens = int(df["n"].iloc[0] or 0)
-        est_geral = float(df["geral"].iloc[0] or 0)
-        est_disp  = float(df["disponivel"].iloc[0] or 0)
-    except Exception as e:
-        est_itens = est_geral = est_disp = None; erros.append(str(e))
-
-    # Parceiros e catálogo
-    try:
-        df_p = query(f"SELECT COUNT(*) n FROM `{PART}.dim_partner`")
-        df_i = query(f"SELECT COUNT(*) n FROM `{PRD}.dim_item`")
-        parceiros = int(df_p["n"].iloc[0] or 0)
-        skus      = int(df_i["n"].iloc[0] or 0)
-    except Exception as e:
-        parceiros = skus = None; erros.append(str(e))
-
-kpi_row([
-    {"label": "Faturamento 2025",
-     "value": fmt_brl(fat_2025) if fat_2025 else "—",
-     "delta": f"{ped_2025:,} pedidos" if ped_2025 else "", "variant": "success"},
-    {"label": "Histórico Liquidado",
-     "value": fmt_brl(liq_total) if liq_total else "—",
-     "delta": f"{liq_n:,} títulos" if liq_n else ""},
-    {"label": "Itens em Estoque",
-     "value": f"{est_itens:,}" if est_itens else "—",
-     "delta": f"{est_geral:,.0f} unid. gerais" if est_geral else ""},
-    {"label": "Parceiros / Clientes",
-     "value": f"{parceiros:,}" if parceiros else "—",
-     "delta": "base ativa ERP"},
-    {"label": "SKUs no Catálogo",
-     "value": f"{skus:,}" if skus else "—",
-     "delta": "com estrutura BOM"},
-])
-
-st.markdown("<br>", unsafe_allow_html=True)
-
-# ── Faturamento anual ─────────────────────────────────────────
-col_fat, col_orc = st.columns(2)
-
-with col_fat:
-    section_title("Faturamento por Ano")
-    try:
-        import plotly.express as px
-        df_fat = query(f"""
-            SELECT
-              EXTRACT(YEAR FROM invoice_date) AS ano,
-              COUNT(*)                         AS pedidos,
-              SUM(total_amount)                AS faturamento
-            FROM `{ORDERS}.fact_sales_order`
-            WHERE invoice_date >= '2020-01-01'
-              AND invoice_date IS NOT NULL
-            GROUP BY 1 ORDER BY 1
-        """)
-        df_fat["ano"] = df_fat["ano"].astype(int).astype(str)
-        fig = px.bar(df_fat, x="ano", y="faturamento",
-                     text=df_fat["pedidos"].apply(lambda n: f"{int(n):,} ped."),
-                     labels={"ano": "Ano", "faturamento": "R$"},
-                     color_discrete_sequence=["#1E1882"])
-        fig.update_traces(textposition="outside")
-        fig.update_layout(plot_bgcolor="white", paper_bgcolor="white",
-                          showlegend=False, margin=dict(t=20))
-        st.plotly_chart(fig, use_container_width=True)
-        st.caption("Fonte: dm_orders.fact_sales_order · ERP NSR_ERP")
-    except Exception as e:
-        st.warning(f"Erro ao carregar faturamento: {e}")
-
-with col_orc:
-    section_title("Orçamentos vs Pedidos")
-    try:
-        import plotly.graph_objects as go
-        df_ped = query(f"""
-            SELECT EXTRACT(YEAR FROM invoice_date) AS ano, COUNT(*) n, SUM(total_amount) v
-            FROM `{ORDERS}.fact_sales_order`
-            WHERE invoice_date >= '2020-01-01' AND invoice_date IS NOT NULL
-            GROUP BY 1 ORDER BY 1
-        """)
-        df_orc = query(f"""
-            SELECT EXTRACT(YEAR FROM quote_date) AS ano, COUNT(*) n, SUM(total_amount) v
-            FROM `{QUOTES}.fact_quote`
-            WHERE quote_date >= '2020-01-01' AND quote_date IS NOT NULL
-            GROUP BY 1 ORDER BY 1
-        """)
-        df_ped["ano"] = df_ped["ano"].astype(int).astype(str)
-        df_orc["ano"] = df_orc["ano"].astype(int).astype(str)
-
-        fig2 = go.Figure()
-        fig2.add_bar(x=df_orc["ano"], y=df_orc["v"], name="Orçamentos",
-                     marker_color="#EEF0FF", marker_line_color="#1E1882", marker_line_width=1.5)
-        fig2.add_bar(x=df_ped["ano"], y=df_ped["v"], name="Pedidos Efetivados",
-                     marker_color="#1E1882")
-        fig2.update_layout(barmode="overlay", plot_bgcolor="white", paper_bgcolor="white",
-                           legend=dict(orientation="h", y=1.1), margin=dict(t=20),
-                           yaxis_title="R$", xaxis_title="Ano")
-        st.plotly_chart(fig2, use_container_width=True)
-        st.caption("Fonte: dm_orders · dm_quotes · O volume de orçamentos indica demanda potencial não convertida")
-    except Exception as e:
-        st.warning(f"Erro ao carregar orçamentos: {e}")
-
-st.markdown("<br>", unsafe_allow_html=True)
-
-# ── Maturidade por setor ──────────────────────────────────────
-section_title("Maturidade do Data Lake por Setor")
-st.caption("Volume real de dados disponíveis hoje no BigQuery (Bronze). Gold eleva a qualidade analítica de cada setor.")
-
-with st.spinner("Carregando maturidade..."):
-    setores = []
-
-    # Comercial
-    try:
-        df = query(f"""
-            SELECT
-              COUNT(*)          AS pedidos,
-              SUM(total_amount) AS faturamento,
-              MIN(invoice_date) AS desde
-            FROM `{ORDERS}.fact_sales_order`
-            WHERE invoice_date IS NOT NULL
-        """)
-        df2 = query(f"SELECT COUNT(*) n FROM `{ORDERS}.fact_order_item`")
-        setores.append({
-            "icon": "", "nome": "Comercial e Compras",
-            "resumo": f"{int(df['pedidos'].iloc[0]):,} pedidos de venda · {int(df2['n'].iloc[0]):,} itens",
-            "volume": fmt_brl(float(df["faturamento"].iloc[0] or 0)),
-            "periodo": f"desde {str(df['desde'].iloc[0])[:7]}",
-            "camada": "Bronze pronto",
-            "cor": "#DBEAFE",
-        })
-    except: pass
-
-    # Compras
-    try:
-        df = query(f"""
-            SELECT COUNT(*) pedidos, SUM(total_amount) compras
-            FROM `{ORDERS}.fact_purchase_order`
-            WHERE invoice_date IS NOT NULL
-        """)
-        setores.append({
-            "icon": "", "nome": "Compras e Suprimentos",
-            "resumo": f"{int(df['pedidos'].iloc[0]):,} pedidos de compra",
-            "volume": fmt_brl(float(df["compras"].iloc[0] or 0)),
-            "periodo": "histórico completo ERP",
-            "camada": "Bronze pronto",
-            "cor": "#DBEAFE",
-        })
-    except: pass
-
-    # Operacional
-    try:
-        df_mov = query(f"SELECT COUNT(*) n FROM `{INV}.fact_inventory_movement`")
-        df_est = query(f"SELECT COUNT(*) n, SUM(general_balance) g FROM `{INV}.snapshot_inventory_balance` WHERE general_balance>0")
-        df_op  = query(f"SELECT COUNT(*) n FROM `{PROD}.fact_production_order`")
-        setores.append({
-            "icon": "", "nome": "Operacional e Produção",
-            "resumo": f"{int(df_op['n'].iloc[0]):,} OPs · {int(df_mov['n'].iloc[0]):,} mov. estoque",
-            "volume": f"{float(df_est['g'].iloc[0] or 0):,.0f} unid. em estoque",
-            "periodo": f"{int(df_est['n'].iloc[0]):,} SKUs com saldo",
-            "camada": "Bronze pronto",
-            "cor": "#DBEAFE",
-        })
-    except: pass
-
-    # Fiscal / Financeiro
-    try:
-        df_cr = query(f"SELECT COUNT(*) n, SUM(net_amount) v FROM `{PAY}.fact_receivable`")
-        df_cp = query(f"SELECT COUNT(*) n, SUM(net_amount) v FROM `{PAY}.fact_payable`")
-        df_lq = query(f"SELECT COUNT(*) n, SUM(paid_amount) v FROM `{PAY}.fact_settled_title`")
-        setores.append({
-            "icon": "", "nome": "Financeiro",
-            "resumo": f"{int(df_lq['n'].iloc[0]):,} títulos liquidados · {int(df_cr['n'].iloc[0]):,} CR · {int(df_cp['n'].iloc[0]):,} CP",
-            "volume": fmt_brl(float(df_lq["v"].iloc[0] or 0)) + " liquidado",
-            "periodo": "Silver parcial — 5 questões abertas c/ Diego",
-            "camada": "Silver parcial ",
-            "cor": "#D1FAE5",
-        })
-    except: pass
-
-    # Engenharia
-    try:
-        df_sku = query(f"SELECT COUNT(*) n FROM `{PRD}.dim_item`")
-        df_bom = query(f"SELECT COUNT(*) n FROM `{PRD}.bridge_item_bom`")
-        df_ser = query(f"SELECT COUNT(*) n FROM `{PRD}.fact_serial_number`")
-        setores.append({
-            "icon": "", "nome": "Engenharia e P&D",
-            "resumo": f"{int(df_sku['n'].iloc[0]):,} SKUs · {int(df_bom['n'].iloc[0]):,} relações BOM · {int(df_ser['n'].iloc[0]):,} seriais",
-            "volume": "Catálogo completo",
-            "periodo": "Estrutura BOM multi-nível disponível",
-            "camada": "Bronze pronto",
-            "cor": "#DBEAFE",
-        })
-    except: pass
-
-# Renderiza cards de maturidade
-for i in range(0, len(setores), 3):
-    cols = st.columns(3)
-    for j, col in enumerate(cols):
-        if i + j < len(setores):
-            s = setores[i + j]
-            with col:
-                st.markdown(
-                    f"""
-                    <div style="
-                        background: white;
-                        border-radius: 14px;
-                        padding: 18px 20px;
-                        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-                        border-top: 4px solid {'#10B981' if 'Silver' in s['camada'] else '#1E1882'};
-                        min-height: 150px;
-                        margin-bottom: 12px;
-                    ">
-                        <div style="font-size:15px; font-weight:700; color:#111827;">{s['nome']}</div>
-                        <div style="font-size:12px; color:#6B7280; margin: 4px 0;">{s['resumo']}</div>
-                        <div style="font-size:16px; font-weight:700; color:#1E1882; margin: 6px 0;">{s['volume']}</div>
-                        <div style="font-size:11px; color:#9CA3AF;">{s['periodo']}</div>
-                        <span style="
-                            display:inline-block; margin-top:8px;
-                            background:{'#D1FAE5' if 'Silver' in s['camada'] else '#EEF0FF'};
-                            color:{'#065F46' if 'Silver' in s['camada'] else '#1E1882'};
-                            padding:2px 10px; border-radius:20px; font-size:11px; font-weight:600;
-                        ">{s['camada']}</span>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-
-st.markdown("<br>", unsafe_allow_html=True)
-
-# ── SAC pill separado (CRM) ───────────────────────────────────
-st.markdown(
-    """
-    <div style="
-        background: white; border-radius:14px; padding:18px 20px;
-        box-shadow:0 2px 8px rgba(0,0,0,0.06);
-        border-top:4px solid #1E1882;
-        display:flex; gap:24px; align-items:center; flex-wrap:wrap;
-        margin-bottom:20px;
-    ">
-        <div>
-            <div style="font-size:15px;font-weight:700;color:#111827;">SAC e Assistência Técnica</div>
-            <div style="font-size:12px;color:#6B7280;">Pipedrive CRM (6 pipelines SAC mapeados) · GoTo Connect · Umbler Talk</div>
-        </div>
-        <div style="margin-left:auto; text-align:right;">
-            <div style="font-size:12px;color:#6B7280;">Fonte</div>
-            <div style="font-size:13px;font-weight:600;color:#1E1882;">crm_raw · dm_calls · umbler_raw</div>
-        </div>
-        <span style="background:#EEF0FF;color:#1E1882;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600;">Bronze pronto</span>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
-# ── Arquitetura ───────────────────────────────────────────────
-section_title("Arquitetura — onde cada setor está hoje")
-st.markdown("""
-| Setor | Camada atual | O que falta para Gold |
-|---|---|---|
-| **Financeiro** | Silver parcial (8 tabelas) | Fechar 5 questões conceituais c/ Diego |
-| **Comercial e Compras** | Bronze completo | Criar `gold_comercial` (agregações + CRM) |
-| **Operacional e Produção** | Bronze completo | Criar `gold_operacional` (eficiência, giro) |
-| **SAC e AT** | Bronze (CRM + GoTo) | Criar `gold_sac` (SLA, TMR, CSAT) |
-| **Engenharia e P&D** | Bronze completo (BOM, seriais) | Criar `gold_engenharia` + integrar Miro/ClickUp |
-| **Jurídico** | Sem fonte ainda | Definir fonte (Drive, ClickUp, planilha) |
-""")
+        st.warning(f"Não foi possível ler o detalhe: {e}")
 
 st.markdown("---")
-st.caption(f"Nevoni Data Lake · Dashboard 360° · {PROJECT_PROD} · {date.today()}")
+st.caption(f"Nevoni Data Lake · Monitor de Cargas · {P}")
