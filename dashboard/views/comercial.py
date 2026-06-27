@@ -11,7 +11,6 @@ import numpy as np
 
 import os as _os
 _FAVICON = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), "assets", "nevoni_favicon.png")
-st.set_page_config(page_title="Comercial e Compras | Nevoni 360°", page_icon=_FAVICON, layout="wide")
 
 import sys
 from pathlib import Path
@@ -31,8 +30,6 @@ def _num(v, default=0.0):
     return float(v) if pd.notna(v) else default
 
 
-inject_css()
-sidebar_brand()
 
 PROJ   = PROJECT_PROD
 ORDERS = f"{PROJ}.dm_orders"

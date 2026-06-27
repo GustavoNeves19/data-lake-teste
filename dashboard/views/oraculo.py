@@ -6,12 +6,6 @@ import streamlit as st
 
 import os as _os
 _FAVICON = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), "assets", "nevoni_favicon.png")
-st.set_page_config(
-    page_title="Oráculo da Nevoni",
-    page_icon=_FAVICON,
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
 
 import sys
 from pathlib import Path
@@ -22,8 +16,6 @@ if str(_ROOT) not in sys.path:
 from dashboard.utils.components import inject_css, sidebar_brand
 from dashboard.utils.oracle import oracle_ask, oracle_is_ready
 
-inject_css()
-sidebar_brand()
 
 # ── Sidebar: input da chave OpenAI ────────────────────────────────────────────
 with st.sidebar:

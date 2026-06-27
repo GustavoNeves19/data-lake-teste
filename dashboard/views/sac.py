@@ -9,7 +9,6 @@ import plotly.express as px
 
 import os as _os
 _FAVICON = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), "assets", "nevoni_favicon.png")
-st.set_page_config(page_title="SAC e AT | Nevoni 360°", page_icon=_FAVICON, layout="wide")
 
 import sys
 from pathlib import Path
@@ -21,8 +20,6 @@ from dashboard.utils.components import inject_css, page_header, kpi_card, sectio
 from dashboard.utils.bq_client import query_layer, PROJECT_PROD
 from dashboard.utils.gold_tables import SAC as G
 
-inject_css()
-sidebar_brand()
 
 PROJ = PROJECT_PROD
 # Pipelines SAC no Pipedrive (IDs mapeados no settings)

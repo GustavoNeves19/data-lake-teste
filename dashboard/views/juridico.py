@@ -4,7 +4,6 @@ import streamlit as st
 
 import os as _os
 _FAVICON = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), "assets", "nevoni_favicon.png")
-st.set_page_config(page_title="Jurídico | Nevoni 360°", page_icon=_FAVICON, layout="wide")
 
 import sys
 from pathlib import Path
@@ -13,8 +12,6 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 from dashboard.utils.components import inject_css, page_header, sidebar_brand, coming_soon
-inject_css()
-sidebar_brand()
 
 page_header(
     title="Jurídico e Homologações",

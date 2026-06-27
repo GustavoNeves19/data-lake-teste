@@ -9,7 +9,6 @@ import plotly.express as px
 
 import os as _os
 _FAVICON = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), "assets", "nevoni_favicon.png")
-st.set_page_config(page_title="Engenharia e P&D | Nevoni 360°", page_icon=_FAVICON, layout="wide")
 
 import sys
 from pathlib import Path
@@ -20,8 +19,6 @@ if str(_ROOT) not in sys.path:
 from dashboard.utils.components import inject_css, page_header, kpi_card, section_title, sidebar_brand, coming_soon
 from dashboard.utils.bq_client import query, PROJECT_PROD
 
-inject_css()
-sidebar_brand()
 
 PROJ = PROJECT_PROD
 PRD  = f"{PROJ}.dm_products"
