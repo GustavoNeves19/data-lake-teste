@@ -130,19 +130,12 @@ def coming_soon(title: str = "Em construção", msg: str = ""):
 
 
 def _logo_html() -> str:
-    """Logo oficial da Nevoni em SVG inline (vetorial, nítido em qualquer tela,
-    self-contained — sem arquivo nem base64). Círculo no índigo da marca (#1E1882)
-    + anel branco + 'n'."""
+    """Logo oficial da Nevoni (círculo índigo + anel branco + 'ni'), embutida como
+    data URI a partir do PNG de alta resolução em dashboard/assets/."""
+    from dashboard.utils.branding import logo_data_uri
     return (
-        '<svg viewBox="0 0 120 120" width="60" height="60" role="img" aria-label="Nevoni" '
-        'style="display:inline-block; margin-bottom:8px;">'
-        '<circle cx="60" cy="60" r="58" fill="#1E1882"/>'
-        '<circle cx="60" cy="60" r="49.5" fill="none" stroke="#ffffff" stroke-width="2.4" opacity="0.9"/>'
-        '<g fill="#ffffff">'
-        '<rect x="44" y="58" width="9" height="24" rx="4.5"/>'
-        '<rect x="67" y="58" width="9" height="24" rx="4.5"/>'
-        '<path d="M44 60 A16 16 0 0 1 76 60 L67 60 A7 7 0 0 0 53 60 Z"/>'
-        '</g></svg>'
+        f'<img src="{logo_data_uri("favicon")}" width="60" height="60" '
+        'alt="Nevoni" style="display:inline-block; margin-bottom:8px;"/>'
     )
 
 

@@ -7,7 +7,9 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-st.set_page_config(page_title="Operacional | Nevoni 360°", page_icon="", layout="wide")
+import os as _os
+_FAVICON = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), "assets", "nevoni_favicon.png")
+st.set_page_config(page_title="Operacional | Nevoni 360°", page_icon=_FAVICON, layout="wide")
 
 import sys
 from pathlib import Path

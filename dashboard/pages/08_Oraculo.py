@@ -4,9 +4,11 @@ Oráculo da Nevoni — Assistente IA sobre o Data Lake
 
 import streamlit as st
 
+import os as _os
+_FAVICON = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), "assets", "nevoni_favicon.png")
 st.set_page_config(
     page_title="Oráculo da Nevoni",
-    page_icon="",
+    page_icon=_FAVICON,
     layout="wide",
     initial_sidebar_state="expanded",
 )

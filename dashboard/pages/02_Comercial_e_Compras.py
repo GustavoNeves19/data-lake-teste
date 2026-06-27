@@ -9,7 +9,9 @@ import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
 
-st.set_page_config(page_title="Comercial e Compras | Nevoni 360°", page_icon="", layout="wide")
+import os as _os
+_FAVICON = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), "assets", "nevoni_favicon.png")
+st.set_page_config(page_title="Comercial e Compras | Nevoni 360°", page_icon=_FAVICON, layout="wide")
 
 import sys
 from pathlib import Path
@@ -21,6 +23,13 @@ from dashboard.utils.components import inject_css, page_header, kpi_card, kpi_ro
 from dashboard.utils.bq_client import query, query_layer, fmt_brl, fmt_num, fmt_pct, PROJECT_PROD, data_ultima_carga
 from dashboard.utils.gold_tables import Comercial as G
 from dashboard.utils import gestao_vista as gv, metas_store, calendario_view
+
+
+def _num(v, default=0.0):
+    """float seguro p/ agregados do BigQuery que podem vir NULL (None/NaN) —
+    ex.: SUM()/SAFE_DIVIDE() sem linhas no período retornam NULL."""
+    return float(v) if pd.notna(v) else default
+
 
 inject_css()
 sidebar_brand()
@@ -665,14 +674,14 @@ with tab_orc:
         r0 = df_okpi.iloc[0]
         ciclo = int(df_cic.iloc[0]["ciclo"]) if (not df_cic.empty and pd.notna(df_cic.iloc[0]["ciclo"])) else 0
         k1, k2, k3, k4 = st.columns(4)
-        with k1: kpi_card("Pipeline Vivo (≤90d)", fmt_brl(float(r0["pipe"])),
-                          delta=f'{int(r0["pipe_n"])} orçamentos abertos', delta_dir="flat", variant="success")
-        with k2: kpi_card("Conversão (safra madura)", f'{float(r0["conv"]):.1f}%',
+        with k1: kpi_card("Pipeline Vivo (≤90d)", fmt_brl(_num(r0["pipe"])),
+                          delta=f'{int(_num(r0["pipe_n"]))} orçamentos abertos', delta_dir="flat", variant="success")
+        with k2: kpi_card("Conversão (safra madura)", f'{_num(r0["conv"]):.1f}%',
                           delta="orçamentos com tempo de fechar", delta_dir="flat")
         with k3: kpi_card("Ciclo de venda (mediana)", f"{ciclo} dias",
                           delta="do orçamento ao faturamento", delta_dir="flat")
-        with k4: kpi_card("Parados +180d", fmt_brl(float(r0["parado"])),
-                          delta=f'{int(r0["parado_n"])} p/ recuperar ou encerrar', delta_dir="down", variant="danger")
+        with k4: kpi_card("Parados +180d", fmt_brl(_num(r0["parado"])),
+                          delta=f'{int(_num(r0["parado_n"]))} p/ recuperar ou encerrar', delta_dir="down", variant="danger")
 
         st.markdown("<br>", unsafe_allow_html=True)
         c_safra, c_idade = st.columns(2)
@@ -1315,7 +1324,7 @@ with tab_rfv:
         with c7:
             kpi_card("Perdidos", f'{int(row["perdidos"]):,}', variant="danger")
         with c8:
-            kpi_card("Faturamento", fmt_brl(float(row["faturamento"])))
+            kpi_card("Faturamento", fmt_brl(_num(row["faturamento"])))
 
         data_ref = pd.to_datetime(row["data_referencia"]).strftime("%d/%m/%Y")
         st.markdown(

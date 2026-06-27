@@ -12,9 +12,11 @@ if _ROOT not in sys.path:
 import streamlit as st
 from datetime import date
 
+from dashboard.utils.branding import FAVICON
+
 st.set_page_config(
     page_title="Nevoni 360° | Dashboard Gerencial",
-    page_icon="N",
+    page_icon=FAVICON,
     layout="wide",
     initial_sidebar_state="expanded",
 )
