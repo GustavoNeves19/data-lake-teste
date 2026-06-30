@@ -149,24 +149,27 @@ def _pipeline_stats(tables: list, allowed: list):
     return out
 
 
-def _pipe_card(badge_n, titulo, stats: dict) -> str:
-    df = stats["df"]
-    if df is None or df.empty:
-        inner = '<div class="gv-sub" style="padding:8px 0;">Sem pipeline próprio no CRM.</div>'
-        nota = "Sem deals em aberto nesta pipeline"
-    else:
-        vmax = float(df["val"].max()) or 1.0
-        inner = (f'<div class="gv-hero" style="font-size:22px;margin-bottom:10px;">{brl_k(stats["pipe_open"])}'
-                 f'<span style="font-size:13px;color:#8A8A99;font-weight:400;"> em aberto</span></div>')
+def _pipe_list_card(badge_n, titulo, blocos) -> str:
+    """Pipelines (Hospitalar + Farmácia) num card só, em LISTA compacta (sem barras),
+    pra economizar espaço no painel de TV (Alves 30/06). blocos = [(segmento, stats), ...]."""
+    total = sum(float(s.get("pipe_open") or 0) for _, s in blocos)
+    inner = (f'<div class="gv-hero" style="font-size:19px;margin-bottom:6px;">{brl_k(total)}'
+             f'<span style="font-size:12px;color:#8A8A99;font-weight:400;"> em aberto · Hosp + Farma</span></div>')
+    for seg, stats in blocos:
+        df = stats["df"]
+        inner += (f'<div style="display:flex;justify-content:space-between;margin-top:7px;'
+                  f'font-size:12px;font-weight:700;color:#0C447C;'
+                  f'border-bottom:1px solid #DCE6F2;padding-bottom:2px;">'
+                  f'<span>{seg}</span><span>{brl_k(float(stats.get("pipe_open") or 0))}</span></div>')
+        if df is None or df.empty:
+            inner += '<div style="font-size:12px;color:#8A8A99;padding:3px 0;">sem pipeline própria no CRM</div>'
+            continue
         for _, rw in df.iterrows():
-            w = max(rw["val"] / vmax * 100, 3)
-            inner += (f'<div class="gv-rk-row"><div class="gv-rk-top">'
-                      f'<span style="color:#15151F;">{rw["nome"]}</span>'
-                      f'<span style="color:#8A8A99;">{brl_k(rw["val"])}</span></div>'
-                      f'<div class="gv-bar-track"><div class="gv-bar-fill" '
-                      f'style="width:{w:.0f}%;background:#378ADD;"></div></div></div>')
-        nota = "Pipedrive ao vivo · top estágios por valor"
-    return card(badge_n, "#E6F1FB", "#0C447C", titulo, inner + f'<div class="gv-note">{nota}</div>')
+            inner += (f'<div style="display:flex;justify-content:space-between;padding:2px 0;font-size:13px;">'
+                      f'<span style="color:#555;">{rw["nome"]}</span>'
+                      f'<span style="color:#15151F;font-weight:600;">{brl_k(rw["val"])}</span></div>')
+    return card(badge_n, "#E6F1FB", "#0C447C", titulo,
+                inner + '<div class="gv-note">Pipedrive ao vivo · estágios por valor</div>')
 
 
 def _eng_reversa_card(badge_n, titulo, users: list) -> str:
@@ -202,19 +205,19 @@ def _eng_reversa_card(badge_n, titulo, users: list) -> str:
         ("#AAA093", "Vendas",        _n(vendas),   f"{tx_v*100:.0f}% das oport.",   max(vendas / base * 100, 22)),
     ]
     inner = (
-        f'<div class="gv-hero" style="font-size:20px;">{fmt_brl(meta_tot)}'
-        f'<span style="font-size:13px;color:#8A8A99;font-weight:400;"> meta do grupo</span></div>'
-        f'<div class="gv-sub">ticket médio {fmt_brl(ticket)} · funil necessário pra bater a meta no mês</div>'
-        '<div style="margin-top:12px;display:flex;flex-direction:column;align-items:center;gap:6px;">'
+        f'<div class="gv-hero" style="font-size:16px;">{fmt_brl(meta_tot)}'
+        f'<span style="font-size:12px;color:#8A8A99;font-weight:400;"> meta do grupo</span></div>'
+        f'<div class="gv-sub" style="font-size:11px;">ticket médio {fmt_brl(ticket)} · funil pra bater a meta no mês</div>'
+        '<div style="margin-top:8px;display:flex;flex-direction:column;align-items:center;gap:4px;">'
     )
     for cor, rotulo, valor, sub, w in etapas:
         inner += (
-            f'<div style="width:{w:.0f}%;min-width:130px;background:{cor};color:#fff;'
-            f'border-radius:8px;padding:9px 14px;display:flex;justify-content:space-between;'
+            f'<div style="width:{w:.0f}%;min-width:116px;background:{cor};color:#fff;'
+            f'border-radius:7px;padding:5px 12px;display:flex;justify-content:space-between;'
             f'align-items:baseline;box-shadow:0 1px 2px rgba(0,0,0,.10);">'
-            f'<span style="font-weight:600;font-size:13px;">{rotulo}</span>'
-            f'<span style="font-size:18px;font-weight:700;">{valor}</span></div>'
-            f'<div style="font-size:11px;color:#8A8A99;">{sub}</div>'
+            f'<span style="font-weight:600;font-size:12px;">{rotulo}</span>'
+            f'<span style="font-size:15px;font-weight:700;">{valor}</span></div>'
+            f'<div style="font-size:10px;color:#8A8A99;">{sub}</div>'
         )
     inner += '</div>'
     flag = (' <span style="font-size:11px;color:#854F0B;background:#FAEEDA;'
@@ -492,9 +495,10 @@ def render(key_prefix: str = "gv"):
         f'<div class="gv-note">(meta − realizado) ÷ {du_rest} dias úteis restantes (contando hoje) · '
         f'seg-sex sem feriado · ordenado pelo que falta mais por dia</div>'))
 
-    # 5 e 6 — Pipelines abertas (Hospitalar + Farmácia)
-    cards.append(_pipe_card("5", "Pipeline aberto — Hospitalar", stats_hosp))
-    cards.append(_pipe_card("6", "Pipeline aberto — Farmácia", stats_farma))
+    # 5 — Pipelines abertas (Hospitalar + Farmácia) num card só, em lista (Alves 30/06):
+    # economiza espaço pro painel caber na TV.
+    cards.append(_pipe_list_card("5", "Pipeline aberto — Hosp + Farmácia",
+                                 [("Hospitalar", stats_hosp), ("Farmácia", stats_farma)]))
 
     # 6 e 7 — Engenharia reversa POR USUÁRIO (Alves 23/06): meta do Pipe + taxas da
     # planilha do Alves + agrupamento do ERP (sem hardcode, regra Diego). Kauan Ramos
@@ -515,10 +519,10 @@ def render(key_prefix: str = "gv"):
             users.append({"nome": nome_norm.title(), "aprox": aprox, **f})
         users.sort(key=lambda u: u["meta"], reverse=True)
         return users
-    cards.append(_eng_reversa_card("7", "Engenharia reversa — Hospitalar", _eng_familia("FA")))
-    cards.append(_eng_reversa_card("8", "Engenharia reversa — Farmácia", _eng_familia("FR")))
+    cards.append(_eng_reversa_card("6", "Engenharia reversa — Hospitalar", _eng_familia("FA")))
+    cards.append(_eng_reversa_card("7", "Engenharia reversa — Farmácia", _eng_familia("FR")))
 
-    # 9 — Atividades por TIPO (ranqueadas)
+    # 8 — Atividades por TIPO (ranqueadas)
     if df_at is not None and not df_at.empty:
         df_at["concl"] = df_at["concl"].astype(int)
         df_at["atras"] = df_at["atras"].astype(int)
@@ -541,9 +545,9 @@ def render(key_prefix: str = "gv"):
     else:
         rows = '<div class="gv-sub" style="padding:8px 0;">crm_raw.activities indisponível.</div>'
         nota = "Ingestão de atividades pendente"
-    cards.append(card("9", "#FAEEDA", "#854F0B", "Atividades por tipo", rows + f'<div class="gv-note">{nota}</div>'))
+    cards.append(card("8", "#FAEEDA", "#854F0B", "Atividades por tipo", rows + f'<div class="gv-note">{nota}</div>'))
 
-    # 10 — Atividades por VENDEDOR (novo)
+    # 9 — Atividades por VENDEDOR (novo)
     if df_av is not None and not df_av.empty:
         df_av["concl"] = df_av["concl"].astype(int)
         df_av["atras"] = df_av["atras"].astype(int)
@@ -562,7 +566,7 @@ def render(key_prefix: str = "gv"):
     else:
         rows = '<div class="gv-sub" style="padding:8px 0;">Sem atividades por vendedor.</div>'
         nota = "Mapeamento user_id → vendedor (dim_crm_user)"
-    cards.append(card("10", "#FAEEDA", "#854F0B", "Atividades por vendedor", rows + f'<div class="gv-note">{nota}</div>'))
+    cards.append(card("9", "#FAEEDA", "#854F0B", "Atividades por vendedor", rows + f'<div class="gv-note">{nota}</div>'))
 
     st.markdown(f'<div class="gv-grid">{"".join(cards)}</div>', unsafe_allow_html=True)
     st.markdown('<div class="gv-foot">★ Nosso foco, nosso resultado — disciplina todos os dias, '

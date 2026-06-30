@@ -134,6 +134,7 @@ ENTITIES = {
             ("country",         "STRING"),
             ("email",           "STRING"),
             ("phone",           "STRING"),
+            ("carteira_code",   "STRING"),     # YCARCOM do cliente (CA..CF) — fonte da verdade RFV
             ("is_active",       "BOOL"),
             ("excluded_at",     "TIMESTAMP"),
             ("loaded_at",       "TIMESTAMP"),
