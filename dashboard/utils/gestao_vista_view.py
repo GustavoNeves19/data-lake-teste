@@ -172,16 +172,55 @@ def _pipe_list_card(badge_n, titulo, blocos) -> str:
                 inner + '<div class="gv-note">Pipedrive ao vivo · estágios por valor</div>')
 
 
-def _eng_reversa_card(badge_n, titulo, users: list) -> str:
+RIBEIRO_USER_ID = 25242560  # Cauã Ribeiro (titular Farmácia) no Pipedrive — filtro da conversão de Farmácia
+_FUNIL_ORD = ("CASE s.stage_name WHEN 'Contato' THEN 1 WHEN 'Conexão Realizada' THEN 2 "
+              "WHEN 'Orçamento' THEN 3 WHEN 'Negociação' THEN 4 WHEN 'Fechamento' THEN 5 ELSE 0 END")
+_CONV_PIPE = {"FA": ("recorrencia_distribuidores", ""),
+              "FR": ("recorrencia_farmacia", f"AND r.owner_id = {RIBEIRO_USER_ID}")}
+
+
+def _conversao_setor(grupo_cod):
+    """Taxa de conversão (Contato → Ganho) do mês corrente — métrica nossa, validada com o
+    Alves (30/06, bate ~1pt do Insight do Pipedrive): deals ATIVOS no mês na pipeline, do
+    Contato em diante (exclui 'A trabalhar'), vs os GANHOS fechados no mês. Hospitalar pela
+    pipeline de distribuidores; Farmácia pela recorrência filtrada no titular (Ribeiro), que
+    é como o Alves olha. SAC não tem pipeline própria → None (não mostra)."""
+    if grupo_cod not in _CONV_PIPE:
+        return None
+    t, extra = _CONV_PIPE[grupo_cod]
+    try:
+        df = query(f"""
+            WITH d AS (
+              SELECT r.status, {_FUNIL_ORD} AS ord, r.local_close_date cd
+              FROM `{CRM}.{t}` r JOIN `{CRM}.dim_crm_stage` s ON s.stage_id = r.stage_id
+              WHERE r.is_deleted IS NOT TRUE
+                AND DATE(r.update_time) >= DATE_TRUNC(CURRENT_DATE(), MONTH) {extra})
+            SELECT COUNTIF(ord >= 1) contato,
+                   COUNTIF(status = 'won' AND cd >= DATE_TRUNC(CURRENT_DATE(), MONTH)) ganho
+            FROM d""")
+        c = int(df["contato"].iloc[0] or 0); g = int(df["ganho"].iloc[0] or 0)
+        return {"contato": c, "ganho": g, "pct": (g / c) if c else 0.0}
+    except Exception:
+        return None
+
+
+def _eng_reversa_card(badge_n, titulo, users: list, conv: dict | None = None) -> str:
     """Funil de engenharia reversa do GRUPO (reunião 26/06, Vinícius): cascata vertical
     Meta → vendas necessárias → oportunidades → contatos, com as taxas de conversão entre
     as etapas. Agrega os vendedores do grupo (meta do Pipedrive + ticket/taxas da planilha
-    do Alves). As taxas mostradas são as EFETIVAS do grupo (blended). O número de etapas
-    do funil (orçamento/contato) casa com o que o Alves vai mandar do Pipedrive."""
+    do Alves). `conv` = taxa de conversão do setor (Alves 30/06), mostrada em destaque."""
+    conv_html = ""
+    if conv and conv.get("contato"):
+        conv_html = (
+            f'<div style="margin-top:10px;padding-top:8px;border-top:1px solid #E2DFD6;text-align:center;">'
+            f'<span style="font-size:24px;font-weight:700;color:#0F6E56;">{conv["pct"]*100:.0f}%</span>'
+            f'<div style="font-size:10px;color:#8A8A99;margin-top:1px;">taxa de conversão · '
+            f'de Contato a Ganho · mês corrente ({conv["ganho"]}/{conv["contato"]})</div></div>')
     if not users:
         return card(badge_n, "#F1EFE8", "#444441", titulo,
             '<div class="gv-sub" style="padding:8px 0;">Sem vendedor com meta nesta visão.</div>'
-            '<div class="gv-note">Metas do Pipedrive + taxas da planilha do Alves</div>', wide=True)
+            + conv_html
+            + '<div class="gv-note">Metas do Pipedrive + taxas da planilha do Alves</div>', wide=True)
 
     meta_tot = sum(u["meta"] for u in users)
     vendas   = sum(u.get("vendas", 0.0)        for u in users)
@@ -223,8 +262,40 @@ def _eng_reversa_card(badge_n, titulo, users: list) -> str:
     flag = (' <span style="font-size:11px;color:#854F0B;background:#FAEEDA;'
             'padding:1px 6px;border-radius:6px;">taxas aprox.</span>') if aprox_any else ''
     return card(badge_n, "#F1EFE8", "#444441", titulo,
-                inner + f'<div class="gv-note">Meta (Pipedrive) ÷ ticket ÷ taxas de conversão '
+                inner + conv_html + f'<div class="gv-note">Meta (Pipedrive) ÷ ticket ÷ taxas de conversão '
                         f'(planilha Alves){flag}</div>', wide=True)
+
+
+def _prazo_medio_card(badge_n, view_key, mes_sel):
+    """Prazo médio de pagamento (Yprzmed do ERP) por vendedor, em LISTA (aprovado Alves
+    30/06). Filtra pelo setor da visão; em Geral mostra os 3 setores com a tag de cada.
+    Lê silver_comercial.com_prazo_medio_vendedor (tabela dedicada, não toca na fact)."""
+    setor = "" if view_key == "GERAL" else f"AND setor = '{view_key}'"
+    try:
+        df = query(f"""SELECT INITCAP(vendedor) v, setor, prazo_medio_dias p, n_notas n
+            FROM `{PROJ}.silver_comercial.com_prazo_medio_vendedor`
+            WHERE mes = '{mes_sel}' {setor} ORDER BY p DESC""")
+    except Exception:
+        df = None
+    if df is None or df.empty:
+        return card(badge_n, "#E6F1FB", "#0C447C", "Prazo médio de pagamento",
+            '<div class="gv-sub" style="padding:8px 0;">Sem dados de prazo neste mês/visão.</div>'
+            '<div class="gv-note">Yprzmed do ERP · dias até o pagamento</div>')
+    tag_de = {"HOSPITALAR": ("Hosp", "#0C447C"), "FARMACIA": ("Farma", "#0F6E56"), "SAC": ("SAC", "#854F0B")}
+    rows = ""
+    for _, r in df.iterrows():
+        tag = ""
+        if view_key == "GERAL":
+            lbl, cor = tag_de.get(r["setor"], (r["setor"], "#8A8A99"))
+            tag = (f'<span style="font-size:10px;color:{cor};background:#EEF1F6;'
+                   f'padding:1px 6px;border-radius:6px;margin-left:6px;">{lbl}</span>')
+        rows += (f'<div style="display:flex;justify-content:space-between;align-items:baseline;'
+                 f'padding:3px 0;border-bottom:1px solid #F0F1F5;font-size:13px;">'
+                 f'<span style="color:#15151F;">{r["v"]}{tag}</span>'
+                 f'<span style="color:#0C447C;font-weight:600;">{r["p"]:.0f} dias'
+                 f'<span style="color:#8A8A99;font-weight:400;font-size:11px;"> · {r["n"]} notas</span></span></div>')
+    return card(badge_n, "#E6F1FB", "#0C447C", "Prazo médio de pagamento",
+                rows + '<div class="gv-note">Yprzmed do ERP · média ponderada por valor · dias até o pagamento</div>')
 
 
 def _meta_editor_ui(view_key, view_label, mes_sel, meta_atual, key_prefix):
@@ -376,6 +447,8 @@ def render(key_prefix: str = "gv"):
 
         stats_hosp  = _pipeline_stats(PIPE_HOSP, STAGES_HOSP)
         stats_farma = _pipeline_stats(PIPE_FARMA, STAGES_FARMA)
+        conv_fa = _conversao_setor("FA")   # taxa de conversão do setor (Alves 30/06)
+        conv_fr = _conversao_setor("FR")
 
         # atividades por TIPO (feitas no mês + atrasadas) — filtra por vendedor (Alves)
         _vesc = vend_at.replace("'", "''")
@@ -519,10 +592,13 @@ def render(key_prefix: str = "gv"):
             users.append({"nome": nome_norm.title(), "aprox": aprox, **f})
         users.sort(key=lambda u: u["meta"], reverse=True)
         return users
-    cards.append(_eng_reversa_card("6", "Engenharia reversa — Hospitalar", _eng_familia("FA")))
-    cards.append(_eng_reversa_card("7", "Engenharia reversa — Farmácia", _eng_familia("FR")))
+    cards.append(_eng_reversa_card("6", "Engenharia reversa — Hospitalar", _eng_familia("FA"), conv_fa))
+    cards.append(_eng_reversa_card("7", "Engenharia reversa — Farmácia", _eng_familia("FR"), conv_fr))
 
-    # 8 — Atividades por TIPO (ranqueadas)
+    # 8 — Prazo médio de pagamento por vendedor (Yprzmed do ERP), em lista, filtra por setor (Alves 30/06)
+    cards.append(_prazo_medio_card("8", view_key, mes_sel))
+
+    # 9 — Atividades por TIPO (ranqueadas)
     if df_at is not None and not df_at.empty:
         df_at["concl"] = df_at["concl"].astype(int)
         df_at["atras"] = df_at["atras"].astype(int)
@@ -545,9 +621,9 @@ def render(key_prefix: str = "gv"):
     else:
         rows = '<div class="gv-sub" style="padding:8px 0;">crm_raw.activities indisponível.</div>'
         nota = "Ingestão de atividades pendente"
-    cards.append(card("8", "#FAEEDA", "#854F0B", "Atividades por tipo", rows + f'<div class="gv-note">{nota}</div>'))
+    cards.append(card("9", "#FAEEDA", "#854F0B", "Atividades por tipo", rows + f'<div class="gv-note">{nota}</div>'))
 
-    # 9 — Atividades por VENDEDOR (novo)
+    # 10 — Atividades por VENDEDOR (novo)
     if df_av is not None and not df_av.empty:
         df_av["concl"] = df_av["concl"].astype(int)
         df_av["atras"] = df_av["atras"].astype(int)
@@ -566,7 +642,7 @@ def render(key_prefix: str = "gv"):
     else:
         rows = '<div class="gv-sub" style="padding:8px 0;">Sem atividades por vendedor.</div>'
         nota = "Mapeamento user_id → vendedor (dim_crm_user)"
-    cards.append(card("9", "#FAEEDA", "#854F0B", "Atividades por vendedor", rows + f'<div class="gv-note">{nota}</div>'))
+    cards.append(card("10", "#FAEEDA", "#854F0B", "Atividades por vendedor", rows + f'<div class="gv-note">{nota}</div>'))
 
     st.markdown(f'<div class="gv-grid">{"".join(cards)}</div>', unsafe_allow_html=True)
     st.markdown('<div class="gv-foot">★ Nosso foco, nosso resultado — disciplina todos os dias, '
