@@ -58,7 +58,6 @@ VENDEDOR_RAW_TO_NOME = {
     "nan":              "Kauan Ramos",
 }
 
-GIOVANNA = "Geovanna Gomes"
 RIBEIRO  = "Cauã Ribeiro"
 
 # Mapeamento canônico família → grupo ERP (espelha param_com_grupo_familia no silver).
@@ -140,10 +139,10 @@ def load_inside_sales() -> pd.DataFrame:
     df['vendedor_nome'] = df['vendedor_raw'].map(VENDEDOR_RAW_TO_NOME).fillna(df['vendedor_raw'])
     df, redirect_stats = aplicar_redirect_eduardo(df)
     df.attrs['redirect_stats'] = redirect_stats
-    # Inside Sales é Hospitalar — exceto Giovanna (regra acordada na reunião 25/05).
-    df['rfv_familia'] = df['vendedor_nome'].apply(
-        lambda v: 'SAC' if v == GIOVANNA else 'HOSPITALAR'
-    )
+    # Inside Sales é Hospitalar. Giovanna (SAC) foi aglutinada em Hospitalar na
+    # Matriz RFV (decisao 16/07/2026, reuniao VanguardIA x Nevoni) — todo mundo
+    # de Inside Sales entra como HOSPITALAR agora, sem excecao.
+    df['rfv_familia'] = 'HOSPITALAR'
     return df[['id_erp', 'partner_name', 'vendedor_nome', 'rfv_familia']]
 
 

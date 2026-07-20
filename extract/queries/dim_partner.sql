@@ -21,6 +21,9 @@ SELECT
     YPAICLI AS country,
     YEMAIL1 AS email,
     YTE1CLI AS phone,
+    YCARCOM AS carteira_code,                       -- carteira comercial do cliente (CA..CF):
+                                                    -- FONTE DA VERDADE da RFV (vendedor titular dono
+                                                    -- do cliente). Substitui a param_com_rfv_carteira manual.
     CASE WHEN YDATEXC IS NULL THEN 1 ELSE 0 END AS is_active,
     YDATEXC AS excluded_at
 FROM [CLIENTES OU FORNECEDORES]

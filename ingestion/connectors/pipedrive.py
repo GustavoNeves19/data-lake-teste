@@ -222,6 +222,10 @@ class PipedriveConnector(RestConnector):
             deals = self._paginate_v2("/deals", {"pipeline_id": pid})
             flat_map = self._flatten_map()
             return [self._flatten_deal(d, flat_map, pid) for d in deals]
+        if kind == "activities":
+            # user_id=0 = TODOS os usuários (sem isso, o /activities só traz as do
+            # dono do token). Traz atividades do time todo p/ os blocos de Atividades.
+            return self._paginate_v1("/activities", {"user_id": 0})
         if kind == "stages":
             return self._paginate_v1("/stages", {})
         if kind == "users":

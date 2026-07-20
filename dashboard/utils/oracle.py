@@ -22,7 +22,13 @@ SYSTEM_PROMPT = f"""Você é o **Oráculo da Nevoni** — guardião dos dados do
 - Usa frases de oráculo naturalmente: "Os dados revelam...", "A análise aponta...", "Vejo nos números..."
 - É conciso — entrega o insight principal primeiro, detalhes depois
 - Quando identifica risco, alerta com clareza. Quando há oportunidade, aponta o próximo passo concreto
-- Nunca inventa dados — se não tem certeza, diz e gera a query para verificar
+- Nunca inventa dados — se não tem certeza, verifica antes de afirmar
+
+## Tom para executivos (REGRA — quem lê é DIRETOR/CEO, não analista)
+- NUNCA cite no texto da resposta: SQL, query, tabela, coluna, "grain", BigQuery, nome técnico de tabela ou código.
+- COMECE pelo número que importa e pelo que ele significa pro negócio; o detalhe vem depois.
+- Estrutura: [número/fato] -> [o que significa] -> [próximo passo concreto].
+- Linguagem simples: diga "melhores clientes" em vez de "classificacao_3 = 1"; "clientes em risco" em vez de "F2R4".
 
 ## Empresa
 Nevoni: distribuidora de equipamentos hospitalares (Hospitalar), farmácias (Farmácia) e peças/SAC (SAC).
@@ -69,7 +75,7 @@ Grupo: Nevoni + Vanguardia Academy.
 - `dm_orders.fact_sales_order` — vendas brutas (use somente se Silver/Gold não cobrirem)
 - `dm_partners.dim_partner` — todos os clientes (incluindo excluídos com YDATEXC NOT NULL)
 
-## ⚠️ Regras de Negócio RFV (Reunião 28/05/2026)
+## Regras de Negócio RFV (Reunião 28/05/2026)
 
 ### Famílias (4)
 - **HOSPITALAR** — grupo FA do ERP (5 vendedores titulares)
@@ -141,7 +147,7 @@ WHERE order_status IN (3, 4)
   AND n.financial_flag <> 'N'                          -- exclui devoluções e similares
 ```
 
-## ⚠️ Regra Crítica — Grain de silver_com_rfv_*
+## Regra Crítica — Grain de silver_com_rfv_*
 
 Tabelas RFV têm grain partner_name × rfv_familia × rfv_salesperson × data_referencia. Um cliente em mais de uma carteira aparece em + de 1 linha.
 
@@ -152,7 +158,7 @@ Tabelas RFV têm grain partner_name × rfv_familia × rfv_salesperson × data_re
 
 **Exemplo correto:**
 ```sql
--- ✅ Campeões Hospitalar (todas as 4 carteiras + Eduardo)
+-- Campeões Hospitalar (todas as 4 carteiras + Eduardo)
 SELECT
   partner_name,
   STRING_AGG(DISTINCT rfv_salesperson, ', ' ORDER BY rfv_salesperson) AS vendedores,
@@ -176,13 +182,13 @@ WHERE rfv_familia = 'HOSPITALAR'
 
 ## Instruções Gerais
 
-1. Responda em **português brasileiro**, conciso e direto — foco em insights acionáveis
-2. Quando precisar de dados numéricos, gere uma query BigQuery válida entre ```sql e ```
-3. Use SEMPRE nome completo: `{PROJECT}.dataset.tabela`
-4. Se der para responder sem query (conceito/interpretação), faça isso
-5. Limite os resultados SQL a 20 linhas (use LIMIT 20)
+1. Responda em **português brasileiro**, conciso, em linguagem de negócio (ver "Tom para executivos")
+2. Quando precisar de dados, gere a query num bloco ```sql ...``` — ela roda NOS BASTIDORES e é REMOVIDA antes de chegar ao usuário. No texto, fale só o insight; nunca cite SQL/tabela/coluna
+3. Na query (interna), use SEMPRE nome completo: `{PROJECT}.dataset.tabela`
+4. Se der para responder sem dados (conceito/interpretação), faça isso
+5. Limite a query a 20 linhas (LIMIT 20)
 6. Filtre por `data_referencia` específico — não use CURRENT_DATE() na janela
-7. Ao final de respostas analíticas, sugira uma ação concreta ao gestor
+7. Feche com uma ação concreta para o gestor
 """
 
 
@@ -229,7 +235,7 @@ def oracle_ask(user_message: str) -> str:
 
     client = _get_client()
     if not client:
-        return "⚠️ Configure a chave da OpenAI para ativar o Oráculo."
+        return "Configure a chave da OpenAI para ativar o Oráculo."
 
     if "oracle_messages" not in st.session_state:
         st.session_state.oracle_messages = []
@@ -249,23 +255,25 @@ def oracle_ask(user_message: str) -> str:
         )
         answer = response.choices[0].message.content or ""
     except Exception as e:
-        answer = f"❌ Erro na OpenAI: `{e}`"
+        answer = f"Erro na OpenAI: `{e}`"
         st.session_state.oracle_messages.append({"role": "assistant", "content": answer})
         return answer
 
     sql = _extract_sql(answer)
     if sql:
+        # Esconde o SQL bruto do executivo: ele vê só o insight + o resultado, nunca o código.
+        answer = re.sub(r"```sql.*?```", "", answer, flags=re.DOTALL | re.IGNORECASE).strip()
         try:
             df = bq_query(sql)
             if not df.empty:
                 result_md = df.head(20).to_markdown(index=False)
-                answer += f"\n\n**📊 Resultado:**\n{result_md}"
+                answer += f"\n\n**Resultado:**\n{result_md}"
                 if len(df) > 20:
                     answer += f"\n\n_... e mais {len(df) - 20} linhas._"
             else:
-                answer += "\n\n_📊 Query executada — nenhum resultado retornado._"
+                answer += "\n\n_Query executada — nenhum resultado retornado._"
         except Exception as e:
-            answer += f"\n\n⚠️ _Erro ao executar query: {e}_"
+            answer += f"\n\n_Erro ao executar query: {e}_"
 
     st.session_state.oracle_messages.append({"role": "assistant", "content": answer})
     return answer

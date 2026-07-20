@@ -7,19 +7,24 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-st.set_page_config(page_title="Engenharia e P&D | Nevoni 360°", page_icon="🔧", layout="wide")
+import os as _os
+_FAVICON = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), "assets", "nevoni_favicon.png")
+
+import sys
+from pathlib import Path
+_ROOT = Path(__file__).resolve().parents[2]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
 
 from dashboard.utils.components import inject_css, page_header, kpi_card, section_title, sidebar_brand, coming_soon
 from dashboard.utils.bq_client import query, PROJECT_PROD
 
-inject_css()
-sidebar_brand()
 
 PROJ = PROJECT_PROD
 PRD  = f"{PROJ}.dm_products"
 
 page_header(
-    title="🔧 Engenharia e P&D",
+    title="Engenharia e P&D",
     subtitle="Catálogo de Produtos · Estrutura BOM · Fichas Técnicas · Seriais",
     sources=[
         {"name": "ERP (SQL Server)", "active": True},
@@ -29,9 +34,9 @@ page_header(
 )
 
 tab_cat, tab_bom_eng, tab_roadmap = st.tabs([
-    "📋 Catálogo de Produtos",
-    "🗂️ Estrutura Técnica (BOM)",
-    "🚀 Roadmap P&D",
+    "Catálogo de Produtos",
+    "Estrutura Técnica (BOM)",
+    "Roadmap P&D",
 ])
 
 # ── Tab: Catálogo ────────────────────────────────────────────

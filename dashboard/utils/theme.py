@@ -1,211 +1,194 @@
-"""Identidade visual Nevoni — cores, CSS injetável."""
+"""Identidade visual Nevoni — cores, CSS injetável (refino visual jun/2026)."""
 
 # ── Paleta Nevoni ─────────────────────────────────────────────
-PRIMARY      = "#1E1882"   # roxo principal
-PRIMARY_DARK = "#0D0B50"   # roxo escuro (gradiente)
-PRIMARY_LIGHT = "#4844C8"  # roxo médio
-PRIMARY_PALE  = "#EEF0FF"  # roxo muito claro (bg cards)
-GRAY          = "#6B7280"
+PRIMARY      = "#1E1882"   # índigo principal
+PRIMARY_DARK = "#15104F"
+PRIMARY_LIGHT = "#4844C8"
+PRIMARY_PALE  = "#EEF0FF"
+GRAY          = "#8A8A99"
 GRAY_LIGHT    = "#F3F4F6"
-SUCCESS       = "#10B981"
-WARNING       = "#F59E0B"
-DANGER        = "#EF4444"
-TEXT_DARK     = "#111827"
-BG            = "#F8F9FE"
+SUCCESS       = "#059669"
+WARNING       = "#B45309"
+DANGER        = "#DC2626"
+TEXT_DARK     = "#15151F"
+BG            = "#F7F7FB"
+HAIRLINE      = "#ECECF3"
 
 # ── CSS global ────────────────────────────────────────────────
 CSS = """
 <style>
-/* Layout */
-.main .block-container {
-    padding-top: 1.5rem;
-    padding-bottom: 2rem;
-    max-width: 1440px;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+html, body, [class*="css"], .stMarkdown, button, input, textarea, select {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
+/* Layout */
+.main .block-container { padding-top: 1.4rem; padding-bottom: 2.5rem; max-width: 1480px; }
+.block-container { font-variant-numeric: tabular-nums; }
+
 /* Sidebar */
-[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #0D0B50 0%, #1E1882 60%, #2C28A8 100%);
-}
+[data-testid="stSidebar"] { background: #15104F; }
 [data-testid="stSidebar"] .stMarkdown p,
 [data-testid="stSidebar"] .stMarkdown h1,
 [data-testid="stSidebar"] .stMarkdown h2,
 [data-testid="stSidebar"] .stMarkdown h3,
 [data-testid="stSidebar"] label,
-[data-testid="stSidebar"] span {
-    color: rgba(255,255,255,0.85) !important;
+[data-testid="stSidebar"] span { color: rgba(255,255,255,0.82) !important; }
+[data-testid="stSidebar"] hr { border-color: rgba(255,255,255,0.12) !important; }
+[data-testid="stSidebarNav"] a span { color: rgba(255,255,255,0.66) !important; font-size: 13.5px; }
+[data-testid="stSidebarNav"] a[aria-selected="true"] span { color: #fff !important; font-weight: 600; }
+[data-testid="stSidebarNav"] a[aria-selected="true"] { background: rgba(255,255,255,0.10) !important; border-radius: 7px; }
+/* Botão na sidebar escura (ex.: "Sair") — sem isto o texto fica claro sobre fundo
+   escuro e some (botão "transparente"). Garante contraste. */
+[data-testid="stSidebar"] .stButton > button {
+    color: #fff !important;
+    background: rgba(255,255,255,0.10) !important;
+    border: 1px solid rgba(255,255,255,0.30) !important;
 }
-[data-testid="stSidebar"] hr {
-    border-color: rgba(255,255,255,0.15) !important;
-}
-[data-testid="stSidebarNav"] a span {
-    color: rgba(255,255,255,0.75) !important;
-}
-[data-testid="stSidebarNav"] a[aria-selected="true"] span {
-    color: white !important;
-    font-weight: 700;
-}
-[data-testid="stSidebarNav"] a[aria-selected="true"] {
-    background: rgba(255,255,255,0.12) !important;
-    border-radius: 8px;
+[data-testid="stSidebar"] .stButton > button:hover {
+    background: rgba(255,255,255,0.20) !important;
+    border-color: rgba(255,255,255,0.50) !important;
 }
 
-/* Page header band */
+/* Page header — banda sólida, plana (sem gradiente de template) */
 .page-header {
-    background: linear-gradient(135deg, #0D0B50 0%, #1E1882 100%);
-    color: white;
-    padding: 22px 28px;
-    border-radius: 14px;
-    margin-bottom: 20px;
+    background: #1E1882; color: white;
+    padding: 20px 26px; border-radius: 12px; margin-bottom: 22px;
 }
-.page-header h1 {
-    color: white !important;
-    margin: 0 0 4px 0;
-    font-size: 22px;
-    font-weight: 700;
-}
-.page-header p {
-    color: rgba(255,255,255,0.65);
-    margin: 0;
-    font-size: 13px;
-}
+.page-header h1 { color: white !important; margin: 0 0 3px 0; font-size: 22px; font-weight: 600; letter-spacing: -.01em; }
+.page-header p { color: rgba(255,255,255,0.62); margin: 0; font-size: 13px; }
 
-/* KPI metric card */
+/* KPI card — hairline plano, sem borda-lateral colorida, números tabulares */
 .kpi-card {
-    background: white;
-    border-radius: 12px;
-    padding: 18px 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    border-left: 4px solid #1E1882;
-    height: 100%;
-    min-height: 100px;
+    background: #fff; border: 1px solid #ECECF3; border-radius: 10px;
+    padding: 15px 17px; height: 100%; min-height: 92px;
 }
-.kpi-card.warning { border-left-color: #F59E0B; }
-.kpi-card.danger  { border-left-color: #EF4444; }
-.kpi-card.success { border-left-color: #10B981; }
-.kpi-label {
-    color: #6B7280;
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin: 0 0 6px 0;
-}
+.kpi-card.success { border-top: 2px solid #10B981; }
+.kpi-card.warning { border-top: 2px solid #D97706; }
+.kpi-card.danger  { border-top: 2px solid #DC2626; }
+.kpi-label { color: #8A8A99; font-size: 12px; font-weight: 500; margin: 0 0 9px 0; }
 .kpi-value {
-    color: #111827;
-    font-size: 26px;
-    font-weight: 700;
-    margin: 0;
-    line-height: 1.1;
+    color: #15151F; font-size: 23px; font-weight: 600; margin: 0; line-height: 1.1;
+    font-variant-numeric: tabular-nums; letter-spacing: -.022em;
 }
-.kpi-delta {
-    font-size: 12px;
-    margin-top: 5px;
-    display: flex;
-    align-items: center;
-    gap: 3px;
+.kpi-delta { font-size: 12px; margin-top: 7px; display: flex; align-items: center; gap: 4px; }
+.delta-up   { color: #059669; }
+.delta-down { color: #DC2626; }
+.delta-flat { color: #9A9AA8; }
+
+/* Grid responsivo de KPIs — reflui sozinho (resolve o "não responsivo") */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 11px; }
+
+/* Retrofit de responsividade: qualquer linha st.columns que contenha um KPI card
+   passa a REFLUIR (quebra de linha) em vez de espremer. Cobre todos os call-sites
+   antigos sem reescrever Python. :has() é suportado no Chrome do Streamlit. */
+[data-testid="stHorizontalBlock"]:has(.kpi-card) { flex-wrap: wrap; gap: 11px; row-gap: 11px; }
+[data-testid="stHorizontalBlock"]:has(.kpi-card) > [data-testid="stColumn"] {
+    flex: 1 1 160px; min-width: 160px;
 }
-.delta-up   { color: #10B981; }
-.delta-down { color: #EF4444; }
-.delta-flat { color: #6B7280; }
 
 /* Sector card (home 360) */
 .sector-card {
-    background: white;
-    border-radius: 16px;
-    padding: 20px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    cursor: pointer;
-    min-height: 150px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    transition: box-shadow 0.2s, transform 0.2s;
-    border: 1px solid #F0F0F8;
+    background: #fff; border-radius: 12px; padding: 18px; border: 1px solid #ECECF3;
+    cursor: pointer; min-height: 138px; display: flex; flex-direction: column; gap: 9px;
+    transition: border-color .15s, transform .15s;
 }
-.sector-card:hover {
-    box-shadow: 0 8px 24px rgba(30,24,130,0.12);
-    transform: translateY(-2px);
-}
-.sector-icon  { font-size: 30px; line-height: 1; }
-.sector-name  { font-size: 15px; font-weight: 700; color: #111827; margin: 0; }
-.sector-sub   { font-size: 12px; color: #6B7280; margin: 0; }
+.sector-card:hover { border-color: #1E1882; transform: translateY(-1px); }
+.sector-icon  { font-size: 22px; line-height: 1; color: #1E1882; }
+.sector-name  { font-size: 15px; font-weight: 600; color: #15151F; margin: 0; }
+.sector-sub   { font-size: 12px; color: #8A8A99; margin: 0; }
 
 /* Status badges */
-.badge {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 600;
-}
-.badge-ready   { background: #D1FAE5; color: #065F46; }
-.badge-partial { background: #FEF3C7; color: #92400E; }
-.badge-planned { background: #F3F4F6; color: #6B7280; }
-.badge-raw     { background: #DBEAFE; color: #1E40AF; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 500; }
+.badge-ready   { background: #E1F5EE; color: #0F6E56; }
+.badge-partial { background: #FAEEDA; color: #854F0B; }
+.badge-planned { background: #F1EFE8; color: #5F5E5A; }
+.badge-raw     { background: #E6F1FB; color: #0C447C; }
 
-/* Source pill (header) */
-.sources-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 10px;
-}
+/* Source pills (header) */
+.sources-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
 .src-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    background: rgba(255,255,255,0.13);
-    color: rgba(255,255,255,0.9);
-    padding: 3px 11px;
-    border-radius: 20px;
-    font-size: 12px;
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.9);
+    padding: 3px 11px; border-radius: 6px; font-size: 12px;
 }
-.src-pill.pending {
-    opacity: 0.5;
-}
+.src-pill.pending { opacity: 0.45; }
 
-/* Coming soon section */
+/* Coming soon */
 .coming-soon-box {
-    background: white;
-    border-radius: 14px;
-    padding: 48px 24px;
-    text-align: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    border: 2px dashed #E5E7EB;
+    background: #fff; border-radius: 12px; padding: 48px 24px; text-align: center;
+    border: 1px solid #ECECF3;
 }
-.coming-soon-box h3 { color: #6B7280; margin-bottom: 8px; }
+.coming-soon-box .lock { font-size: 30px; line-height: 1; display: block; margin-bottom: 12px; opacity: .5; }
+.coming-soon-box h3 { color: #6B7280; margin-bottom: 8px; font-weight: 600; }
 .coming-soon-box p  { color: #9CA3AF; font-size: 14px; }
 
-/* Data table */
-[data-testid="stDataFrame"] {
-    border-radius: 10px;
-    overflow: hidden;
-}
+/* Tabelas */
+[data-testid="stDataFrame"] { border: 1px solid #ECECF3; border-radius: 8px; overflow: hidden; }
 
-/* Tabs */
-.stTabs [data-baseweb="tab"] {
-    font-weight: 600;
-    color: #6B7280;
-}
-.stTabs [data-baseweb="tab"][aria-selected="true"] {
-    color: #1E1882;
-}
-.stTabs [data-baseweb="tab-highlight"] {
-    background: #1E1882 !important;
-}
+/* Tabs — limpo, sublinhado índigo */
+.stTabs [data-baseweb="tab-list"] { gap: 22px; }
+.stTabs [data-baseweb="tab"] { font-weight: 500; color: #9A9AA8; font-size: 14px; }
+.stTabs [data-baseweb="tab"][aria-selected="true"] { color: #1E1882; }
+.stTabs [data-baseweb="tab-highlight"] { background: #1E1882 !important; }
 
-/* Divider */
+/* Section title — leve, sem barra grossa */
 .section-title {
-    font-size: 16px;
-    font-weight: 700;
-    color: #111827;
-    margin: 24px 0 12px 0;
-    padding-bottom: 8px;
-    border-bottom: 2px solid #EEF0FF;
+    font-size: 16px; font-weight: 600; color: #15151F; margin: 26px 0 12px 0; padding: 0;
 }
 
-/* Hide default Streamlit chrome */
+/* ── Painel de Gestão à Vista ─────────────────────────────────── */
+.gv-band {
+    background: #1E1882; color: #fff; border-radius: 14px;
+    padding: 20px 26px; margin-bottom: 18px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+}
+.gv-band .t  { font-size: 21px; font-weight: 600; letter-spacing: -.01em; margin: 0; }
+.gv-band .s  { font-size: 13px; color: rgba(255,255,255,.66); margin: 0; }
+.gv-foot {
+    background: #EEF0FF; color: #1E1882; border-radius: 14px; padding: 14px 22px; margin-top: 18px;
+    font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 10px;
+}
+/* grid mais arejado: trilho 300px + gap 18 (resolve o "apertado") */
+.gv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+.gv-card {
+    background: #fff; border: 1px solid #ECECF3; border-radius: 14px; padding: 20px 22px;
+    box-shadow: 0 1px 2px rgba(30,24,130,.04);
+}
+.gv-card.gv-wide { grid-column: span 2; }
+@media (max-width: 720px) { .gv-card.gv-wide { grid-column: span 1; } }
+.gv-chan { display: flex; gap: 10px; margin-top: 12px; }
+.gv-chan > div { flex: 1; background: #F7F7FB; border-radius: 8px; padding: 9px; text-align: center; }
+.gv-chan .lbl { font-size: 10.5px; color: #8A8A99; }
+.gv-chan .val { font-size: 15px; font-weight: 600; color: #15151F; }
+.gv-head { display: flex; align-items: center; gap: 9px; margin-bottom: 14px; }
+.gv-badge { width: 22px; height: 22px; border-radius: 50%; font-size: 12px; font-weight: 600;
+    display: inline-flex; align-items: center; justify-content: center; flex: none; }
+/* título = rótulo de seção (degrau claro acima de sub/note) */
+.gv-title { font-size: 11px; color: #6B6B7A; font-weight: 700; letter-spacing: .045em; text-transform: uppercase; }
+.gv-hero  { font-size: 28px; font-weight: 600; color: #15151F; letter-spacing: -.02em; line-height: 1.1;
+    font-variant-numeric: tabular-nums; }
+.gv-hero.gv-effort { color: #1E1882; }   /* nº de esforço usa o índigo da marca */
+.gv-sub   { font-size: 12.5px; color: #6B6B7A; margin-top: 5px; }
+.gv-bar-track { height: 6px; background: #F0F0F5; border-radius: 4px; overflow: hidden; }
+.gv-bar-fill  { height: 100%; border-radius: 4px; }
+.gv-rk-row { margin-bottom: 9px; }
+.gv-rk-top { display: flex; justify-content: space-between; font-size: 12.5px; margin-bottom: 3px; gap: 10px; }
+/* funil da engenharia reversa: separado do hero, ritmo tabular */
+.gv-eng-funil { margin-top: 14px; padding-top: 12px; border-top: 1px solid #F0F0F5; }
+.gv-eng-row { display: flex; justify-content: space-between; font-size: 12.5px; margin: 6px 0;
+    font-variant-numeric: tabular-nums; }
+.gv-eng-row .lbl { color: #8A8A99; }
+.gv-eng-row .val { color: #15151F; font-weight: 600; }
+/* atividades: concluído x atrasado legíveis (atraso = cobrança) */
+.gv-ativ-done { color: #15151F; font-weight: 600; font-variant-numeric: tabular-nums; }
+.gv-ativ-late { color: #DC2626; font-weight: 600; background: #FEECEC; padding: 1px 7px; border-radius: 6px; font-size: 11px; }
+.gv-stage { height: 22px; border-radius: 4px; display: flex; align-items: center;
+    justify-content: space-between; padding: 0 10px; color: #fff; font-size: 12px; margin-bottom: 3px; }
+.gv-note { font-size: 11px; color: #A6A6B2; margin-top: 10px; padding-top: 8px; border-top: 1px dashed #F0F0F5; }
+
+/* Esconde chrome do Streamlit */
 #MainMenu  { visibility: hidden; }
 footer     { visibility: hidden; }
 .stDeployButton { display: none; }

@@ -57,24 +57,66 @@ def get_client(project: str = PROJECT_PROD) -> bigquery.Client:
     return bigquery.Client(project=project)
 
 
-@st.cache_data(ttl=3600, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
+def _data_version(project: str = PROJECT_PROD) -> str:
+    """Carimbo de frescor BARATO (só metadado, sem custo de query no BQ): o
+    last_modified das tabelas que o dashboard lê. Muda a cada carga nova.
+    Serve de CHAVE do cache pesado → quando entra carga, o cache se refaz sozinho.
+    TTL 5min = a tela 'percebe' a carga nova em até 5min, sem ninguém limpar cache
+    na mão e sem reconsultar o BigQuery à toa (entre cargas o valor não muda)."""
+    try:
+        client = get_client(project)
+        marcos = []
+        for t in (f"{project}.gold_comercial.gold_com_cliente_360",   # gold = última coisa que a carga grava
+                  f"{project}.dm_orders.fact_sales_order",
+                  f"{project}.crm_raw.activities"):                    # CRM sobe de hora em hora (Gestão à Vista lê crm_raw direto)
+            try:
+                marcos.append(str(client.get_table(t).modified))
+            except Exception:
+                pass
+        return "|".join(marcos) if marcos else "na"
+    except Exception:
+        return "na"
+
+
 def query(sql: str, project: str = PROJECT_PROD) -> pd.DataFrame:
-    """Executa SQL no BigQuery e cacheia por 1 hora."""
+    """Executa SQL no BigQuery. O resultado é cacheado, mas a chave inclui o
+    carimbo de frescor (_data_version): entrou carga nova → a chave muda → a tela
+    se atualiza SOZINHA em até 5min, sem 'Clear cache'/'Reboot' na mão. Entre
+    cargas, bate no cache (rápido, sem custo)."""
+    return _query_cached(sql, _data_version(project), project)
+
+
+@st.cache_data(ttl=14400, show_spinner=False)
+def _query_cached(sql: str, version: str, project: str = PROJECT_PROD) -> pd.DataFrame:
+    # 'version' (sem underscore) entra na chave do cache de propósito: muda com a
+    # carga e força o refresh. Entre cargas fica estável e o cache de 4h segura.
     client = get_client(project)
     return client.query(sql).to_dataframe()
 
 
+@st.cache_data(ttl=300, show_spinner=False)
+def data_ultima_carga(project: str = PROJECT_PROD) -> str:
+    """Data/hora (BRT) da última carga do fact_sales_order — frescor REAL dos dados
+    de vendas/faturamento. Usar pra exibir 'Dados de ...' em vez da data de hoje.
+    TTL 5min pra o label acompanhar a carga (a query embaixo já é versionada)."""
+    try:
+        df = query(
+            f"SELECT FORMAT_TIMESTAMP('%d/%m/%Y %Hh%M', MAX(loaded_at), 'America/Sao_Paulo') AS dt "
+            f"FROM `{project}.dm_orders.fact_sales_order`",
+            project,
+        )
+        return df["dt"].iloc[0] or "—"
+    except Exception:
+        return "—"
+
+
 def gold_not_ready(table: str, msg: str = "") -> None:
-    """Exibe card padrão quando uma tabela Gold ainda não existe."""
-    import streamlit as st
-    default = (
-        f"A tabela Gold `{table.split('.')[-1]}` ainda não foi criada. "
-        "Construa a transformação Silver → Gold e a tabela aparecerá automaticamente aqui."
-    )
-    st.info(
-        f"**Gold em construção**\n\n{msg or default}\n\n`{table}`",
-        icon="🏗️",
-    )
+    """Card neutro de 'em construção' (cadeado) quando um indicador ainda não existe.
+    Sem vermelho e sem nome de tabela técnico — é tela de executivo. O param `table`
+    é mantido por compatibilidade com os call-sites (não é mais exibido)."""
+    from dashboard.utils.components import coming_soon
+    coming_soon("Em construção", msg or "Este indicador está em construção. Em breve disponível aqui.")
 
 
 def query_layer(gold_sql: str, bronze_sql: str, label: str = "") -> tuple[pd.DataFrame, str]:
@@ -95,8 +137,10 @@ def query_layer(gold_sql: str, bronze_sql: str, label: str = "") -> tuple[pd.Dat
         try:
             df = query(bronze_sql)
             return df, "bronze"
-        except Exception as e:
-            st.error(f"Erro ao consultar Bronze: {e}", icon="🚨")
+        except Exception:
+            # Tela de executivo: setor sem dado vira cadeado limpo, nunca erro vermelho.
+            from dashboard.utils.components import coming_soon
+            coming_soon("Em construção", "Este painel está em construção. Em breve disponível aqui.")
             return pd.DataFrame(), "error"
 
 

@@ -7,6 +7,7 @@ Custo de BigQuery é idêntico ao dashboard atual: cache TTL de 1h por SQL.
 """
 
 import os
+import json
 import time
 import threading
 
@@ -14,16 +15,20 @@ import pandas as pd
 from google.cloud import bigquery
 from google.oauth2 import service_account
 
+_SCOPES = ["https://www.googleapis.com/auth/cloud-platform"]
+
 PROJECT_PROD = "sapient-metrics-492914-m7"   # Nevoni produção
 PROJECT_TEST = "vanguardia-prod-466114"        # Vanguard teste
 
 CREDS_PATHS = [
-    r"C:\teste\sapient-metrics.json",      # Nevoni produção (principal)
+    os.getenv("GOOGLE_APPLICATION_CREDENTIALS", ""),  # cloud / deploy (prioridade)
+    r"C:\teste\sapient-metrics.json",                 # Nevoni produção (local)
     r"C:\teste\credentials.json",
     r"C:\teste\nevoni-credentials.json",
     r"C:\teste\service-account.json",
-    os.getenv("GOOGLE_APPLICATION_CREDENTIALS", ""),
 ]
+# Se nenhum arquivo existir, get_client cai em Application Default Credentials
+# (funciona no GCP/Cloud Run com service account anexada, sem arquivo).
 
 _client: bigquery.Client | None = None
 _client_lock = threading.Lock()
@@ -45,15 +50,20 @@ def get_client(project: str = PROJECT_PROD) -> bigquery.Client:
     global _client
     with _client_lock:
         if _client is None:
+            # 1) Conteúdo JSON da service account numa env var (jeito EasyPanel/secret).
+            creds_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON", "").strip()
+            if creds_json:
+                info = json.loads(creds_json)
+                creds = service_account.Credentials.from_service_account_info(info, scopes=_SCOPES)
+                _client = bigquery.Client(credentials=creds, project=project)
+                return _client
+            # 2) Arquivo de credencial (env path ou caminhos locais).
             creds_path = _find_creds()
             if creds_path:
-                creds = service_account.Credentials.from_service_account_file(
-                    creds_path,
-                    scopes=["https://www.googleapis.com/auth/cloud-platform"],
-                )
+                creds = service_account.Credentials.from_service_account_file(creds_path, scopes=_SCOPES)
                 _client = bigquery.Client(credentials=creds, project=project)
             else:
-                # Application Default Credentials (gcloud auth)
+                # 3) Application Default Credentials (service account anexada no GCP).
                 _client = bigquery.Client(project=project)
         return _client
 

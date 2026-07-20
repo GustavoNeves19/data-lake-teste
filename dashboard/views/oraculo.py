@@ -4,23 +4,25 @@ Oráculo da Nevoni — Assistente IA sobre o Data Lake
 
 import streamlit as st
 
-st.set_page_config(
-    page_title="Oráculo da Nevoni",
-    page_icon="🔮",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
+import os as _os
+_FAVICON = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), "assets", "nevoni_favicon.png")
+
+import sys
+from pathlib import Path
+_ROOT = Path(__file__).resolve().parents[2]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
 
 from dashboard.utils.components import inject_css, sidebar_brand
 from dashboard.utils.oracle import oracle_ask, oracle_is_ready
 
-inject_css()
-sidebar_brand()
 
 # ── Sidebar: input da chave OpenAI ────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("### 🔑 Chave OpenAI")
+    # Chave vem do Secret (produção) → nada de chave aparece pro executivo.
+    # O campo só surge se NÃO houver chave (dev/fallback), pra colar na sessão.
     if not oracle_is_ready():
+        st.markdown("### Chave OpenAI")
         key_input = st.text_input(
             "Cole `sk-...`",
             type="password",
@@ -29,11 +31,6 @@ with st.sidebar:
         )
         if key_input:
             st.session_state["openai_api_key"] = key_input
-            st.rerun()
-    else:
-        st.success("✓ Oráculo ativo")
-        if st.button("Limpar chave", use_container_width=True):
-            st.session_state.pop("openai_api_key", None)
             st.rerun()
 
 # ── Header ────────────────────────────────────────────────────────────────────
@@ -72,7 +69,6 @@ if not oracle_is_ready():
     st.info(
         "**O Oráculo aguarda sua chave.**\n\n"
         "Cole sua chave OpenAI (`sk-...`) na sidebar para ativar o chat.",
-        icon="🔑",
     )
     st.stop()
 
@@ -92,7 +88,7 @@ if not st.session_state.oracle_messages:
             margin-bottom: 20px;
         ">
             <p style="margin:0; font-size:14px; color:#1E1882; font-weight:700;">
-                🔮 Os dados estão prontos. O que deseja saber?
+                Os dados estão prontos. O que deseja saber?
             </p>
             <p style="margin:8px 0 0; font-size:13px; color:#374151;">
                 Exemplos de perguntas:
@@ -116,7 +112,7 @@ for msg in st.session_state.oracle_messages:
         with st.chat_message("user"):
             st.markdown(msg["content"])
     else:
-        with st.chat_message("assistant", avatar="🔮"):
+        with st.chat_message("assistant"):
             st.markdown(msg["content"])
 
 # ── Input de chat (fixo no rodapé da página) ─────────────────────────────────
@@ -124,7 +120,7 @@ if prompt := st.chat_input("Pergunte ao Oráculo sobre os dados da Nevoni..."):
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    with st.chat_message("assistant", avatar="🔮"):
+    with st.chat_message("assistant"):
         with st.spinner("O Oráculo está consultando os dados..."):
             resposta = oracle_ask(prompt)
         st.markdown(resposta)
@@ -134,6 +130,6 @@ if st.session_state.oracle_messages:
     st.markdown("<br>", unsafe_allow_html=True)
     col_clear, _ = st.columns([1, 4])
     with col_clear:
-        if st.button("🗑️ Limpar conversa", use_container_width=True):
+        if st.button("Limpar conversa", use_container_width=True):
             st.session_state.oracle_messages = []
             st.rerun()

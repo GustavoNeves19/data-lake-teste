@@ -34,7 +34,9 @@ CREDENTIALS = r"C:\teste\sapient-metrics.json"
 
 SQL_FILE = Path(__file__).parent / "build_silver_comercial.sql"
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = CREDENTIALS
+# cloud: usa a GOOGLE_APPLICATION_CREDENTIALS já setada no ambiente;
+# dev local: cai pro arquivo em C:\teste (não sobrescreve a env da nuvem).
+os.environ.setdefault("GOOGLE_APPLICATION_CREDENTIALS", CREDENTIALS)
 
 
 # ── Parse SQL ─────────────────────────────────────────────────────────────────

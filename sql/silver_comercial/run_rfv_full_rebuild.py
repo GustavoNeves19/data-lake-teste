@@ -17,7 +17,10 @@ import io, os, sys, subprocess, time
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r'C:\teste\sapient-metrics.json'
+# setdefault (NÃO sobrescrever): no container o entrypoint já aponta pra /app/bq_sa.json.
+# Sobrescrever com o caminho de Windows quebrava a auth no BigQuery dentro do container
+# (e fazia o estágio RFV abortar, deixando só o snapshot de hoje). Local: cai no C:\teste.
+os.environ.setdefault('GOOGLE_APPLICATION_CREDENTIALS', r'C:\teste\sapient-metrics.json')
 from google.cloud import bigquery
 
 PROJ     = 'sapient-metrics-492914-m7'
@@ -35,7 +38,8 @@ PERIODOS_HISTORICOS = [
     ("Fevereiro/2026", "DATE '2026-02-28'"),
     ("Março/2026",     "DATE '2026-03-31'"),
     ("Abril/2026",     "DATE '2026-04-30'"),
-    ("Maio/2026",      "DATE '2026-05-31'"),   # fechado — após Diego/Fred subirem NSR_ERP até 31/05
+    ("Maio/2026",      "DATE '2026-05-31'"),       # fechado
+    ("Junho/2026",     "DATE '2026-06-30'"),       # fechado (era CURRENT_DATE() e pulava o snapshot real de 30/06)
 ]
 
 
@@ -60,7 +64,15 @@ def run_script(path: str) -> None:
 
 
 def insert_periodo(label: str, ref: str) -> None:
-    """Insere rfv_base + rfv_score + rfv_resumo para um período histórico."""
+    """(Re)constrói rfv_base + rfv_score + rfv_resumo para UM período (idempotente)."""
+
+    # Idempotência por período: apaga só este data_referencia antes de inserir. Evita a
+    # janela de "tabela vazia" de um DELETE global — importante porque a carga rápida roda
+    # 3x/dia com o Alves olhando ao vivo (só o período sendo refeito some por ~1s, os
+    # outros 5 meses continuam na tela).
+    for tbl in ("silver_com_rfv_base", "silver_com_rfv_score", "silver_com_rfv_resumo"):
+        run_bq(f"{label} — limpa {tbl}",
+               f"DELETE FROM `{PROJ}.silver_comercial.{tbl}` WHERE data_referencia = {ref}")
 
     # rfv_base — agrega pedidos com hierarquia de match na carteira (decisão Gustavo 31/05):
     #   1º) cliente em carteira VÁLIDA (4 Hosp + Farm + SAC) → vai pro titular
@@ -117,16 +129,39 @@ def insert_periodo(label: str, ref: str) -> None:
             FROM `{PROJ}.dm_orders.fact_sales_order` o
             LEFT JOIN `{PROJ}.dm_partners.dim_partner` p
                 ON p.partner_code = o.partner_code
+        ),
+        grp_dom AS (
+            -- grupo DOMINANTE (por valor) de cada cliente — evita PARTIR clientes
+            -- não-carteirizados entre NOVOS_<grupo> (decisão 16/06): o Alves classifica
+            -- cada cliente UMA vez, combinando todas as vendas dele. Sem isso, um cliente
+            -- com vendas em FA e FR vira 2 linhas, racha a frequência e cai no segmento errado.
+            SELECT pkey, grp FROM (
+                SELECT pkey, grp,
+                       ROW_NUMBER() OVER (PARTITION BY pkey ORDER BY val DESC, grp) rn
+                FROM (
+                    SELECT COALESCE(v.partner_name_erp, CAST(v.partner_code AS STRING)) AS pkey,
+                           v.salesperson_group_code AS grp, SUM(v.product_amount) AS val
+                    FROM vendas v
+                    JOIN `{PROJ}.dm_orders.dim_operation_nature` n
+                        ON n.nature_code = v.nature_code AND n.financial_flag <> 'N'
+                    WHERE v.order_status IN (3, 4)
+                      AND v.invoice_date >= DATE_TRUNC(DATE_SUB({ref}, INTERVAL 1 YEAR), MONTH)
+                      AND v.invoice_date <= {ref}
+                      AND v.channel_code <> '000054'
+                      AND v.salesperson_group_code IN ('FA','FR','PC')
+                    GROUP BY pkey, grp
+                )
+            ) WHERE rn = 1
         )
         SELECT
             COALESCE(v.partner_name_erp, CAST(v.partner_code AS STRING))            AS partner_name,
             COALESCE(
                 cc.rfv_familia,                                  -- 1º match: partner_code (sem encoding)
                 cn.rfv_familia,                                  -- 2º match: nome normalizado
-                CASE v.salesperson_group_code                    -- 3º fallback: NOVOS_<grupo>
+                CASE gd.grp                                      -- 3º fallback: NOVOS_<grupo DOMINANTE>
                     WHEN 'FA' THEN 'NOVOS_HOSPITALAR'
                     WHEN 'FR' THEN 'NOVOS_FARMACIAS'
-                    WHEN 'PC' THEN 'NOVOS_SAC'
+                    WHEN 'PC' THEN 'NOVOS_HOSPITALAR'  -- SAC aglutinado em Hospitalar (16/07)
                 END
             )                                                                       AS rfv_familia,
             -- Vendedor: titular da carteira (limpo) quando carteirizado; senão
@@ -146,10 +181,14 @@ def insert_periodo(label: str, ref: str) -> None:
         FROM vendas v
         LEFT JOIN carteira_por_codigo cc ON cc.partner_code = v.partner_code
         LEFT JOIN carteira_por_nome   cn ON cn.nome_norm = v.nome_norm
+        LEFT JOIN grp_dom gd ON gd.pkey = COALESCE(v.partner_name_erp, CAST(v.partner_code AS STRING))
         JOIN `{PROJ}.dm_orders.dim_operation_nature` n
             ON  n.nature_code     = v.nature_code
             AND n.financial_flag <> 'N'
         WHERE v.order_status IN (3, 4)
+          -- COM canceladas (reunião 16/06): a planilha do Alves inclui notas canceladas
+          -- (uma nota cancelada conta como pedido na frequência). Validar a classificação
+          -- com o MESMO universo dele. Reavaliar excluded_at após o Fred confirmar (reunião qui).
           AND v.invoice_date >= DATE_TRUNC(DATE_SUB({ref}, INTERVAL 1 YEAR), MONTH)
           AND v.invoice_date <= {ref}
           AND v.channel_code <> '000054'
@@ -163,10 +202,10 @@ def insert_periodo(label: str, ref: str) -> None:
             COALESCE(
                 cc.rfv_familia,
                 cn.rfv_familia,
-                CASE v.salesperson_group_code
+                CASE gd.grp
                     WHEN 'FA' THEN 'NOVOS_HOSPITALAR'
                     WHEN 'FR' THEN 'NOVOS_FARMACIAS'
-                    WHEN 'PC' THEN 'NOVOS_SAC'
+                    WHEN 'PC' THEN 'NOVOS_HOSPITALAR'  -- SAC aglutinado em Hospitalar (16/07)
                 END
             ),
             COALESCE(cc.salesperson_name, cn.salesperson_name,
@@ -179,17 +218,12 @@ def insert_periodo(label: str, ref: str) -> None:
         WITH scored AS (
             SELECT
                 b.*,
+                -- FREQUÊNCIA — régua oficial do Alves, POR FAMÍLIA (validada 29/06 contra a
+                -- planilha dele, aba Apoio). Farmácia tem corte mais alto (planilha Ribeiro):
+                --   Hospitalar/SAC: F1>=5 · F2=4 · F3=3 · F4=2 · F5=1
+                --   Farmácia:       F1>=7 · F2=5-6 · F3=3-4 · F4=2 · F5=1
                 CASE
-                    WHEN b.rfv_familia IN ('HOSPITALAR', 'SAC',
-                                            'NOVOS_HOSPITALAR', 'NOVOS_SAC') THEN
-                        CASE
-                            WHEN b.frequencia >= 5 THEN 'F1'
-                            WHEN b.frequencia  = 4 THEN 'F2'
-                            WHEN b.frequencia  = 3 THEN 'F3'
-                            WHEN b.frequencia  = 2 THEN 'F4'
-                            ELSE                        'F5'
-                        END
-                    ELSE  -- FARMACIAS / NOVOS_FARMACIAS
+                    WHEN b.rfv_familia LIKE '%FARMACIA%' THEN
                         CASE
                             WHEN b.frequencia >= 7 THEN 'F1'
                             WHEN b.frequencia >= 5 THEN 'F2'
@@ -197,7 +231,18 @@ def insert_periodo(label: str, ref: str) -> None:
                             WHEN b.frequencia  = 2 THEN 'F4'
                             ELSE                        'F5'
                         END
+                    ELSE  -- Hospitalar / SAC (e os NOVOS_* correspondentes)
+                        CASE
+                            WHEN b.frequencia >= 5 THEN 'F1'
+                            WHEN b.frequencia  = 4 THEN 'F2'
+                            WHEN b.frequencia  = 3 THEN 'F3'
+                            WHEN b.frequencia  = 2 THEN 'F4'
+                            ELSE                        'F5'
+                        END
                 END AS freq_bucket,
+                -- RECÊNCIA — fronteiras da MATRIZ do Alves (validada 16/06 célula-a-célula):
+                --   R1 ≤30d · R2 31-60d · R3 61-120d · R4 121-180d · R5 181-360d
+                -- (a fórmula que ele mandou no WhatsApp dava 90/150d e não batia os segmentos)
                 CASE
                     WHEN b.recencia_dias <=  30 THEN 'R1'
                     WHEN b.recencia_dias <=  60 THEN 'R2'
@@ -272,14 +317,10 @@ def insert_periodo(label: str, ref: str) -> None:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# PASSO 1 — Limpa períodos existentes (evita duplicatas em re-runs)
+# PASSO 1 — (sem DELETE global) — a limpeza agora é POR PERÍODO dentro de
+# insert_periodo (idempotente, sem janela de tabela vazia). Outros períodos
+# eventuais ficam intactos; cada mês de PERIODOS_HISTORICOS é refeito.
 # ──────────────────────────────────────────────────────────────────────────────
-print()
-print('=' * 70)
-print('  PASSO 1/3 — Limpeza das tabelas rfv')
-print('=' * 70)
-for tbl in ['silver_com_rfv_base', 'silver_com_rfv_score', 'silver_com_rfv_resumo']:
-    run_bq(f"DELETE {tbl}", f"DELETE FROM `{PROJ}.silver_comercial.{tbl}` WHERE TRUE")
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -307,13 +348,16 @@ for _, r in df.iterrows():
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# PASSO 3 — Gold comercial
+# PASSO 3 — Gold comercial (pula com --skip-gold; o pipeline_diario tem estágio Gold)
 # ──────────────────────────────────────────────────────────────────────────────
-print()
-print('=' * 70)
-print('  PASSO 3/3 — Gold comercial')
-print('=' * 70)
-run_script(os.path.join(ROOT, 'sql', 'gold_comercial', 'run_gold_comercial.py'))
+if '--skip-gold' in sys.argv:
+    print('\n  PASSO 3/3 — Gold: PULADO (--skip-gold; o estágio Gold do pipeline cuida).')
+else:
+    print()
+    print('=' * 70)
+    print('  PASSO 3/3 — Gold comercial')
+    print('=' * 70)
+    run_script(os.path.join(ROOT, 'sql', 'gold_comercial', 'run_gold_comercial.py'))
 
 print()
 print('=' * 70)

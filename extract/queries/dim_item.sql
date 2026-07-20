@@ -10,6 +10,7 @@ SELECT
     YFAMITM AS family_code,
     YGRPITM AS group_code,
     YCLAITM AS tax_class_code,
+    YVALITMVIN AS linked_items_cost,
     YLIQITM AS net_weight,
     YBRUITM AS gross_weight,
     CASE WHEN YDATEXC IS NULL THEN 1 ELSE 0 END AS is_active,

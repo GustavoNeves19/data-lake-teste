@@ -14,6 +14,8 @@ _REGISTRY = {
     "umbler":    ("ingestion.connectors.umbler", "UmblerConnector"),
     "pipedrive": ("ingestion.connectors.pipedrive", "PipedriveConnector"),
     "gmail":     ("ingestion.connectors.gmail", "GmailConnector"),
+    "clickup":   ("ingestion.connectors.clickup", "ClickUpConnector"),
+    "miro":      ("ingestion.connectors.miro", "MiroConnector"),
     # "goto":      ("ingestion.connectors.goto", "GoToConnector"),
 }
 

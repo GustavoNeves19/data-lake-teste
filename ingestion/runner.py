@@ -157,6 +157,9 @@ class IngestionRunner:
                 records = connector.extract(entity_cfg, parents=parents, since=since)
                 cache[name] = records
 
+            # Guarda anti-nulo nº 1: extração vazia/None vira "skipped" — nunca carrega.
+            # Numa carga cheia (truncate) isso é CRÍTICO: sem esta guarda, um DataFrame
+            # vazio truncaria a tabela e apagaria o dado bom da véspera.
             if not records:
                 logger.warning("ingestion_entity_empty", entity=name)
                 _state("skipped")
@@ -169,8 +172,19 @@ class IngestionRunner:
             else:
                 df = build_bronze_dataframe(records, entity_cfg=entity_cfg, run_id=run_id,
                                             source_system=src.source, context=context)
-            max_ev = _max_event_at(df, entity_cfg)
+
             write_mode = _WRITE_MODE_MAP.get(entity_cfg.get("write_mode", "truncate"), "WRITE_TRUNCATE")
+
+            # Guarda anti-nulo nº 2: a projeção pode esvaziar o DataFrame (tudo filtrado
+            # ou None). Tratamos como "skipped" para JAMAIS truncar a tabela com vazio.
+            if df is None or df.empty:
+                logger.warning("ingestion_entity_empty_after_projection",
+                               entity=name, rows_extracted=len(records))
+                _state("skipped", rows_ext=len(records))
+                return EntityResult(entity=name, status="skipped", rows_extracted=len(records),
+                                    seconds=round(time.time() - start, 2))
+
+            max_ev = _max_event_at(df, entity_cfg)
 
             self.loader.create_table(entity_cfg)
             # Idempotência: apaga a janela re-extraída antes do append incremental.

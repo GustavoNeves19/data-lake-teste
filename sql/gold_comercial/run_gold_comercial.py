@@ -15,7 +15,8 @@ from pathlib import Path
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r'C:\teste\sapient-metrics.json'
+# cloud: usa a env já setada; dev local: cai pro arquivo (sem sobrescrever a nuvem)
+os.environ.setdefault('GOOGLE_APPLICATION_CREDENTIALS', r'C:\teste\sapient-metrics.json')
 from google.cloud import bigquery
 
 BQ_PROJECT = 'sapient-metrics-492914-m7'

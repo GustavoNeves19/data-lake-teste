@@ -30,11 +30,13 @@ BQ_DATASET = os.getenv("BQ_DATASET")
 BQ_LOCATION = os.getenv("BQ_LOCATION", "us-east1")
 
 # ── Pipeline ─────────────────────────────────────────────
-BATCH_SIZE = int(os.getenv("BATCH_SIZE"))
-LOG_LEVEL = os.getenv("LOG_LEVEL")
-ENVIRONMENT = os.getenv("ENVIRONMENT")
-MAX_RETRIES = int(os.getenv("MAX_RETRIES"))
-RETRY_DELAY = int(os.getenv("RETRY_DELAY_SECONDS"))
+# defaults explícitos: variável opcional faltando NÃO derruba o import (era um
+# foot-gun — int(os.getenv(...)) com env vazia estourava TypeError).
+BATCH_SIZE = int(os.getenv("BATCH_SIZE", "50000"))
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
+MAX_RETRIES = int(os.getenv("MAX_RETRIES", "3"))
+RETRY_DELAY = int(os.getenv("RETRY_DELAY_SECONDS", "5"))
 QUERY_TIMEOUT_SECONDS = int(os.getenv("QUERY_TIMEOUT_SECONDS", "300"))   # 5 min
 LOCK_TIMEOUT_MS = int(os.getenv("LOCK_TIMEOUT_MS", "5000"))              # 5 seg
 
@@ -132,6 +134,7 @@ ENTITIES = {
             ("country",         "STRING"),
             ("email",           "STRING"),
             ("phone",           "STRING"),
+            ("carteira_code",   "STRING"),     # YCARCOM do cliente (CA..CF) — fonte da verdade RFV
             ("is_active",       "BOOL"),
             ("excluded_at",     "TIMESTAMP"),
             ("loaded_at",       "TIMESTAMP"),
@@ -231,6 +234,7 @@ ENTITIES = {
             ("family_code",         "INT64"),
             ("group_code",          "INT64"),
             ("tax_class_code",      "STRING"),
+            ("linked_items_cost",   "NUMERIC"),
             ("net_weight",          "NUMERIC"),
             ("gross_weight",        "NUMERIC"),
             ("is_active",           "BOOL"),
@@ -409,6 +413,9 @@ ENTITIES = {
         "query_file": "fact_purchase_order.sql",
         "bq_table": "fact_purchase_order",
         "sk_column": "sk_purchase_order",
+        # Incremental ADIADO: a chave composta order_number+invoice_number fica instável
+        # (invoice_number vai de NULL->valor quando a nota chega, mudando o sk e duplicando
+        # no MERGE). Religar quando houver chave estável. Full por ora.
         "load_order": 3,
         "bq_schema": [
             ("sk_purchase_order",   "INT64"),
@@ -446,6 +453,15 @@ ENTITIES = {
         "query_file": "fact_sales_order.sql",
         "bq_table": "fact_sales_order",
         "sk_column": "sk_sales_order",
+        # Carga incremental (25/06): chave natural order_number -> sk vira hash estável;
+        # watermark = invoice_date (YDATEMI), que é o gatilho do faturamento e pega o
+        # faturamento de um pedido antigo (order_date ficaria velho e escaparia); o
+        # cancelamento entra por excluded_at; o full noturno reconcilia o resto.
+        "load_mode": "incremental",
+        "natural_key": ["order_number"],
+        "watermark_column": "invoice_date",
+        "exclusion_column": "excluded_at",
+        "overlap_days": 7,
         "load_order": 4,
         "bq_schema": [
             ("sk_sales_order",      "INT64"),
@@ -491,6 +507,7 @@ ENTITIES = {
             ("unit_price",          "NUMERIC"),
             ("ipi_amount",          "NUMERIC"),
             ("icms_amount",         "NUMERIC"),
+            ("unit_cost",           "NUMERIC"),
             ("inspection_flag",     "STRING"),
             ("inspected_qty",       "NUMERIC"),
             ("approved_qty",        "NUMERIC"),
@@ -904,6 +921,8 @@ ENTITIES = {
         "query_file": "fact_payable.sql",
         "bq_table": "fact_payable",
         "sk_column": "sk_payable",
+        # Incremental ADIADO: confirmar se title_number é único GLOBAL (PAGAR E RECEBER é
+        # multi-empresa; YNUMERO costuma ser único por empresa). Full por ora.
         "load_order": 5,
         "bq_schema": [
             ("sk_payable",          "INT64"),
@@ -935,6 +954,9 @@ ENTITIES = {
         "query_file": "fact_receivable.sql",
         "bq_table": "fact_receivable",
         "sk_column": "sk_receivable",
+        # Incremental ADIADO: issue_date tem datas FUTURAS (até 2029) que travariam o
+        # watermark, e title_number é multi-empresa. Volume baixo (1.609), ganho irrelevante.
+        # Full por ora.
         "load_order": 6,
         "bq_schema": [
             ("sk_receivable",       "INT64"),

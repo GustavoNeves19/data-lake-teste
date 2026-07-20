@@ -35,7 +35,8 @@ CREATE TABLE IF NOT EXISTS `sapient-metrics-492914-m7.silver_comercial.param_com
 --    Confirmado por Frederico/DC-Info na reunião 27/05/2026:
 --      FR (Farmácia) → FARMACIAS
 --      FA (Farmer)   → HOSPITALAR
---      PC (Peças)    → SAC
+--      PC (Peças)    → HOSPITALAR (SAC aglutinado em Hospitalar, decisão 16/07/2026
+--                       — reunião VanguardIA x Nevoni, confirmado com Natália/Alves)
 --    Filtro RFV = grupos presentes nesta tabela.
 --    Para incluir novo grupo (ex: e-commerce no futuro), adicionar linha aqui —
 --    sem mexer no resto do silver.
@@ -43,7 +44,7 @@ CREATE TABLE IF NOT EXISTS `sapient-metrics-492914-m7.silver_comercial.param_com
 CREATE OR REPLACE TABLE `sapient-metrics-492914-m7.silver_comercial.param_com_grupo_familia` AS
 SELECT 'FR' AS salesperson_group_code, 'FARMACIAS'  AS rfv_familia, 'Farmácia' AS group_name
 UNION ALL SELECT 'FA', 'HOSPITALAR', 'Farmer'
-UNION ALL SELECT 'PC', 'SAC',        'Peças';
+UNION ALL SELECT 'PC', 'HOSPITALAR', 'Peças';
 
 
 -- -----------------------------------------------------------------------------
@@ -179,9 +180,10 @@ WITH scored AS (
         -- Bucket Frequência
         --   HOSPITALAR/SAC (confirmado Hugo Alves — mai/2026):
         --     F1 >= 5 | F2 = 4 | F3 = 3 | F4 = 2 | F5 = 1
-        --   FARMACIAS: aguarda validação (thresholds provisórios)
+        --   FARMACIAS: F1 >= 7 | F2 = 5-6 | F3 = 3-4 | F4 = 2 | F5 = 1 (planilha Ribeiro)
+        --   NOT LIKE '%FARMACIA%' pega Hosp/SAC e os NOVOS_* correspondentes (5+).
         CASE
-            WHEN b.rfv_familia IN ('HOSPITALAR', 'SAC') THEN
+            WHEN b.rfv_familia NOT LIKE '%FARMACIA%' THEN
                 CASE
                     WHEN b.frequencia >= 5 THEN 'F1'
                     WHEN b.frequencia  = 4 THEN 'F2'

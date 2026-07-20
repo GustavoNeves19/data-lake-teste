@@ -7,21 +7,26 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-st.set_page_config(page_title="SAC e AT | Nevoni 360°", page_icon="🎧", layout="wide")
+import os as _os
+_FAVICON = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), "assets", "nevoni_favicon.png")
+
+import sys
+from pathlib import Path
+_ROOT = Path(__file__).resolve().parents[2]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
 
 from dashboard.utils.components import inject_css, page_header, kpi_card, section_title, sidebar_brand, coming_soon
 from dashboard.utils.bq_client import query_layer, PROJECT_PROD
 from dashboard.utils.gold_tables import SAC as G
 
-inject_css()
-sidebar_brand()
 
 PROJ = PROJECT_PROD
 # Pipelines SAC no Pipedrive (IDs mapeados no settings)
 SAC_PIPELINE_IDS = "(4, 5, 7, 9)"
 
 page_header(
-    title="🎧 SAC e Assistência Técnica",
+    title="SAC e Assistência Técnica",
     subtitle="Atendimentos · SLA · Chamadas GoTo Connect · Chat Umbler",
     sources=[
         {"name": "gold_sac", "active": True},
@@ -30,7 +35,7 @@ page_header(
 )
 
 tab_atend, tab_sla, tab_calls, tab_chat = st.tabs([
-    "🎫 Atendimentos", "⏱️ SLA", "📞 Chamadas", "💬 Chat",
+    "Atendimentos", "SLA", "Chamadas", "Chat",
 ])
 
 # ── Atendimentos ─────────────────────────────────────────────

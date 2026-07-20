@@ -7,14 +7,19 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-st.set_page_config(page_title="Operacional | Nevoni 360°", page_icon="🏭", layout="wide")
+import os as _os
+_FAVICON = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), "assets", "nevoni_favicon.png")
+
+import sys
+from pathlib import Path
+_ROOT = Path(__file__).resolve().parents[2]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
 
 from dashboard.utils.components import inject_css, page_header, kpi_card, section_title, sidebar_brand
 from dashboard.utils.bq_client import query_layer, fmt_num, PROJECT_PROD
 from dashboard.utils.gold_tables import Operacional as G
 
-inject_css()
-sidebar_brand()
 
 PROJ = PROJECT_PROD
 PROD = f"{PROJ}.dm_production"
@@ -22,13 +27,13 @@ INV  = f"{PROJ}.dm_inventory"
 PRD  = f"{PROJ}.dm_products"
 
 page_header(
-    title="🏭 Operacional e Produção",
+    title="Operacional e Produção",
     subtitle="Ordens de Produção · Eficiência · Estoque · BOM",
     sources=[{"name": "gold_operacional", "active": True}, {"name": "ERP (Bronze fallback)", "active": True}],
 )
 
 tab_op, tab_est, tab_bom = st.tabs([
-    "⚙️ Ordens de Produção", "📦 Estoque", "🗂️ BOM",
+    "Ordens de Produção", "Estoque", "BOM",
 ])
 
 # ── Ordens de Produção ───────────────────────────────────────

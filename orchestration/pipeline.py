@@ -2,7 +2,7 @@
 
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 import structlog
 
@@ -75,20 +75,40 @@ class ETLPipeline:
 
     # ── Processar uma entidade ───────────────────────────
 
-    def _process_entity(self, entity: dict) -> EntityResult:
-        """Executa E → T → L para uma entidade com logging de memória e throughput."""
+    def _process_entity(self, entity: dict, incremental: bool = False) -> EntityResult:
+        """Executa E → T → L para uma entidade com logging de memória e throughput.
+        Se incremental=True E a entidade tem load_mode='incremental', sobe só o delta
+        (janela de watermark) e faz upsert por chave; senão, full-reload (WRITE_TRUNCATE).
+        A primeira carga incremental (sem watermark gravado) cai no backfill full."""
         name = entity["name"]
         domain = entity["domain"]
         start = time.time()
 
-        logger.info("entity_start", entity=name, domain=domain, mem_mb=_mem_mb())
+        use_inc = (incremental and entity.get("load_mode") == "incremental"
+                   and bool(entity.get("watermark_column"))
+                   and bool(entity.get("sk_column"))
+                   and bool(entity.get("natural_key")))
+        logger.info("entity_start", entity=name, domain=domain,
+                    mode=("incremental" if use_inc else "full"), mem_mb=_mem_mb())
 
         try:
             # ── EXTRACT ──────────────────────────────────
             mem_pre_extract = _mem_mb()
             extract_start = time.time()
 
-            df = self.extractor.extract_entity(name, entity["query_file"])
+            since = None
+            if use_inc:
+                since = self.loader.get_watermark(name)   # None = primeira carga (backfill)
+                if since is not None and entity.get("overlap_days"):
+                    since = since - timedelta(days=entity["overlap_days"])
+                df = self.extractor.extract_entity(
+                    name, entity["query_file"],
+                    watermark_col=entity.get("watermark_column"),
+                    exclusion_col=entity.get("exclusion_column"),
+                    since=since,
+                )
+            else:
+                df = self.extractor.extract_entity(name, entity["query_file"])
 
             mem_post_extract = _mem_mb()
             logger.info(
@@ -130,7 +150,17 @@ class ETLPipeline:
             load_start = time.time()
 
             self.loader.create_table(entity)
-            rows_loaded = self.loader.load_dataframe(df, entity)
+            if use_inc and since is not None:
+                # delta → staging + MERGE pela sk (hash estável da chave natural)
+                rows_loaded = self.loader.upsert_incremental(df, entity, entity["sk_column"])
+            else:
+                # full-reload (modo full, ou backfill da 1ª carga incremental)
+                rows_loaded = self.loader.load_dataframe(df, entity)
+            # Carimba o watermark após QUALQUER carga de tabela incremental, inclusive o
+            # full-reload noturno (que tambem regenera o sk-hash), mantendo
+            # ops.watermark_control fresco pro próximo delta.
+            if entity.get("load_mode") == "incremental" and entity.get("watermark_column"):
+                self.loader.set_watermark(entity, entity["watermark_column"])
 
             mem_post_load = _mem_mb()
             logger.info(
@@ -198,6 +228,7 @@ class ETLPipeline:
         self,
         domains: list[str] | None = None,
         entities_filter: list[str] | None = None,
+        incremental: bool = False,
     ) -> PipelineResult:
         """
         Executa o pipeline completo.
@@ -233,7 +264,7 @@ class ETLPipeline:
                     if not entity.get("enabled", True):
                         logger.info("entity_disabled", entity=entity["name"])
                         continue
-                    entity_result = self._process_entity(entity)
+                    entity_result = self._process_entity(entity, incremental=incremental)
                     result.details.append(entity_result)
 
                     if entity_result.status == "ok":

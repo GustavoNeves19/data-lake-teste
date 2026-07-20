@@ -57,6 +57,30 @@ def kpi_card(
     )
 
 
+def kpi_row(cards: list[dict]):
+    """Linha de KPIs num grid RESPONSIVO (reflui sozinho em telas estreitas).
+
+    cards: lista de dicts {label, value, delta?, delta_dir?, variant?}.
+    Substitui o padrão `st.columns(N) + kpi_card`, que não quebra em mobile.
+    """
+    arrows = {"up": "▲", "down": "▼", "flat": ""}
+    items = []
+    for c in cards:
+        dd = c.get("delta_dir", "flat")
+        delta = c.get("delta", "")
+        delta_html = (
+            f'<div class="kpi-delta delta-{dd}">{arrows.get(dd, "")} {delta}</div>'
+            if delta else ""
+        )
+        items.append(
+            f'<div class="kpi-card {c.get("variant", "")}">'
+            f'<p class="kpi-label">{c["label"]}</p>'
+            f'<p class="kpi-value">{c["value"]}</p>'
+            f'{delta_html}</div>'
+        )
+    st.markdown(f'<div class="kpi-grid">{"".join(items)}</div>', unsafe_allow_html=True)
+
+
 def section_title(text: str):
     st.markdown(f'<p class="section-title">{text}</p>', unsafe_allow_html=True)
 
@@ -90,15 +114,28 @@ def sector_card(
     )
 
 
-def coming_soon(title: str = "Em desenvolvimento", msg: str = ""):
+def coming_soon(title: str = "Em construção", msg: str = ""):
+    """Card neutro de setor em construção (cadeado). Sem vermelho, sem jargão
+    técnico — é tela de executivo: o que ainda não tem dado aparece travado e limpo."""
     st.markdown(
         f"""
         <div class="coming-soon-box">
-          <h3>⏳ {title}</h3>
-          <p>{msg if msg else "Fonte de dados em fase de integração. Silver será criado na próxima sprint."}</p>
+          <span class="lock">🔒</span>
+          <h3>{title}</h3>
+          <p>{msg if msg else "Este setor está em construção. Em breve disponível aqui."}</p>
         </div>
         """,
         unsafe_allow_html=True,
+    )
+
+
+def _logo_html() -> str:
+    """Logo oficial da Nevoni (círculo índigo + anel branco + 'ni'), embutida como
+    data URI a partir do PNG de alta resolução em dashboard/assets/."""
+    from dashboard.utils.branding import logo_data_uri
+    return (
+        f'<img src="{logo_data_uri("favicon")}" width="60" height="60" '
+        'alt="Nevoni" style="display:inline-block; margin-bottom:8px;"/>'
     )
 
 
@@ -109,15 +146,9 @@ def sidebar_brand():
     from dashboard.utils.auth import require_login, logout_button
     require_login()
     st.sidebar.markdown(
-        """
+        f"""
         <div style="text-align:center; padding: 16px 0 8px;">
-          <div style="
-            width: 56px; height: 56px; border-radius: 50%;
-            background: white; display: inline-flex;
-            align-items: center; justify-content: center;
-            font-size: 28px; font-weight: 900;
-            color: #1E1882; margin-bottom: 8px;
-          ">N</div>
+          {_logo_html()}
           <div style="color:white; font-size:16px; font-weight:700;">Nevoni</div>
           <div style="color:rgba(255,255,255,0.5); font-size:11px;">Dashboard 360°</div>
         </div>

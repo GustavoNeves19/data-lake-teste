@@ -4,6 +4,7 @@ Conversões de tipo, surrogate keys, colunas de auditoria e limpeza de dados.
 Baseado no schema dimensional v5.
 """
 
+import hashlib
 from datetime import datetime, timezone
 
 import numpy as np
@@ -21,9 +22,42 @@ logger = structlog.get_logger(__name__)
 # ══════════════════════════════════════════════════════════
 
 def add_surrogate_key(df: pd.DataFrame, sk_column: str) -> pd.DataFrame:
-    """Insere surrogate key auto-incremento (1, 2, 3...) como primeira coluna."""
+    """Surrogate key auto-incremento (1, 2, 3...) como primeira coluna.
+    Estável SÓ dentro de uma carga (depende da ordem de extração). Para tabelas
+    full-reload. NÃO usar em incremental: o delta colidiria com o destino."""
     df = df.copy()
     df.insert(0, sk_column, range(1, len(df) + 1))
+    return df
+
+
+def _hash_int64(s: str) -> int:
+    """Hash determinístico de uma string -> INT64 assinado (8 bytes do blake2b)."""
+    return int.from_bytes(
+        hashlib.blake2b(s.encode("utf-8"), digest_size=8).digest(), "big", signed=True
+    )
+
+
+def add_hashed_surrogate_key(df: pd.DataFrame, sk_column: str, natural_key) -> pd.DataFrame:
+    """Surrogate key ESTÁVEL = hash determinístico da chave natural. A mesma linha
+    vira o mesmo sk em qualquer carga (full ou delta), pré-requisito do MERGE
+    incremental (o delta casa com o destino pela chave em vez de colidir). O
+    separador \\x1f entre colunas + sentinela p/ NULL evitam chave ambígua
+    (ex.: ['1','23'] vs ['12','3'])."""
+    df = df.copy()
+    cols = [natural_key] if isinstance(natural_key, str) else list(natural_key)
+    parts = []
+    for c in cols:
+        s = df[c]
+        if pd.api.types.is_numeric_dtype(s):
+            # chave numérica = identificador inteiro: formata como inteiro EXATO (sem
+            # ".0" nem notação científica) pra o hash não depender do repr do float64.
+            # Invariante: chave NUMERIC deve ser integral e < 2^53.
+            s = s.map(lambda v: format(int(v), "d") if pd.notna(v) else pd.NA)
+        parts.append(s.astype("string").fillna("\x00"))
+    key = parts[0]
+    for p in parts[1:]:
+        key = key + "\x1f" + p
+    df.insert(0, sk_column, key.map(_hash_int64).astype("int64"))
     return df
 
 
@@ -251,9 +285,14 @@ def transform_entity(
     if types["timestamps"]:
         df = cast_timestamps(df, types["timestamps"])
 
-    # 4. Surrogate key
+    # 4. Surrogate key — hash da chave natural (ESTÁVEL entre cargas, pré-requisito
+    #    do MERGE incremental) quando a entidade declara natural_key; senão sequencial.
     if sk_column:
-        df = add_surrogate_key(df, sk_column)
+        natural_key = entity_config.get("natural_key")
+        if natural_key:
+            df = add_hashed_surrogate_key(df, sk_column, natural_key)
+        else:
+            df = add_surrogate_key(df, sk_column)
 
     # 5. Auditoria
     has_updated = any(col == "updated_at" for col, _ in bq_schema)

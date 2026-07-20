@@ -98,15 +98,25 @@ class SQLServerExtractor:
             raise FileNotFoundError(f"Query não encontrada: {filepath}")
         return filepath.read_text(encoding="utf-8").strip()
 
-    def extract_entity(self, entity_name: str, query_file: str) -> pd.DataFrame:
+    def extract_entity(
+        self,
+        entity_name: str,
+        query_file: str,
+        watermark_col: str = None,
+        exclusion_col: str = None,
+        since=None,
+    ) -> pd.DataFrame:
         """
         Extrai uma entidade do ERP e retorna como DataFrame.
         Usa server-side cursor com fetchmany para controle de memória
         e log de progresso a cada BATCH_SIZE linhas.
 
         Args:
-            entity_name: Nome da entidade (ex: 'dim_company')
-            query_file:  Nome do arquivo SQL (ex: 'dim_company.sql')
+            entity_name:   Nome da entidade (ex: 'dim_company')
+            query_file:    Nome do arquivo SQL (ex: 'dim_company.sql')
+            watermark_col: (incremental) coluna de data de inserção/emissão p/ o delta
+            exclusion_col: (incremental) coluna de exclusão, traz o cancelamento de linha antiga
+            since:         (incremental) limite inferior da janela (last_watermark - overlap)
 
         Returns:
             DataFrame com dados extraídos, colunas já renomeadas pelo AS.
@@ -114,7 +124,23 @@ class SQLServerExtractor:
         if not self.is_connected():
             self.connect()
 
-        sql = self._load_query(query_file)
+        sql = self._load_query(query_file).rstrip().rstrip(";")
+        params: list = []
+        # Modo INCREMENTAL: envelopa a query crua e filtra pelo watermark (data de
+        # inserção/emissão) OU pela coluna de exclusão (essa segunda condição é o que
+        # traz o cancelamento de uma nota antiga, cuja data de emissão está fora da janela).
+        # O WHERE referencia os ALIAS de saída (created_at_erp, excluded_at, ...), que
+        # existem na subquery porque já vêm renomeados pelo AS na query original.
+        if watermark_col and since is not None:
+            conds = [f"_base.[{watermark_col}] >= ?"]
+            params.append(since)
+            if exclusion_col:
+                conds.append(f"_base.[{exclusion_col}] >= ?")
+                params.append(since)
+            sql = f"SELECT * FROM (\n{sql}\n) AS _base\nWHERE " + " OR ".join(conds)
+            logger.info("extract_incremental", entity=entity_name,
+                        watermark=watermark_col, exclusion=exclusion_col, since=str(since))
+
         start = time.time()
 
         try:
@@ -125,7 +151,10 @@ class SQLServerExtractor:
 
             # Timeout de lock no SQL Server (em milissegundos)
             cursor.execute(f"SET LOCK_TIMEOUT {LOCK_TIMEOUT_MS}")
-            cursor.execute(sql)
+            if params:
+                cursor.execute(sql, params)
+            else:
+                cursor.execute(sql)
 
             columns = [desc[0] for desc in cursor.description]
             chunks: list[pd.DataFrame] = []

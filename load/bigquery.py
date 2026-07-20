@@ -4,6 +4,7 @@ Cria tabelas (se não existem) e carrega DataFrames.
 Usa dataset por domínio (Opção B): dm_partners, dm_products, etc.
 """
 
+import datetime as dt
 import io
 import math
 import time
@@ -13,7 +14,7 @@ import structlog
 from google.cloud import bigquery
 from google.api_core.exceptions import NotFound, Conflict
 
-from config.settings import BQ_PROJECT, DOMAIN_DATASET_MAP, BATCH_SIZE
+from config.settings import BQ_PROJECT, DOMAIN_DATASET_MAP, BATCH_SIZE, BQ_LOCATION
 
 logger = structlog.get_logger(__name__)
 
@@ -378,6 +379,261 @@ class BigQueryLoader:
         affected = job.num_dml_affected_rows or 0
         logger.info("delete_window", table=table_id, column=column, since=str(since), deleted=affected)
         return affected
+
+    # ── Carga incremental — staging + MERGE (upsert idempotente) ──────────
+    # O caminho incremental: em vez de re-subir a tabela inteira (load_dataframe
+    # WRITE_TRUNCATE), sobe só o delta numa staging e faz MERGE pela chave. O MERGE
+    # cobre os 3 casos do CDC numa passada: linha nova (INSERT), valor alterado
+    # (UPDATE) e cancelamento via excluded_at (UPDATE = soft-delete). Idempotente:
+    # re-trazer o overlap reaplica o mesmo valor pela chave, nunca duplica.
+
+    @staticmethod
+    def _staging_config(entity_config: dict) -> dict:
+        """Config espelho apontando pra staging descartável _stg_<tabela> (mesmo
+        dataset, mesmo schema da final)."""
+        return {**entity_config, "bq_table": "_stg_" + entity_config["bq_table"]}
+
+    def load_to_staging(self, df: pd.DataFrame, entity_config: dict) -> tuple[str, int]:
+        """Sobe o delta na staging _stg_<tabela> com WRITE_TRUNCATE. Reusa
+        create_table + load_dataframe. Retorna (staging_table_id, linhas)."""
+        stg_cfg = self._staging_config(entity_config)
+        self.create_table(stg_cfg)
+        rows = self.load_dataframe(df, stg_cfg, write_mode="WRITE_TRUNCATE")
+        return self._get_table_id(stg_cfg), rows
+
+    def merge_from_staging(
+        self,
+        entity_config: dict,
+        primary_key: "list[str] | str",
+        columns: "list[str] | None" = None,
+    ) -> int:
+        """MERGE (upsert) da staging pra final, pela chave primária. WHEN MATCHED
+        reaplica todas as colunas fora da chave (cobre edição e cancelamento via
+        excluded_at); WHEN NOT MATCHED insere. Retorna linhas afetadas."""
+        self.connect()
+        final_id = self._get_table_id(entity_config)
+        stg_id = self._get_table_id(self._staging_config(entity_config))
+
+        pk = [primary_key] if isinstance(primary_key, str) else list(primary_key)
+        cols = columns or [c for c, _ in entity_config["bq_schema"]]
+        upd = [c for c in cols if c not in pk]
+        if not upd:
+            raise ValueError(f"merge_from_staging: nada a atualizar fora da chave {pk}")
+
+        on = " AND ".join(f"T.`{k}` = S.`{k}`" for k in pk)
+        set_clause = ", ".join(f"`{c}` = S.`{c}`" for c in upd)
+        ins_cols = ", ".join(f"`{c}`" for c in cols)
+        ins_vals = ", ".join(f"S.`{c}`" for c in cols)
+        sql = (
+            f"MERGE `{final_id}` T USING `{stg_id}` S ON {on}\n"
+            f"WHEN MATCHED THEN UPDATE SET {set_clause}\n"
+            f"WHEN NOT MATCHED THEN INSERT ({ins_cols}) VALUES ({ins_vals})"
+        )
+        job = self._client.query(sql)
+        job.result()
+        affected = job.num_dml_affected_rows or 0
+        logger.info("merge_ok", table=final_id, staging=stg_id, key=pk, affected=affected)
+        return affected
+
+    def upsert_incremental(
+        self,
+        df: pd.DataFrame,
+        entity_config: dict,
+        primary_key: "list[str] | str",
+    ) -> int:
+        """Caminho incremental completo: staging + MERGE numa chamada. Contraparte
+        do load_dataframe (WRITE_TRUNCATE = full-reload)."""
+        if df.empty:
+            logger.warning("upsert_skipped_empty", table=self._get_table_id(entity_config))
+            return 0
+        # sk ÚNICO no delta antes do MERGE: o BQ aborta ("must match at most one source
+        # row") se a staging tiver sk repetido. Fan-out de JOIN (ex.: ATENDENTES com
+        # YCODVEN duplicado) geraria sk repetido; colapsa pro primeiro e loga (visível).
+        subset = primary_key if isinstance(primary_key, list) else [primary_key]
+        n0 = len(df)
+        df = df.drop_duplicates(subset=subset, keep="first")
+        if len(df) < n0:
+            logger.warning("upsert_dedup_staging", table=self._get_table_id(entity_config),
+                           removed=n0 - len(df), key=subset)
+        self.load_to_staging(df, entity_config)
+        return self.merge_from_staging(entity_config, primary_key)
+
+    # ── Historico de versao (auditoria pre-MERGE) ──────────────────────────
+    # Duvida levantada pelo Fred na call de 13/07 (docs/PIPELINE_DOCUMENTOS_FTP.md):
+    # quando um documento e reprocessado com hash novo, o registro antigo vira
+    # uma linha de auditoria em vez de simplesmente desaparecer no UPDATE.
+    # Mesma logica do ops.watermark_control: tabela auxiliar separada da
+    # entidade principal, nao um redesenho da chave primaria dela.
+
+    def archive_history_from_staging(
+        self,
+        entity_config: dict,
+        history_entity_config: dict,
+        primary_key: str,
+        version_column: str,
+    ) -> int:
+        """Roda ENTRE load_to_staging() e merge_from_staging(): compara a
+        staging (delta que esta prestes a sobrescrever a final) com a linha
+        atual da final por `primary_key`, e arquiva (INSERT-only, nunca
+        UPDATE/DELETE) toda linha cujo `version_column` (ex.: content_hash)
+        vai mudar. Se a final ainda nao existir ou a staging nao trouxer
+        divergencia, e no-op — nao e erro, so nao ha o que arquivar ainda."""
+        self.connect()
+        final_id = self._get_table_id(entity_config)
+        stg_id = self._get_table_id(self._staging_config(entity_config))
+        hist_id = self.create_table(history_entity_config)
+
+        final_cols = [c for c, _ in entity_config["bq_schema"]]
+        select_cols = ", ".join(f"T.`{c}`" for c in final_cols)
+        query = f"""
+            INSERT INTO `{hist_id}` ({", ".join(f"`{c}`" for c in final_cols)}, archived_at)
+            SELECT {select_cols}, CURRENT_TIMESTAMP()
+            FROM `{final_id}` T
+            JOIN `{stg_id}` S ON T.`{primary_key}` = S.`{primary_key}`
+            WHERE T.`{version_column}` != S.`{version_column}`
+        """
+        try:
+            job = self._client.query(query)
+            job.result()
+        except NotFound:
+            # Tabela final ainda nao existe (primeira carga) — nada a arquivar.
+            logger.info("archive_history_skip_first_load", table=final_id)
+            return 0
+        archived = job.num_dml_affected_rows or 0
+        logger.info("archive_history_done", table=hist_id, archived=archived)
+        return archived
+
+    def soft_delete_missing(
+        self,
+        entity_config: dict,
+        primary_key: str,
+        present_keys: set[str],
+    ) -> int:
+        """Marca excluded_at para toda linha cuja `primary_key` nao esta em
+        `present_keys` — nunca DELETE fisico. Contraparte do espelho:
+        upsert_incremental cobre INSERT/UPDATE, este metodo cobre a exclusao
+        logica. Usado pelo conector de Documentos (Decisao 5 do
+        PIPELINE_DOCUMENTOS_FTP.md) — generalizavel pra qualquer conector
+        "espelho" futuro."""
+        self.connect()
+        table_id = self._get_table_id(entity_config)
+        query = f"""
+            UPDATE `{table_id}`
+            SET excluded_at = CURRENT_TIMESTAMP()
+            WHERE excluded_at IS NULL
+              AND `{primary_key}` NOT IN UNNEST(@present_keys)
+        """
+        job_config = bigquery.QueryJobConfig(query_parameters=[
+            bigquery.ArrayQueryParameter("present_keys", "STRING", list(present_keys)),
+        ])
+        job = self._client.query(query, job_config=job_config)
+        job.result()
+        affected = job.num_dml_affected_rows or 0
+        logger.info("soft_delete_missing", table=table_id, key=primary_key, affected=affected)
+        return affected
+
+    def get_existing_values(
+        self,
+        entity_config: dict,
+        key_column: str,
+        value_column: str,
+        keys: set[str],
+    ) -> dict:
+        """Busca `value_column` atual pra cada `key_column` dentre `keys`, na
+        tabela final. Usado quando o pipeline precisa preservar uma coluna que
+        o MERGE generico de merge_from_staging sobrescreveria — ex.:
+        first_seen_at do catalogo de Documentos, que nao pode ser resetado a
+        cada atualizacao de hash (MERGE nao faz COALESCE por coluna)."""
+        self.connect()
+        table_id = self._get_table_id(entity_config)
+        query = f"""
+            SELECT `{key_column}` AS k, `{value_column}` AS v
+            FROM `{table_id}`
+            WHERE `{key_column}` IN UNNEST(@keys)
+        """
+        job_config = bigquery.QueryJobConfig(query_parameters=[
+            bigquery.ArrayQueryParameter("keys", "STRING", list(keys)),
+        ])
+        try:
+            rows = list(self._client.query(query, job_config=job_config).result())
+        except NotFound:
+            return {}
+        return {r.k: r.v for r in rows}
+
+    # ── Watermark control (carga incremental) ─────────────────────────────
+    # ops.watermark_control guarda, por entidade, a maior data já carregada. A
+    # próxima carga incremental lê a partir dela (menos o overlap). Atualizada SÓ
+    # após a carga dar certo, recalculando MAX direto da tabela final.
+
+    def _watermark_table_id(self) -> str:
+        return f"{BQ_PROJECT}.ops.watermark_control"
+
+    def ensure_watermark_table(self) -> None:
+        """Cria ops.watermark_control (e o dataset ops) se não existirem."""
+        self.connect()
+        ds_id = f"{BQ_PROJECT}.ops"
+        try:
+            self._client.get_dataset(ds_id)
+        except NotFound:
+            ds = bigquery.Dataset(ds_id)
+            ds.location = BQ_LOCATION
+            self._client.create_dataset(ds, exists_ok=True)
+        tid = self._watermark_table_id()
+        try:
+            self._client.get_table(tid)
+        except NotFound:
+            schema = [
+                bigquery.SchemaField("entity", "STRING", mode="REQUIRED"),
+                bigquery.SchemaField("watermark_column", "STRING"),
+                bigquery.SchemaField("last_watermark_value", "TIMESTAMP"),
+                bigquery.SchemaField("last_run_at", "TIMESTAMP"),
+                bigquery.SchemaField("last_row_count", "INT64"),
+                bigquery.SchemaField("load_mode", "STRING"),
+            ]
+            self._client.create_table(bigquery.Table(tid, schema=schema), exists_ok=True)
+            logger.info("watermark_table_created", table=tid)
+
+    def get_watermark(self, entity_name: str):
+        """Último watermark gravado pra entidade. None se nunca carregou (= backfill)."""
+        self.connect()
+        self.ensure_watermark_table()
+        q = f"SELECT last_watermark_value AS v FROM `{self._watermark_table_id()}` WHERE entity = @e"
+        cfg = bigquery.QueryJobConfig(query_parameters=[
+            bigquery.ScalarQueryParameter("e", "STRING", entity_name)])
+        rows = list(self._client.query(q, job_config=cfg).result())
+        return rows[0].v if rows else None
+
+    def set_watermark(self, entity_config: dict, watermark_column: str):
+        """Recalcula MAX(watermark_column) da tabela FINAL e grava (upsert) em
+        ops.watermark_control. Chamar SÓ após a carga dar certo, pra não travar a
+        marca num valor parcial. Retorna o novo watermark."""
+        self.connect()
+        self.ensure_watermark_table()
+        mx = self.get_max(entity_config, watermark_column)
+        # get_max devolve datetime.date pra coluna DATE (ex.: invoice_date); o parametro
+        # TIMESTAMP do BQ nao serializa date puro (TypeError). Promove a datetime UTC
+        # (meia-noite); o overlap em dias absorve qualquer desvio de borda.
+        if isinstance(mx, dt.date) and not isinstance(mx, dt.datetime):
+            mx = dt.datetime(mx.year, mx.month, mx.day, tzinfo=dt.timezone.utc)
+        cnt = self.get_row_count(entity_config)
+        q = f"""MERGE `{self._watermark_table_id()}` T
+        USING (SELECT @e AS entity, @c AS watermark_column, @v AS last_watermark_value,
+                      CURRENT_TIMESTAMP() AS last_run_at, @n AS last_row_count, @m AS load_mode) S
+        ON T.entity = S.entity
+        WHEN MATCHED THEN UPDATE SET watermark_column = S.watermark_column,
+            last_watermark_value = S.last_watermark_value, last_run_at = S.last_run_at,
+            last_row_count = S.last_row_count, load_mode = S.load_mode
+        WHEN NOT MATCHED THEN INSERT ROW"""
+        cfg = bigquery.QueryJobConfig(query_parameters=[
+            bigquery.ScalarQueryParameter("e", "STRING", entity_config["name"]),
+            bigquery.ScalarQueryParameter("c", "STRING", watermark_column),
+            bigquery.ScalarQueryParameter("v", "TIMESTAMP", mx),
+            bigquery.ScalarQueryParameter("n", "INT64", cnt),
+            bigquery.ScalarQueryParameter("m", "STRING", entity_config.get("load_mode", "")),
+        ])
+        self._client.query(q, job_config=cfg).result()
+        logger.info("watermark_set", entity=entity_config["name"], value=str(mx), rows=cnt)
+        return mx
 
     def get_row_count(self, entity_config: dict) -> int:
         """Conta linhas de uma tabela usando o config da entidade."""

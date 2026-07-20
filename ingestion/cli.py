@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import argparse
 import sys
+import time
+from datetime import datetime, timezone
 
 import structlog
 
@@ -106,6 +108,76 @@ def cmd_ingest(source: str, entities: list[str] | None, full: bool) -> int:
     return 1 if result.errors else 0
 
 
+def cmd_daily(exclude: list[str] | None) -> int:
+    """Roda TODAS as fontes de API registradas (Gmail, Pipedrive, Umbler, ClickUp,
+    Miro) numa tacada. O ERP NÃO entra — não é fonte registrada (é o main.py à parte,
+    que depende da carga do banco do Diego). Pensado pro agendador da nuvem (manhã).
+
+    Continua mesmo se uma fonte falhar; retorna != 0 se qualquer uma deu erro,
+    pro Cloud Scheduler/Run marcar a execução como falha e alertar.
+    """
+    runner = IngestionRunner()
+    exclude = set(exclude or [])
+    sources = [s for s in list_sources() if s not in exclude]
+
+    print(f"\n{'═'*64}")
+    print(f"  CARGA DIÁRIA — {len(sources)} fontes: {', '.join(sources)}")
+    if exclude:
+        print(f"  (excluídas: {', '.join(sorted(exclude))})")
+    print(f"{'═'*64}")
+
+    tot_ok = tot_err = tot_skip = tot_rows = 0
+    falhas: list[str] = []
+    # Linha de auditoria por fonte: ícone, rows e tempo — preenchida mesmo em falha total.
+    audit: list[dict] = []
+    for src in sources:
+        t0 = time.time()
+        try:
+            r = runner.run_source(src, full=False)
+            tot_ok += r.ok; tot_err += r.errors; tot_skip += r.skipped; tot_rows += r.total_rows
+            icon = "✓" if r.errors == 0 else "✗"
+            print(f"  {icon} {src:12s} ok={r.ok} erro={r.errors} vazio={r.skipped} "
+                  f"linhas={r.total_rows:,} ({r.total_seconds}s)")
+            # ⊘ vazio só quando NADA carregou e não houve erro (skip total da fonte).
+            if r.errors:
+                status_icon = "❌"
+            elif r.total_rows == 0 and r.ok == 0:
+                status_icon = "⊘"
+            else:
+                status_icon = "✅"
+            first_err = next((d.error for d in r.details if d.status == "error"), "")
+            audit.append({"src": src, "icon": status_icon, "rows": r.total_rows,
+                          "seconds": r.total_seconds, "error": first_err})
+            if r.errors:
+                falhas.append(src)
+        except Exception as e:  # noqa: BLE001
+            falhas.append(src)
+            print(f"  ✗ {src:12s} FALHA TOTAL: {e}")
+            audit.append({"src": src, "icon": "❌", "rows": 0,
+                          "seconds": round(time.time() - t0, 2), "error": str(e)})
+
+    print(f"{'═'*64}")
+    print(f"  TOTAL: {tot_ok} ok · {tot_err} erro · {tot_skip} vazio · {tot_rows:,} linhas")
+    if falhas:
+        print(f"  ⚠ Fontes com erro: {', '.join(falhas)}")
+    print(f"{'═'*64}\n")
+
+    # ── Auditoria: uma linha por fonte com status visual (✅/❌/⊘) ────────────────
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    print(f"{'═'*64}")
+    print(f"  === RESUMO DA CARGA (auditoria) ===   {ts}")
+    print(f"{'═'*64}")
+    print(f"  {'':2s} {'Fonte':<12} {'Linhas':>10} {'Tempo':>8}  Detalhe")
+    print(f"  {'─'*2} {'─'*12} {'─'*10} {'─'*8}  {'─'*24}")
+    for a in audit:
+        detalhe = a["error"][:60] if a["error"] else ""
+        print(f"  {a['icon']:2s} {a['src']:<12} {a['rows']:>10,} {a['seconds']:>7.1f}s  {detalhe}")
+    print(f"{'═'*64}")
+    print("  Detalhe completo persistido em ops.ingestion_runs (use: ingestion freshness)")
+    print(f"{'═'*64}\n")
+    return 1 if falhas else 0
+
+
 def cmd_freshness() -> int:
     rows = IngestionState().freshness()
     print("\n═══ Saúde das Fontes — última execução por entidade ═══\n")
@@ -139,6 +211,9 @@ def main(argv: list[str] | None = None) -> int:
     p_list = sub.add_parser("list", help="Lista entidades da fonte")
     p_list.add_argument("--source", required=True)
 
+    p_daily = sub.add_parser("daily", help="Roda TODAS as fontes de API (p/ agendador da nuvem)")
+    p_daily.add_argument("--exclude", nargs="+", default=None, help="Fontes a pular (ex: miro)")
+
     sub.add_parser("sources", help="Lista fontes registradas")
     sub.add_parser("freshness", help="Mostra a freshness por fonte/entidade")
 
@@ -147,6 +222,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.cmd == "ingest":
         return cmd_ingest(args.source, args.entity, args.full)
+    if args.cmd == "daily":
+        return cmd_daily(args.exclude)
     if args.cmd == "test":
         return cmd_test(args.source)
     if args.cmd == "list":
